@@ -44,15 +44,25 @@ export default function PerfilPage() {
 
   const handleSave = async () => {
     setIsSaving(true);
-    setTimeout(() => {
-      setIsSaving(false);
+    try {
+      const res = await fetch("/api/profile/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, commercialOptIn, avatar: selectedAvatar }),
+      });
+
+      if (!res.ok) throw new Error("Falha ao atualizar");
+
       if (typeof window !== "undefined") {
          localStorage.setItem("mozbet_avatar", selectedAvatar);
       }
-      toast.success("Perfil atualizado com sucesso!");
-      // Atualiza a página para o Header pegar o novo avatar
+      toast.success("Perfil e preferências guardados com sucesso!");
       setTimeout(() => window.location.reload(), 1000);
-    }, 1000);
+    } catch (err: any) {
+      toast.error(err.message || "Ocorreu um erro ao guardar.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleChangePassword = () => {

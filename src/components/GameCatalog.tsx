@@ -44,12 +44,11 @@ export function GameCatalog() {
             onClick={() => handleGameClick(game.id)}
             className="relative rounded-[28px] overflow-hidden aspect-[4/5] group active:scale-[0.97] transition-all cursor-pointer text-left shadow-lg bg-card"
           >
-            <Image
+            <img
               src={game.banner}
               alt={game.name}
-              fill
-              sizes="(max-width: 768px) 50vw, 25vw"
-              className="object-cover"
+              loading="lazy"
+              className="absolute inset-0 w-full h-full object-cover"
             />
 
             {/* Badge HOT */}

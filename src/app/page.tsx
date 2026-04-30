@@ -24,7 +24,7 @@ import { useSearchParams } from "next/navigation";
 const SLIDES = [
   {
     id: 1,
-    image: "https://res.cloudinary.com/dm3glrwax/image/upload/c_limit,f_auto,q_auto,w_800/v1/mozbet/mozbet/banner-promo",
+    image: "/api/img/banner-promo",
     badge: "NOVO JOGADOR",
     title: "BÔNUS DE ",
     highlight: "500%",
@@ -33,7 +33,7 @@ const SLIDES = [
   },
   {
     id: 2,
-    image: "https://res.cloudinary.com/dm3glrwax/image/upload/c_limit,f_auto,q_auto,w_800/v1/mozbet/mozbet/banner-aviator",
+    image: "/api/img/banner-aviator",
     badge: "O MAIS QUERIDO",
     title: "VOE COM O ",
     highlight: "AVIATOR",
@@ -42,7 +42,7 @@ const SLIDES = [
   },
   {
     id: 3,
-    image: "https://res.cloudinary.com/dm3glrwax/image/upload/c_limit,f_auto,q_auto,w_800/v1/mozbet/mozbet/banner-mines",
+    image: "/api/img/banner-mines",
     badge: "CLÁSSICO",
     title: "EXPLOSÃO DE ",
     highlight: "GANHOS",
@@ -51,7 +51,7 @@ const SLIDES = [
   },
   {
     id: 4,
-    image: "https://res.cloudinary.com/dm3glrwax/image/upload/c_limit,f_auto,q_auto,w_800/v1/mozbet/mozbet/banner-plinko",
+    image: "/api/img/banner-plinko",
     badge: "CASINO",
     title: "A BOLA DA ",
     highlight: "SORTE",
@@ -60,7 +60,7 @@ const SLIDES = [
   },
   {
     id: 5,
-    image: "https://res.cloudinary.com/dm3glrwax/image/upload/c_limit,f_auto,q_auto,w_800/v1/mozbet/mozbet/banner-taxi",
+    image: "/api/img/banner-taxi",
     badge: "NOVIDADE",
     title: "O TAXI DA ",
     highlight: "FORTUNA",
@@ -94,12 +94,10 @@ export default function HomePage() {
               index === currentSlide ? "opacity-100 z-10" : "opacity-0 z-0"
             }`}
           >
-            <Image
+            <img
               src={slide.image}
               alt={slide.title}
-              fill
-              className="object-cover opacity-60 sm:opacity-80 transition-transform duration-[6000ms] ease-out scale-100 group-hover:scale-105"
-              priority={index === 0}
+              className="absolute inset-0 w-full h-full object-cover opacity-60 sm:opacity-80 transition-transform duration-[6000ms] ease-out scale-100 group-hover:scale-105"
             />
             <div className="absolute inset-0 bg-gradient-to-r from-background via-background/90 to-transparent" />
             

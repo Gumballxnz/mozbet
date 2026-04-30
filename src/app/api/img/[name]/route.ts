@@ -22,7 +22,7 @@ export async function GET(
 ) {
   const { name } = await params;
 
-  if (!name || !/^[a-z0-9-]+$/i.test(name)) {
+  if (!name || !/^[a-z0-9-.]+$/i.test(name)) {
     return new NextResponse("Not found", { status: 404 });
   }
 

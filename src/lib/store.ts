@@ -10,6 +10,7 @@ interface User {
   balance: number;
   hasDeposited: boolean;
   createdAt: string;
+  isAdmin?: boolean;
 }
 
 interface AppState {

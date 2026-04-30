@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslation } from "@/hooks/useTranslation";
-import { Gamepad2, ChevronRight, Heart } from "lucide-react";
+import { Gamepad2, ChevronRight, Heart, LayoutGrid, Flame, Clock, Swords, Trophy } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { useState, useEffect } from "react";
@@ -14,6 +14,16 @@ export function GameCatalog() {
   
   const [games, setGames] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeFilter, setActiveFilter] = useState("all");
+
+  const filters = [
+    { id: "all", label: "Todos os Jogos", icon: Gamepad2 },
+    { id: "casino", label: "Cassino", icon: LayoutGrid },
+    { id: "popular", label: "Popular", icon: Flame },
+    { id: "new", label: "Novos Jogos", icon: Clock },
+    { id: "battles", label: "Batalhas", icon: Swords },
+    { id: "sports", label: "Esportes", icon: Trophy },
+  ];
 
   useEffect(() => {
     async function loadGames() {
@@ -41,13 +51,46 @@ export function GameCatalog() {
     }
   };
 
+  const filteredGames = games.filter(g => {
+    if (activeFilter === "all") return true;
+    const cat = g.category?.toLowerCase() || "";
+    if (activeFilter === "casino") return cat.includes("casino") || cat.includes("slot");
+    if (activeFilter === "popular") return g.is_hot;
+    if (activeFilter === "new") return g.is_new;
+    return cat.includes(activeFilter);
+  });
+
   return (
     <div className="px-3 pt-2 pb-6">
+      {/* Filtros em Barra Horizontal com Scroll */}
+      <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar pb-4 -mx-3 px-3">
+        {filters.map((filter) => {
+          const Icon = filter.icon;
+          const isActive = activeFilter === filter.id;
+          return (
+            <button
+              key={filter.id}
+              onClick={() => setActiveFilter(filter.id)}
+              className={`flex items-center gap-2 whitespace-nowrap px-4 py-2.5 rounded-full text-sm font-bold transition-colors shrink-0 border ${
+                isActive 
+                  ? "bg-primary/20 text-primary border-primary shadow-[0_0_15px_rgba(0,255,127,0.2)]" 
+                  : "bg-surface border-white/5 text-muted-foreground hover:bg-white/5 hover:text-white"
+              }`}
+            >
+              <Icon size={16} className={isActive ? "text-primary" : "text-muted-foreground"} />
+              {filter.label}
+            </button>
+          );
+        })}
+      </div>
+
       {/* Header da secção */}
       <div className="flex items-center justify-between mt-2 mb-3">
         <div className="flex items-center gap-2">
-          <Gamepad2 size={20} className="text-primary" />
-          <h2 className="text-xl font-extrabold">{t("games")}</h2>
+          <Gamepad2 size={20} className={activeFilter === "all" ? "text-primary" : "text-white"} />
+          <h2 className="text-xl font-extrabold">
+            {activeFilter === "all" ? "Jogos De Todos" : filters.find(f => f.id === activeFilter)?.label}
+          </h2>
         </div>
         <button 
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
@@ -64,7 +107,7 @@ export function GameCatalog() {
       ) : (
         /* Grid de jogos — estilo original */
         <div className="grid grid-cols-2 gap-3">
-          {games.map((game) => (
+          {filteredGames.map((game) => (
             <button
               key={game.id}
               onClick={() => handleGameClick(game.id)}

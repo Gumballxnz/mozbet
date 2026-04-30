@@ -3,7 +3,7 @@ import { ShieldCheck, SmartphoneNfc } from "lucide-react";
 
 export function Footer() {
   return (
-    <footer className="mt-12 border-t border-white/5 bg-surface-elevated/30 py-8 px-4 text-center">
+    <footer className="mt-2 border-t border-white/5 bg-surface-elevated/30 py-8 px-4 text-center">
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="flex flex-col items-center gap-2">
           <span className="text-xl font-extrabold tracking-tight text-white">

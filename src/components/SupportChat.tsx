@@ -51,7 +51,7 @@ export function SupportChat() {
     if (!isDragging) return;
     const dx = clientX - dragStart.current.x;
     const dy = clientY - dragStart.current.y;
-    if (Math.abs(dx) > 5 || Math.abs(dy) > 5) dragStart.current.moved = true;
+    if (Math.abs(dx) > 15 || Math.abs(dy) > 15) dragStart.current.moved = true;
     
     const newX = Math.max(0, Math.min(window.innerWidth - 56, dragStart.current.startX + dx));
     const newY = Math.max(0, Math.min(window.innerHeight - 56, dragStart.current.startY + dy));
@@ -134,6 +134,11 @@ export function SupportChat() {
           )}
           <button
             ref={dragRef}
+            onClick={() => {
+              if (!dragStart.current.moved) {
+                setChatOpen(true);
+              }
+            }}
             onMouseDown={(e) => handleDragStart(e.clientX, e.clientY)}
             onTouchStart={(e) => handleDragStart(e.touches[0].clientX, e.touches[0].clientY)}
             onTouchMove={(e) => handleDragMove(e.touches[0].clientX, e.touches[0].clientY)}

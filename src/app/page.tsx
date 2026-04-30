@@ -62,7 +62,13 @@ export default function Home() {
   }, [searchParams, openLogin]);
 
   return (
-    <div className="flex flex-col pb-20">
+    <div className="flex flex-col pb-4">
+      <style>{`
+        @keyframes fillProgress {
+          from { width: 0%; }
+          to { width: 100%; }
+        }
+      `}</style>
       {/* Navbar Superior (Específico Mobile) */}
       <div className="flex items-center justify-between px-4 pt-4 pb-2">
         <div className="flex flex-col">
@@ -120,10 +126,17 @@ export default function Home() {
               <button
                 key={i}
                 onClick={() => setCurrentSlide(i)}
-                className={`transition-all duration-300 rounded-full h-1.5 ${
-                  i === currentSlide ? "w-6 bg-primary" : "w-1.5 bg-white/30 hover:bg-white/50"
+                className={`rounded-full h-1.5 overflow-hidden transition-all duration-300 ${
+                  i === currentSlide ? "w-6 bg-black/50 border border-white/10" : "w-1.5 bg-white/30 hover:bg-white/50"
                 }`}
-              />
+              >
+                {i === currentSlide && (
+                  <div 
+                    className="h-full bg-primary" 
+                    style={{ animation: "fillProgress 5s linear forwards" }} 
+                  />
+                )}
+              </button>
             ))}
           </div>
         )}

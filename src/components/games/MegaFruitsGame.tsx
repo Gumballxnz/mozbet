@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { ArrowLeft, Maximize2, RotateCw, Trash2, Play, Volume2, Trophy, Coins } from "lucide-react";
@@ -18,7 +18,7 @@ const SYMBOLS = [
   { icon: "ðŸ‰", name: "Melancia", mult: 10 },
   { icon: "ðŸ“", name: "Morango", mult: 20 },
   { icon: "ðŸ‡", name: "Uva", mult: 50 },
-  { icon: "ðŸ’Ž", name: "777", mult: 100 },
+  { icon: "💎", name: "777", mult: 100 },
 ];
 
 const REELS_COUNT = 3;
@@ -99,7 +99,7 @@ const MegaFruitsGame = ({ balance, onUpdateBalance, onBack }: MegaFruitsProps) =
       setWinningLine(wonLine);
       onUpdateBalance(balance - betAmount + totalWin);
       toast.success(`PARABÉNS! Você ganhou ${totalWin.toFixed(2)} MT!`, {
-        icon: "ðŸŽ°",
+        icon: "🎰",
         className: "bg-yellow-500 text-black font-bold"
       });
     }

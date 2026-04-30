@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { ArrowLeft, Maximize2, Menu, Minus, Plus } from "lucide-react";
@@ -186,7 +186,7 @@ const TaxiCrashGame = ({ balance, onUpdateBalance, onBack }: Props) => {
         </div>
         {/* Car */}
         <div className="absolute bottom-3 text-3xl transition-all duration-100" style={{ left: `${carX}%` }}>
-          {phase === "crashed" ? "ðŸ’¥" : "🚕"}
+          {phase === "crashed" ? "💥" : "🚕"}
         </div>
 
         {/* Multiplier */}

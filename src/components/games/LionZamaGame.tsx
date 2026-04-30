@@ -16,7 +16,7 @@ const SYMBOLS = [
   { icon: "ðŸŽ", name: "Maçã", mult: 8, color: "text-red-400" },
   { icon: "ðŸŒ", name: "Banana", mult: 12, color: "text-yellow-400" },
   { icon: "ðŸ‰", name: "Melancia", mult: 20, color: "text-green-400" },
-  { icon: "ðŸ””", name: "Sino", mult: 30, color: "text-yellow-500" },
+  { icon: "🔔", name: "Sino", mult: 30, color: "text-yellow-500" },
   { icon: "â­", name: "Estrela", mult: 40, color: "text-blue-400" },
   { icon: "77", name: "77", mult: 60, color: "text-red-600" },
   { icon: "BAR", name: "BAR", mult: 100, color: "text-white" },

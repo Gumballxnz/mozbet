@@ -22,7 +22,7 @@ const GameCatalog = dynamic(() => import("@/components/GameCatalog").then(mod =>
 export default function Home() {
   const { t } = useTranslation();
   const searchParams = useSearchParams();
-  const { authMode, setAuthMode, setRegisterOpen } = useAppStore();
+  const { openLogin } = useAppStore();
   
   const [currentSlide, setCurrentSlide] = useState(0);
   const [banners, setBanners] = useState<any[]>([]);
@@ -60,10 +60,9 @@ export default function Home() {
   useEffect(() => {
     const error = searchParams.get("error");
     if (error === "unauthorized") {
-      setAuthMode("login");
-      setRegisterOpen(true);
+      openLogin();
     }
-  }, [searchParams, setAuthMode, setRegisterOpen]);
+  }, [searchParams, openLogin]);
 
   return (
     <div className="flex flex-col pb-20">

@@ -1,139 +1,83 @@
 "use client";
 
 import { useTranslation } from "@/hooks/useTranslation";
-import { Button } from "@/components/ui/button";
-import { Gamepad2, Coins, Cherry, Zap } from "lucide-react";
+import { Gamepad2, ChevronRight, Heart } from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { GAMES } from "@/lib/games";
 
-import { useRouter } from "next/navigation";
-
-export function GameCatalog({ categoryFilter }: { categoryFilter?: string | null }) {
+export function GameCatalog() {
   const { t } = useTranslation();
   const { isLoggedIn } = useAppStore();
   const router = useRouter();
 
-  // Se existe um filtro de categoria, mostrar apenas essa
-  if (categoryFilter && ["crash", "casino", "slots"].includes(categoryFilter)) {
-    const filtered = GAMES.filter((g) => g.category === categoryFilter);
-    const titles: Record<string, { icon: any; label: string }> = {
-      crash: { icon: Zap, label: "Crash Games" },
-      casino: { icon: Coins, label: "Casino" },
-      slots: { icon: Cherry, label: "Slots" },
-    };
-    const cat = titles[categoryFilter];
-
-    return (
-      <div className="space-y-8">
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold flex items-center gap-2">
-              <cat.icon className="text-primary w-5 h-5" />
-              {cat.label}
-            </h2>
-            <span className="text-xs text-muted-foreground">{filtered.length} jogos</span>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {filtered.map((game) => (
-              <GameCard key={game.id} game={game} isLoggedIn={isLoggedIn} router={router} t={t} />
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Sem filtro — mostrar todas as categorias
-  return (
-    <div className="space-y-8">
-      {/* Crash Games */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold flex items-center gap-2">
-            <Zap className="text-primary w-5 h-5" />
-            Crash Games
-          </h2>
-          <Button variant="link" className="text-muted-foreground text-sm p-0 h-auto">
-            {t("viewAll")}
-          </Button>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {GAMES.filter((g) => g.category === "crash").map((game) => (
-            <GameCard key={game.id} game={game} isLoggedIn={isLoggedIn} router={router} t={t} />
-          ))}
-        </div>
-      </div>
-
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold flex items-center gap-2">
-            <Coins className="text-primary w-5 h-5" />
-            {t("casino")}
-          </h2>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {GAMES.filter((g) => g.category === "casino").map((game) => (
-            <GameCard key={game.id} game={game} isLoggedIn={isLoggedIn} router={router} t={t} />
-          ))}
-        </div>
-      </div>
-
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold flex items-center gap-2">
-            <Cherry className="text-primary w-5 h-5" />
-            Slots
-          </h2>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {GAMES.filter((g) => g.category === "slots").map((game) => (
-            <GameCard key={game.id} game={game} isLoggedIn={isLoggedIn} router={router} t={t} />
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function GameCard({ 
-  game, 
-  isLoggedIn,
-  router,
-  t 
-}: { 
-  game: typeof GAMES[0], 
-  isLoggedIn: boolean,
-  router: any,
-  t: any
-}) {
-  const handleCardClick = () => {
+  const handleGameClick = (gameId: string) => {
     if (!isLoggedIn) {
-      router.push(`/jogar/${game.id}?mode=demo`);
+      router.push(`/jogar/${gameId}?mode=demo`);
     } else {
-      router.push(`/jogar/${game.id}?mode=real`);
+      router.push(`/jogar/${gameId}?mode=real`);
     }
   };
 
   return (
-    <div 
-      onClick={handleCardClick}
-      className="group relative rounded-xl overflow-hidden bg-surface-elevated border border-border aspect-[4/5] flex flex-col transition-all hover:scale-[1.02] hover:shadow-[0_0_20px_rgba(0,255,127,0.15)] cursor-pointer"
-    >
-      <Image
-        src={game.banner}
-        alt={game.name}
-        fill
-        sizes="(max-width: 768px) 50vw, (max-width: 1200px) 25vw, 20vw"
-        className="object-cover opacity-80 group-hover:opacity-100 transition-opacity"
-      />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent pointer-events-none" />
-      
-      <div className="absolute inset-x-0 bottom-0 p-3 flex flex-col gap-2 transform transition-transform">
-        <h3 className="font-bold text-sm text-white truncate drop-shadow-md">
-          {game.name}
-        </h3>
+    <div className="px-4 pt-8 pb-24">
+      {/* Header da secção */}
+      <div className="flex items-center justify-between mt-4 mb-4">
+        <div className="flex items-center gap-2">
+          <Gamepad2 size={20} className="text-primary" />
+          <h2 className="text-xl font-extrabold">{t("games")}</h2>
+        </div>
+        <button className="flex items-center gap-1 text-sm text-muted-foreground">
+          {t("viewAll")} <ChevronRight size={16} />
+        </button>
+      </div>
+
+      {/* Grid de jogos — estilo original */}
+      <div className="grid grid-cols-2 gap-3">
+        {GAMES.map((game) => (
+          <button
+            key={game.id}
+            onClick={() => handleGameClick(game.id)}
+            className="relative rounded-2xl overflow-hidden aspect-square group active:scale-[0.97] transition-all cursor-pointer text-left shadow-lg bg-card"
+          >
+            <Image
+              src={game.banner}
+              alt={game.name}
+              fill
+              sizes="(max-width: 768px) 50vw, 25vw"
+              className="object-cover"
+            />
+
+            {/* Badge HOT */}
+            {game.hot && (
+              <div className="absolute top-0 left-0 w-20 h-20 overflow-hidden pointer-events-none z-10">
+                <div className="absolute top-3 -left-6 rotate-[-45deg] bg-red-600 text-white text-[11px] font-extrabold px-7 py-0.5 shadow-md">
+                  HOT
+                </div>
+              </div>
+            )}
+
+            {/* Botão de favorito */}
+            <div className="absolute top-2 right-2 w-8 h-8 bg-black/70 rounded-lg flex items-center justify-center backdrop-blur-sm z-10">
+              <Heart size={16} className="text-yellow-400" fill="none" />
+            </div>
+
+            {/* Percentagem RTP */}
+            <div className="absolute top-2 left-1/2 -translate-x-1/2 z-10">
+              <span className="text-[9px] font-bold bg-black/60 backdrop-blur-sm text-white px-2 py-0.5 rounded">
+                {game.pct}
+              </span>
+            </div>
+
+            {/* Nome do jogo */}
+            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent pt-8 pb-3 px-2">
+              <p className="text-center text-base font-extrabold text-white tracking-wider drop-shadow-lg">
+                {game.name}
+              </p>
+            </div>
+          </button>
+        ))}
       </div>
     </div>
   );

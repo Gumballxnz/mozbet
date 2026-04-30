@@ -143,7 +143,7 @@ export default function HomePage() {
 
       {/* Catálogo de Jogos */}
       <section className="px-4 py-8 max-w-7xl mx-auto">
-        <GameCatalog categoryFilter={categoryFilter} />
+        <GameCatalog />
       </section>
     </div>
   );

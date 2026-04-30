@@ -3,13 +3,13 @@
 import { useAppStore } from "@/lib/store";
 import { useTranslation } from "@/hooks/useTranslation";
 import { Button } from "@/components/ui/button";
-import { User, Wallet, LogOut, Menu } from "lucide-react";
+import { User, Wallet, LogOut, Menu, MessageCircle } from "lucide-react";
 import { formatMZN } from "@/lib/utils";
 import Link from "next/link";
 
 export function MobileHeader() {
   const { t, locale, setLocale } = useTranslation();
-  const { isLoggedIn, user, setRegisterOpen, setDepositOpen, logout } = useAppStore();
+  const { isLoggedIn, user, setRegisterOpen, setDepositOpen, setChatOpen, logout } = useAppStore();
 
   const handleLogout = async () => {
     try {
@@ -71,6 +71,15 @@ export function MobileHeader() {
                   <User className="w-4 h-4 text-muted-foreground" />
                 </Button>
               </Link>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="w-9 h-9 rounded-full bg-surface"
+                title="Chat Global"
+                onClick={() => setChatOpen(true)}
+              >
+                <MessageCircle className="w-4 h-4 text-muted-foreground" />
+              </Button>
             </div>
           </>
         ) : (

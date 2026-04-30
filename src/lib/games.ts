@@ -1,22 +1,22 @@
+// Catálogo de jogos MOZBET — alinhado com o projeto original
 export const GAMES = [
   // Crash Games
-  { id: "aviator", name: "Aviator", category: "crash", banner: "/assets/banner-aviator.jpg" },
-  { id: "taxi-crash", name: "Taxi Crash", category: "crash", banner: "/assets/banner-taxi.jpg" },
-  { id: "earplane", name: "Earplane", category: "crash", banner: "/assets/banner-earplane.jpg" },
-  { id: "purple-crash", name: "Purple Crash", category: "crash", banner: "/assets/banner-purple-crash.jpg" },
-  { id: "subway-crash", name: "Subway Crash", category: "crash", banner: "/assets/game-dice.jpg" },
-  { id: "augustus-crash", name: "Augustus Crash", category: "crash", banner: "/assets/game-dragon.jpg" },
-  { id: "chicken-highway", name: "Chicken Highway", category: "crash", banner: "/assets/game-keno.jpg" },
+  { id: "aviator", name: "AVIATOR", category: "crash", banner: "/assets/banner-aviator.jpg", hot: true, pct: "97%" },
+  { id: "taxi-crash", name: "TAXI CRASH", category: "crash", banner: "/assets/banner-taxi.jpg", hot: true, pct: "96%" },
+  { id: "earplane", name: "EARPLANE", category: "crash", banner: "/assets/banner-earplane.jpg", hot: true, pct: "98%" },
+  { id: "purple-crash", name: "CRASH", category: "crash", banner: "/assets/banner-purple-crash.jpg", hot: false, pct: "97%" },
+  { id: "subway-crash", name: "SUBWAY CRASH", category: "crash", banner: "/assets/game-crash.jpg", hot: false, pct: "95%" },
+  { id: "augustus-crash", name: "AUGUSTUS CRASH", category: "crash", banner: "/assets/game-dragon.jpg", hot: false, pct: "96%" },
+  { id: "chicken-highway", name: "CHICKEN HIGHWAY", category: "crash", banner: "/assets/game-keno.jpg", hot: false, pct: "94%" },
   
   // Casino & Minigames
-  { id: "mines", name: "Mines", category: "casino", banner: "/assets/banner-mines.jpg" },
-  { id: "plinko", name: "Plinko", category: "casino", banner: "/assets/banner-plinko.jpg" },
-  { id: "bottle-mania", name: "Bottle Mania", category: "casino", banner: "/assets/banner-bottle-mania.jpg" },
-  { id: "fishinator", name: "Fishinator", category: "casino", banner: "/assets/game-trading.jpg" },
-  { id: "football-x", name: "Football X", category: "casino", banner: "/assets/game-roulette.jpg" },
-  { id: "lion-zama", name: "Lion Zama", category: "casino", banner: "/assets/banner-lion-zama.jpg" },
+  { id: "mines", name: "MINES", category: "casino", banner: "/assets/banner-mines.jpg", hot: true, pct: "98%" },
+  { id: "plinko", name: "PLINKO777", category: "casino", banner: "/assets/banner-plinko.jpg", hot: true, pct: "99%" },
+  { id: "bottle-mania", name: "BOTTLE MANIA", category: "casino", banner: "/assets/banner-bottle-mania.jpg", hot: false, pct: "99%" },
+  { id: "fishinator", name: "FISHINATOR", category: "casino", banner: "/assets/game-trading.jpg", hot: false, pct: "96%" },
+  { id: "football-x", name: "FOOTBALL X", category: "casino", banner: "/assets/game-roulette.jpg", hot: false, pct: "95%" },
+  { id: "lion-zama", name: "LION ZAMA", category: "casino", banner: "/assets/banner-lion-zama.jpg", hot: true, pct: "99%" },
   
   // Slots
-  { id: "mega-fruits", name: "Mega Fruits", category: "slots", banner: "/assets/banner-mega-fruits.jpg" },
-  { id: "tiger-fortune", name: "Tiger Fortune", category: "slots", banner: "/assets/game-tiger.jpg" },
+  { id: "mega-fruits", name: "MEGA FRUITS", category: "slots", banner: "/assets/banner-mega-fruits.jpg", hot: true, pct: "98%" },
 ];

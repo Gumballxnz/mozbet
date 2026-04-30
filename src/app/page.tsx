@@ -69,7 +69,7 @@ export default function Home() {
       {/* Navbar Superior (Específico Mobile) */}
       <div className="flex items-center justify-between px-4 pt-4 pb-2">
         <div className="flex flex-col">
-          <span className="text-sm font-bold text-muted-foreground">{t("welcome")}</span>
+          <span className="text-sm font-bold text-muted-foreground">Bem-vindo à</span>
           <h1 className="text-2xl font-black text-foreground tracking-tight leading-none">MOZBET</h1>
         </div>
       </div>

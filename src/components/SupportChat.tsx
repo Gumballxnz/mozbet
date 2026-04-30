@@ -16,7 +16,7 @@ type Message = {
 export function SupportChat() {
   const { t } = useTranslation();
   const pathname = usePathname();
-  const { chatOpen, setChatOpen } = useAppStore();
+  const { supportOpen, setSupportOpen } = useAppStore();
   
   const [messages, setMessages] = useState<Message[]>([
     { role: "model", content: "Olá! Sou o assistente de suporte da MOZBET. Como posso ajudar?" }
@@ -62,9 +62,9 @@ export function SupportChat() {
     setIsDragging(false);
     setShowCloseHint(false);
     if (!dragStart.current.moved) {
-      setChatOpen(true);
+      setSupportOpen(true);
     }
-  }, [setChatOpen]);
+  }, [setSupportOpen]);
 
   // Mouse events
   useEffect(() => {
@@ -81,7 +81,7 @@ export function SupportChat() {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages, chatOpen]);
+  }, [messages, supportOpen]);
 
   const handleSend = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -121,7 +121,7 @@ export function SupportChat() {
   return (
     <>
       {/* Botão Flutuante Arrastável */}
-      {!chatOpen && fabVisible && pathname === "/" && (
+      {!supportOpen && fabVisible && pathname === "/" && (
         <div className="fixed z-50" style={{ left: fabPosition.x, top: fabPosition.y }}>
           {/* Botão X para remover o fab */}
           {showCloseHint && (
@@ -136,7 +136,7 @@ export function SupportChat() {
             ref={dragRef}
             onClick={() => {
               if (!dragStart.current.moved) {
-                setChatOpen(true);
+                setSupportOpen(true);
               }
             }}
             onMouseDown={(e) => handleDragStart(e.clientX, e.clientY)}
@@ -153,8 +153,8 @@ export function SupportChat() {
         </div>
       )}
 
-      {/* Janela de Chat */}
-      {chatOpen && (
+      {/* Janela de Chat de Suporte IA */}
+      {supportOpen && (
         <div className="fixed bottom-20 right-4 sm:bottom-6 sm:right-6 z-50 w-[calc(100vw-32px)] sm:w-[350px] h-[450px] max-h-[70vh] bg-surface-elevated border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-slide-up">
           {/* Header */}
           <div className="bg-primary/10 border-b border-primary/20 p-4 flex items-center justify-between">
@@ -163,12 +163,12 @@ export function SupportChat() {
                 <Bot className="w-4 h-4" />
               </div>
               <div>
-                <h3 className="font-bold text-sm text-foreground">MOZBET Support</h3>
-                <p className="text-[10px] text-primary glow-primary">Online (IA)</p>
+                <h3 className="font-bold text-sm text-foreground">MOZBET Suporte</h3>
+                <p className="text-[10px] text-primary glow-primary">🟢 Online (IA)</p>
               </div>
             </div>
             <button 
-              onClick={() => setChatOpen(false)}
+              onClick={() => setSupportOpen(false)}
               className="text-muted-foreground hover:text-foreground"
             >
               <X className="w-5 h-5" />

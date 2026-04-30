@@ -1,6 +1,6 @@
 "use client";
 
-import { X, Info, Send, Smile, BadgeCheck } from "lucide-react";
+import { X, Info, Send, BadgeCheck } from "lucide-react";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAppStore } from "@/lib/store";
@@ -17,19 +17,165 @@ interface ChatMessage {
   user_id: string;
   username: string;
   message: string;
-  type: "message" | "win_announcement" | "system";
+  type: "message" | "win_announcement" | "system" | "fake_user";
   metadata?: any;
   created_at: string;
+  avatar?: string;
 }
 
+// ===== AVATARES DO SITE (DiceBear Adventurer — mesmos do perfil) =====
+const SITE_AVATARS = [
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Felix&backgroundColor=f59e0b",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Aneka&backgroundColor=10b981",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Jack&backgroundColor=3b82f6",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Molly&backgroundColor=8b5cf6",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Leo&backgroundColor=ef4444",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Zoe&backgroundColor=ec4899",
+];
+
+// Jogos do catálogo real do site
+const GAME_POOL = [
+  { id: "aviator", name: "Aviator" },
+  { id: "taxi-crash", name: "Taxi Crash" },
+  { id: "earplane", name: "Earplane" },
+  { id: "purple-crash", name: "Crash" },
+  { id: "subway-crash", name: "Subway Crash" },
+  { id: "augustus-crash", name: "Augustus Crash" },
+  { id: "chicken-highway", name: "Chicken Highway" },
+  { id: "mines", name: "Mines" },
+  { id: "plinko", name: "Plinko777" },
+  { id: "bottle-mania", name: "Bottle Mania" },
+  { id: "fishinator", name: "Fishinator" },
+  { id: "football-x", name: "Football X" },
+  { id: "lion-zama", name: "Lion Zama" },
+  { id: "mega-fruits", name: "Mega Fruits" },
+];
+
+// Gerar ID de jogador fake no formato real do site (primeiros chars de UUID uppercase)
+function generateFakePlayerId(): string {
+  const chars = "ABCDEF0123456789";
+  let id = "";
+  for (let i = 0; i < 8; i++) {
+    id += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return id;
+}
+
+// Mostrar ID parcialmente (ex: "A3F2***" — primeiros 4 + ***)
+function maskPlayerId(id: string): string {
+  return id.slice(0, 4) + "***";
+}
+
+// ===== TEMPLATES DE MENSAGENS — mistura de ganhos, perdas e conversa casual =====
+const MESSAGE_TEMPLATES: Array<(id: string, amount: number, game: string) => string> = [
+  // Testemunhos de ganhos
+  (id, amount, game) => `Entrei com ${Math.floor(amount * 0.1)}MT e saquei ${amount}MT no ${game} 🔥`,
+  (id, amount, game) => `Ganhei ${amount}MT hoje no ${game}! Só entrei com ${Math.floor(amount * 0.15)}MT 💰`,
+  (id, amount, game) => `${amount}MT no ${game}!! Esta plataforma é real 🙌`,
+  (id, amount, game) => `Acabei de sacar ${amount}MT no ${game}, entrei com apenas ${Math.floor(amount * 0.08)}MT`,
+  (id, amount, game) => `${game} tá a pagar hoje!! Já fiz ${amount}MT 🚀`,
+  (id, amount, game) => `${amount}MT em 10 minutos no ${game}, quem não acredita experimenta`,
+  (id, amount, game) => `Entrei com 20MT e saí com ${amount}MT no ${game} 😂🔥`,
+  (id, amount, game) => `Já sacaram? Eu acabei de tirar ${amount}MT do ${game}`,
+  (id, amount, game) => `Meus ${amount}MT já caíram no M-Pesa! ${game} nunca falha`,
+  (id, amount, game) => `Primeiro dia aqui e já fiz ${amount}MT no ${game} 💚`,
+  (id, amount, game) => `Mais ${amount}MT no bolso graças ao ${game} 🤑`,
+  (id, amount, game) => `Com 50MT fiz ${amount}MT no ${game}`,
+  (id, amount, game) => `Depositei 100MT e tô com ${amount}MT agora só no ${game}`,
+  (id, amount, game) => `${amount}MT direto no M-Pesa, sem stress`,
+  (id, amount, game) => `Não acredito que fiz ${amount}MT num dia no ${game}!! 😱`,
+  (id, amount, game) => `${game} pagou-me ${amount}MT agora!! Obrigado MOZBET`,
+
+  // Mensagens de quem perdeu
+  (id, amount, game) => `Perdi 50MT no ${game} mas vou recuperar 😤`,
+  (id, amount, game) => `${game} me comeu hoje... amanhã volto mais forte`,
+  (id, amount, game) => `Tava a ganhar no ${game} e fiquei ganancioso, perdi tudo 💀`,
+  (id, amount, game) => `Não sacou a tempo no ${game}... aprendi a lição`,
+  (id, amount, game) => `Perdi 100MT no ${game} kkkk vou tentar o Mines agora`,
+  (id, amount, game) => `O ${game} tá difícil hoje, vou mudar de jogo`,
+
+  // Conversa casual / comunidade
+  (_id, _a, game) => `Alguém mais tá a jogar ${game}? Vamos trocar dicas`,
+  (_id, _a, _g) => `Boa noite pessoal, quem tá a jogar agora?`,
+  (_id, _a, _g) => `MOZBET é a melhor plataforma de Moçambique 💯`,
+  (_id, _a, game) => `Vou jogar mais uma rodada no ${game}, tô com sorte hoje`,
+  (_id, _a, _g) => `Quem diz que não se ganha aqui nunca tentou 😂`,
+  (_id, _a, _g) => `Saque caiu em 2 minutos no M-Pesa, incrível 🔥`,
+  (_id, _a, game) => `Minha estratégia no ${game}: entrar com pouco e sair na hora certa 🧠`,
+  (_id, _a, _g) => `Pessoal, boa sorte pra todos! 🍀`,
+  (_id, _a, game) => `${game} é viciante demais kkkk`,
+  (_id, _a, _g) => `Boa noite campeões! Quem já ganhou hoje? 🏆`,
+  (_id, _a, _g) => `Alguém no Aviator agora?`,
+  (_id, _a, _g) => `Já é o 3° saque hoje 😎 MOZBET não brinca`,
+  (_id, _a, game) => `Começando o dia no ${game}, desejem-me sorte! 🤞`,
+  (_id, _a, _g) => `Qual o melhor jogo pra começar? Sou novo aqui`,
+  (_id, _a, _g) => `Mines ou Aviator? Qual rende mais?`,
+  (_id, _a, game) => `${game} tá generoso hoje pessoal`,
+  (_id, _a, _g) => `Alguém sabe quando vão adicionar mais jogos?`,
+  (_id, _a, _g) => `Bom dia a todos 🌅 vamos lucrar!`,
+];
+
+// Controle para nunca repetir mensagens na mesma sessão
+let usedTemplateIndices = new Set<number>();
+
+function getUniqueTemplate(): (id: string, amount: number, game: string) => string {
+  if (usedTemplateIndices.size >= MESSAGE_TEMPLATES.length) {
+    usedTemplateIndices.clear();
+  }
+  let idx: number;
+  do {
+    idx = Math.floor(Math.random() * MESSAGE_TEMPLATES.length);
+  } while (usedTemplateIndices.has(idx));
+  usedTemplateIndices.add(idx);
+  return MESSAGE_TEMPLATES[idx];
+}
+
+function generateFakeMessage(): ChatMessage {
+  const templateFn = getUniqueTemplate();
+  const avatar = SITE_AVATARS[Math.floor(Math.random() * SITE_AVATARS.length)];
+  const playerId = generateFakePlayerId();
+  const maskedId = maskPlayerId(playerId);
+  const game = GAME_POOL[Math.floor(Math.random() * GAME_POOL.length)];
+
+  // Valores realistas de ganho em Meticais
+  const amounts = [150, 200, 350, 500, 750, 1000, 1200, 1500, 2000, 2500, 3000, 4500, 5000, 7500, 10000, 15000, 20000];
+  const amount = amounts[Math.floor(Math.random() * amounts.length)];
+
+  const messageText = templateFn(maskedId, amount, game.name);
+
+  return {
+    id: `fake-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    user_id: `fake-${playerId}`,
+    username: maskedId,
+    message: messageText,
+    type: "fake_user",
+    avatar,
+    metadata: { game_id: game.id, game_name: game.name, amount },
+    created_at: new Date().toISOString(),
+  };
+}
+
+// ===== COMPONENTE PRINCIPAL =====
 export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalProps) {
   const { isLoggedIn } = useAppStore();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
-  const [online] = useState(() => Math.floor(Math.random() * 40) + 45); // Fake online users count (can be updated to real presence later)
+  const [online, setOnline] = useState(() => Math.floor(Math.random() * 40) + 85);
   const scrollRef = useRef<HTMLDivElement>(null);
   const isFetched = useRef(false);
+
+  // Atualizar contagem de online periodicamente (flutuação natural)
+  useEffect(() => {
+    if (!isOpen) return;
+    const interval = setInterval(() => {
+      setOnline((prev) => {
+        const delta = Math.floor(Math.random() * 5) - 2; // -2 a +2
+        return Math.max(60, Math.min(150, prev + delta));
+      });
+    }, 15000);
+    return () => clearInterval(interval);
+  }, [isOpen]);
 
   const fetchHistory = useCallback(async () => {
     try {
@@ -52,7 +198,7 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
       isFetched.current = true;
     }
 
-    // Subscrever a novas mensagens
+    // Subscrever a novas mensagens reais do Supabase
     const channel = supabase
       .channel("public:chat_messages")
       .on(
@@ -71,30 +217,60 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
     };
   }, [isOpen, fetchHistory]);
 
-  // Lógica do BOT automático "nr 84*9 ganhou 20mil no aviator"
+  // Motor de mensagens fake — injeção inicial + contínua
+  useEffect(() => {
+    if (!isOpen) return;
+
+    // Injetar 3-5 mensagens iniciais como se já existissem no chat
+    const initialMessages: ChatMessage[] = [];
+    const initialCount = Math.floor(Math.random() * 3) + 3;
+    for (let i = 0; i < initialCount; i++) {
+      const msg = generateFakeMessage();
+      const minutesAgo = (initialCount - i) * 2 + Math.floor(Math.random() * 3);
+      msg.created_at = new Date(Date.now() - minutesAgo * 60000).toISOString();
+      initialMessages.push(msg);
+    }
+    setMessages((prev) => [...initialMessages, ...prev]);
+    setTimeout(scrollToBottom, 200);
+
+    // Mensagens contínuas com intervalo variável (5 a 15 segundos)
+    let timeoutId: NodeJS.Timeout;
+
+    const scheduleNext = () => {
+      const delay = (Math.random() * 10 + 5) * 1000;
+      timeoutId = setTimeout(() => {
+        const newMsg = generateFakeMessage();
+        setMessages((prev) => {
+          const updated = [...prev, newMsg];
+          return updated.length > 100 ? updated.slice(-80) : updated;
+        });
+        setTimeout(scrollToBottom, 100);
+        scheduleNext();
+      }, delay);
+    };
+
+    scheduleNext();
+
+    return () => clearTimeout(timeoutId);
+  }, [isOpen]);
+
+  // Anúncios de vitória do BOT MOZBET (mais espaçados)
   useEffect(() => {
     if (!isOpen) return;
     const interval = setInterval(() => {
-      const games = [
-        { id: "aviator", name: "Aviator" },
-        { id: "footballx", name: "Football X" },
-        { id: "megafruits", name: "Mega Fruits" },
-        { id: "taxi-crash", name: "Taxi Crash" }
-      ];
-      const g = games[Math.floor(Math.random() * games.length)];
+      const g = GAME_POOL[Math.floor(Math.random() * GAME_POOL.length)];
       const winAmount = Math.floor(Math.random() * 40000) + 500;
-      const prefix = ["84", "85", "86", "87"][Math.floor(Math.random() * 4)];
-      const lastDigit = Math.floor(Math.random() * 9);
-      const username = `${prefix}***${lastDigit}`;
+      const playerId = generateFakePlayerId();
+      const maskedId = maskPlayerId(playerId);
 
       const newBotMsg: ChatMessage = {
         id: `bot-${Date.now()}`,
         user_id: "system-bot",
         username: "MOZBET BOT",
-        message: `${username} ganhou ${winAmount.toLocaleString("pt-MZ")} MT no ${g.name}!`,
+        message: `${maskedId} ganhou ${winAmount.toLocaleString("pt-MZ")} MT no ${g.name}!`,
         type: "win_announcement",
         metadata: {
-          username: username,
+          username: maskedId,
           amount: winAmount,
           game_id: g.id,
           game_name: g.name
@@ -103,12 +279,8 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
       };
 
       setMessages((prev) => [...prev, newBotMsg]);
-      setTimeout(() => {
-        if (scrollRef.current) {
-          scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-        }
-      }, 100);
-    }, 12000); // 12 seconds
+      setTimeout(scrollToBottom, 100);
+    }, 25000);
 
     return () => clearInterval(interval);
   }, [isOpen]);
@@ -142,7 +314,7 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
       if (!res.ok) throw new Error(data.error);
     } catch (err: any) {
       toast.error(err.message || "Erro ao enviar");
-      setInput(messageText); // Devolver texto em caso de erro
+      setInput(messageText);
     } finally {
       setIsSending(false);
     }
@@ -162,12 +334,15 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
             <div className="w-9 h-9 rounded-xl bg-primary/15 flex items-center justify-center">
               <span className="text-primary text-lg">💬</span>
             </div>
-            <h2 className="text-lg font-extrabold tracking-tight">Chat Global</h2>
+            <div>
+              <h2 className="text-lg font-extrabold tracking-tight">Chat ao Vivo</h2>
+              <p className="text-[10px] text-primary font-bold">🟢 {online} online agora</p>
+            </div>
           </div>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1.5 text-xs">
               <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-              <span className="font-bold">{online}</span>
+              <span className="font-bold text-primary">{online}</span>
             </div>
             <button className="text-muted-foreground hover:text-foreground">
               <Info size={18} />
@@ -189,7 +364,7 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
           {messages.map((m) => {
             const timeStr = new Date(m.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
             
-            // 1. ANÚNCIO DE VITÓRIA (WIN_ANNOUNCEMENT)
+            // 1. ANÚNCIO DE VITÓRIA (WIN_ANNOUNCEMENT) — Card do BOT
             if (m.type === "win_announcement") {
               const meta = m.metadata || {};
               return (
@@ -208,7 +383,7 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
                       <div className="rounded-2xl p-4 mt-1" style={{ background: "linear-gradient(135deg, hsl(280 50% 25%), hsl(260 50% 20%))" }}>
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-2">
-                            <span className="text-sm font-extrabold text-white">{m.username}</span>
+                            <span className="text-sm font-extrabold text-white">{meta.username}</span>
                           </div>
                           <BadgeCheck size={20} className="text-primary" />
                         </div>
@@ -216,7 +391,7 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
                           <div>
                             <p className="text-[10px] font-bold tracking-wider text-white/60 mb-0.5">SACOU:</p>
                             <p className="text-2xl font-extrabold" style={{ color: "hsl(290 100% 70%)" }}>
-                              {meta.multiplier}x
+                              {meta.multiplier || `${(Math.random() * 8 + 1.5).toFixed(2)}`}x
                             </p>
                           </div>
                           <div>
@@ -228,7 +403,7 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
                           </div>
                         </div>
                         <button
-                          onClick={() => onPlayGame?.("aviator")} // Futuramente pode vir do metadata
+                          onClick={() => onPlayGame?.(meta.game_id || "aviator")}
                           className="w-full py-3 rounded-xl bg-white/5 hover:bg-white/10 text-white text-xs font-extrabold tracking-wider transition-colors"
                         >
                           JOGAR AGORA
@@ -240,11 +415,29 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
               );
             }
 
-            // 2. MENSAGEM NORMAL DO JOGADOR
+            // 2. MENSAGEM FAKE DE JOGADOR — Avatar DiceBear + ID parcial
+            if (m.type === "fake_user") {
+              return (
+                <div key={m.id} className="flex gap-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                  <div className="w-9 h-9 rounded-full overflow-hidden shrink-0 border border-white/10">
+                    <img src={m.avatar || SITE_AVATARS[0]} alt="" className="w-full h-full object-cover" />
+                  </div>
+                  <div className="flex-1 bg-white/[0.04] rounded-2xl rounded-tl-none p-3 border border-white/[0.06]">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm font-bold text-emerald-400">{m.username}</span>
+                      <span className="text-[10px] text-muted-foreground">{timeStr}</span>
+                    </div>
+                    <p className="text-sm text-foreground/90 break-words">{m.message}</p>
+                  </div>
+                </div>
+              );
+            }
+
+            // 3. MENSAGEM REAL DO JOGADOR
             return (
               <div key={m.id} className="flex gap-2">
-                <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center shrink-0 text-base">
-                  🧑🏽
+                <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center shrink-0 text-base overflow-hidden">
+                  <img src={SITE_AVATARS[0]} alt="" className="w-full h-full object-cover" />
                 </div>
                 <div className="flex-1 bg-secondary/30 rounded-2xl rounded-tl-none p-3 border border-border/50">
                   <div className="flex items-center justify-between mb-1">

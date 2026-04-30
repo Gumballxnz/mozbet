@@ -13,7 +13,7 @@ import { GAMES } from "@/lib/games";
 
 export function DesktopSidebar() {
   const pathname = usePathname();
-  const { setChatOpen, isLoggedIn, user } = useAppStore();
+  const { setSupportOpen, isLoggedIn, user } = useAppStore();
   const [collapsed, setCollapsed] = useState(false);
 
   // Esconder a sidebar em certas páginas
@@ -137,7 +137,7 @@ export function DesktopSidebar() {
       {/* Botão de Suporte no fundo */}
       <div className="p-3 border-t border-white/5">
         <button 
-          onClick={() => setChatOpen(true)}
+          onClick={() => setSupportOpen(true)}
           className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary transition-colors ${collapsed ? "justify-center px-0" : ""}`}
           title={collapsed ? "Suporte" : undefined}
         >

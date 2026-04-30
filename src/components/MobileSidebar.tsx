@@ -16,7 +16,7 @@ export function MobileSidebar() {
   const { locale, setLocale } = useTranslation();
   const { 
     mobileSidebarOpen, setMobileSidebarOpen, 
-    setChatOpen, isLoggedIn, user, logout 
+    setSupportOpen, isLoggedIn, user, logout 
   } = useAppStore();
 
   // Fechar ao mudar de página
@@ -147,7 +147,7 @@ export function MobileSidebar() {
         <div className="p-3 mt-auto border-t border-white/5 space-y-2">
           {/* Suporte */}
           <button 
-            onClick={() => { setChatOpen(true); setMobileSidebarOpen(false); }}
+            onClick={() => { setSupportOpen(true); setMobileSidebarOpen(false); }}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary transition-colors"
           >
             <Headphones className="w-5 h-5" />

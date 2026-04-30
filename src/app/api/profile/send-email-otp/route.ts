@@ -62,7 +62,7 @@ export async function POST(req: Request) {
 
     // 4. Enviar email com Resend
     try {
-      await resend.emails.send({
+      const { data: emailResult, error: emailError } = await resend.emails.send({
         from: "MozBet Suporte <onboarding@resend.dev>", // Sandbox
         to: [email],
         subject: "Código de Verificação MozBet",
@@ -103,10 +103,30 @@ export async function POST(req: Request) {
           </div>
         `,
       });
-      console.log(`Email OTP ${code} enviado para ${email}`);
+
+      // Se a Resend retornar erro, o email é inválido ou não existe
+      if (emailError) {
+        console.error("Erro da Resend:", emailError);
+        
+        // Limpar o OTP que foi gerado pois o email não chegou
+        await supabaseAdmin.from("otp_codes").delete().eq("phone", email);
+        
+        // Mensagem clara para o utilizador
+        const errorMsg = emailError.message?.toLowerCase() || "";
+        if (errorMsg.includes("invalid") || errorMsg.includes("not found") || errorMsg.includes("bounce") || errorMsg.includes("rejected")) {
+          return NextResponse.json({ error: "Este e-mail é inválido ou não existe. Verifica o endereço e tenta novamente." }, { status: 400 });
+        }
+        return NextResponse.json({ error: "Não foi possível enviar o e-mail. Verifica se o endereço está correto." }, { status: 400 });
+      }
+
+      console.log(`Email OTP ${code} enviado para ${email} (ID: ${emailResult?.id})`);
     } catch (emailError: any) {
-      console.error("Erro da Resend:", emailError);
-      return NextResponse.json({ error: "Erro ao enviar e-mail. Verifica o teu plano Resend." }, { status: 500 });
+      console.error("Erro da Resend (exceção):", emailError);
+      
+      // Limpar o OTP que foi gerado
+      await supabaseAdmin.from("otp_codes").delete().eq("phone", email);
+      
+      return NextResponse.json({ error: "E-mail inválido ou incorreto. Verifica o endereço." }, { status: 400 });
     }
 
     return NextResponse.json({ success: true, message: "Código enviado!" });

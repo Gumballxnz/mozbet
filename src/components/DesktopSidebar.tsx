@@ -6,14 +6,14 @@ import { usePathname } from "next/navigation";
 import { 
   Gamepad2, Flame, Heart, Rocket, 
   Target, Dices, Cherry, Swords,
-  ChevronLeft, ChevronRight, Headphones, HelpCircle
+  ChevronLeft, ChevronRight, Headphones, HelpCircle, Shield
 } from "lucide-react";
 import { useAppStore } from "@/lib/store";
 import { GAMES } from "@/lib/games";
 
 export function DesktopSidebar() {
   const pathname = usePathname();
-  const { setChatOpen } = useAppStore();
+  const { setChatOpen, isLoggedIn, user } = useAppStore();
   const [collapsed, setCollapsed] = useState(false);
 
   // Esconder a sidebar em certas páginas
@@ -37,9 +37,9 @@ export function DesktopSidebar() {
 
   // Links de páginas informativas reais
   const infoLinks = [
-    { href: "/sobre", label: "Sobre Nós" },
-    { href: "/termos", label: "Termos" },
-    { href: "/privacidade", label: "Privacidade" },
+    { href: "/sobre-nos", label: "Sobre Nós" },
+    { href: "/termos-e-condicoes", label: "Termos" },
+    { href: "/politica-de-privacidade", label: "Privacidade" },
     { href: "/jogo-responsavel", label: "Jogo Responsável" },
   ];
 
@@ -120,6 +120,19 @@ export function DesktopSidebar() {
           </div>
         )}
       </div>
+
+      {/* Botão Admin (apenas para admins) */}
+      {isLoggedIn && user?.isAdmin && (
+        <div className="p-3 border-t border-white/5">
+          <Link href="/admin/login"
+            className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 transition-colors ${collapsed ? "justify-center px-0" : ""}`}
+            title={collapsed ? "Painel Admin" : undefined}
+          >
+            <Shield className="w-5 h-5 flex-shrink-0" />
+            {!collapsed && <span className="text-sm font-bold">Painel Admin</span>}
+          </Link>
+        </div>
+      )}
 
       {/* Botão de Suporte no fundo */}
       <div className="p-3 border-t border-white/5">

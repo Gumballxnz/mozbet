@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { ArrowLeft, Menu, MessageCircle, Heart } from "lucide-react";
+import { ArrowLeft, Menu, MessageCircle, Heart, Plane } from "lucide-react";
 import { toast } from "sonner";
 import { useAppStore } from "@/lib/store";
 import { supabase } from "@/lib/supabase";

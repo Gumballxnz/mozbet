@@ -39,13 +39,13 @@ export async function signToken(payload: Record<string, unknown>, expiresInSecon
     .sign(new TextEncoder().encode(getJwtSecretKey()));
 }
 
-export async function verifyToken(token: string) {
+export async function verifyToken<T = Record<string, unknown>>(token: string): Promise<T | null> {
   try {
     const { payload } = await jwtVerify(
       token,
       new TextEncoder().encode(getJwtSecretKey())
     );
-    return payload as Record<string, unknown>;
+    return payload as unknown as T;
   } catch (error) {
     return null;
   }

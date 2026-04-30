@@ -26,7 +26,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
     { name: "Utilizadores", href: "/admin/users", icon: Users },
     { name: "Transações", href: "/admin/transactions", icon: Wallet },
-    { name: "Configurações", href: "/admin/settings", icon: Settings },
+    { name: "Banners (Homepage)", href: "/admin/banners", icon: Settings },
+    { name: "Catálogo de Jogos", href: "/admin/games", icon: Settings },
   ];
 
   return (

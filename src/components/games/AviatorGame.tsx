@@ -1,8 +1,10 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { ArrowLeft, Menu, MessageCircle, Plane, Minus, Plus } from "lucide-react";
+import { ArrowLeft, Menu, MessageCircle, Heart } from "lucide-react";
 import { toast } from "sonner";
+import { useAppStore } from "@/lib/store";
+import { supabase } from "@/lib/supabase";
 
 interface Props {
   balance: number;
@@ -10,258 +12,362 @@ interface Props {
   onBack: () => void;
 }
 
-const historyColor = (m: number) => {
-  if (m < 2) return "text-sky-400";
-  if (m < 10) return "text-purple-400";
-  return "text-pink-400";
-};
-
-const fakePlayers = [
-  { name: "Ana****", bet: 50, mult: 2.3, win: 115 },
-  { name: "Jorg****", bet: 100, mult: 1.5, win: 150 },
-  { name: "Mari****", bet: 20, mult: 4.1, win: 82 },
-  { name: "Pedr****", bet: 200, mult: 0, win: 0 },
-  { name: "Luis****", bet: 10, mult: 3.8, win: 38 },
-  { name: "Caro****", bet: 75, mult: 1.2, win: 90 },
-];
-
 const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
-  const [phase, setPhase] = useState<"waiting" | "rising" | "crashed">("waiting");
+  const { isLoggedIn } = useAppStore();
+  const [phase, setPhase] = useState<"waiting" | "rising" | "crashed" | "loading">("loading");
   const [multiplier, setMultiplier] = useState(1.0);
   const [countdown, setCountdown] = useState(5);
-  const [history, setHistory] = useState<number[]>([1.82, 3.82, 1.21, 8.45, 1.45, 12.3, 2.1]);
-  const [bet1, setBet1] = useState(32);
-  const [bet2, setBet2] = useState(80);
-  const [hasBet1, setHasBet1] = useState(false);
-  const [hasBet2, setHasBet2] = useState(false);
-  const [cashed1, setCashed1] = useState(false);
-  const [cashed2, setCashed2] = useState(false);
-  const [tab, setTab] = useState<"manual" | "auto">("manual");
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const crashPointRef = useRef(0);
+  const [history, setHistory] = useState<number[]>([]);
+  
+  // Apostas
+  const [betAmount, setBetAmount] = useState(10);
+  const [activeBetId, setActiveBetId] = useState<string | null>(null);
+  const [hasBet, setHasBet] = useState(false);
+  const [cashedOut, setCashedOut] = useState(false);
+  const [lastWin, setLastWin] = useState(0);
 
-  const startRound = useCallback(() => {
-    setPhase("waiting");
-    setMultiplier(1.0);
-    setCountdown(5);
-    setCashed1(false);
-    setCashed2(false);
-    crashPointRef.current = 1.05 + Math.random() * Math.random() * 25;
-    let c = 5;
-    const cd = setInterval(() => {
-      c--;
-      setCountdown(c);
-      if (c <= 0) {
-        clearInterval(cd);
+  const currentRoundId = useRef<string | null>(null);
+  const startedAt = useRef<number>(0);
+  const animationRef = useRef<number>(0);
+  
+  // ==========================================
+  // SINCRONIZAÇÃO COM O SERVIDOR
+  // ==========================================
+
+  const fetchRoundState = useCallback(async () => {
+    try {
+      const res = await fetch("/api/game/round?game=aviator");
+      const data = await res.json();
+      
+      if (!data.round) return;
+
+      currentRoundId.current = data.round.id;
+      const startMs = new Date(data.round.startedAt).getTime();
+      const now = Date.now();
+
+      if (data.round.status === "waiting") {
+        setPhase("waiting");
+        setMultiplier(1.0);
+        setHasBet(false);
+        setCashedOut(false);
+        setCountdown(Math.max(1, Math.ceil((startMs - now) / 1000)));
+      } else if (data.round.status === "crashed") {
+        setPhase("crashed");
+        setMultiplier(data.round.crashPoint || 1.0);
+      } else {
         setPhase("rising");
+        startedAt.current = startMs;
       }
-    }, 1000);
+    } catch (err) {
+      console.error("Erro ao sincronizar ronda:", err);
+    }
   }, []);
 
-  useEffect(() => { startRound(); }, [startRound]);
+  const fetchHistory = useCallback(async () => {
+    try {
+      const res = await fetch("/api/game/history?game=aviator&limit=15");
+      const data = await res.json();
+      if (data.history) {
+        setHistory(data.history.map((h: any) => h.crashPoint));
+      }
+    } catch (err) {}
+  }, []);
 
+  // Inicialização e subscrição Realtime
   useEffect(() => {
-    if (phase !== "rising") return;
-    intervalRef.current = setInterval(() => {
-      setMultiplier((p) => {
-        const n = p + 0.01 + p * 0.015;
-        if (n >= crashPointRef.current) {
-          clearInterval(intervalRef.current!);
-          setPhase("crashed");
-          setHistory((h) => [parseFloat(crashPointRef.current.toFixed(2)), ...h].slice(0, 10));
-          return crashPointRef.current;
+    fetchRoundState();
+    fetchHistory();
+
+    // Subscrever a alterações na tabela game_rounds via Supabase Realtime
+    const channel = supabase
+      .channel("public:game_rounds")
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "game_rounds", filter: "game_id=eq.aviator" },
+        (payload) => {
+          const round = payload.new;
+          currentRoundId.current = round.id;
+          
+          if (round.status === "waiting") {
+            setPhase("waiting");
+            setMultiplier(1.0);
+            setHasBet(false);
+            setCashedOut(false);
+            const startMs = new Date(round.started_at).getTime();
+            setCountdown(Math.max(1, Math.ceil((startMs - Date.now()) / 1000)));
+          } else if (round.status === "running") {
+            setPhase("rising");
+            startedAt.current = new Date(round.started_at).getTime();
+          } else if (round.status === "crashed") {
+            setPhase("crashed");
+            setMultiplier(Number(round.crash_point));
+            fetchHistory(); // Atualizar histórico
+            
+            // Se o utilizador tinha aposta ativa e não sacou, perdeu.
+            if (hasBet && !cashedOut) {
+              setHasBet(false);
+            }
+          }
         }
-        return parseFloat(n.toFixed(2));
-      });
-    }, 80);
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+      )
+      .subscribe();
+
+    // Fallback: Polling caso o realtime falhe em redes fracas
+    const pollInterval = setInterval(fetchRoundState, 3000);
+
+    return () => {
+      supabase.removeChannel(channel);
+      clearInterval(pollInterval);
+    };
+  }, [fetchRoundState, fetchHistory, hasBet, cashedOut]);
+
+  // ==========================================
+  // LOOP VISUAL DO JOGO (100% Sincronizado)
+  // ==========================================
+  
+  useEffect(() => {
+    if (phase === "waiting") {
+      const timer = setInterval(() => {
+        setCountdown((c) => {
+          if (c <= 1) return 0;
+          return c - 1;
+        });
+      }, 1000);
+      return () => clearInterval(timer);
+    }
+
+    if (phase === "rising") {
+      const updateMultiplier = () => {
+        const elapsedMs = Date.now() - startedAt.current;
+        if (elapsedMs > 0) {
+          // Fórmula universal determinística (todos vêem o mesmo)
+          const calcMult = Math.max(1.0, 1.0 * Math.exp(0.00006 * elapsedMs));
+          setMultiplier(parseFloat(calcMult.toFixed(2)));
+        }
+        animationRef.current = requestAnimationFrame(updateMultiplier);
+      };
+      
+      animationRef.current = requestAnimationFrame(updateMultiplier);
+      return () => cancelAnimationFrame(animationRef.current);
+    }
   }, [phase]);
 
-  useEffect(() => {
-    if (phase === "crashed") {
-      setHasBet1(false);
-      setHasBet2(false);
-      const t = setTimeout(startRound, 3000);
-      return () => clearTimeout(t);
-    }
-  }, [phase, startRound]);
+  // ==========================================
+  // ACÇÕES DO JOGADOR
+  // ==========================================
 
-  const place = (n: 1 | 2) => {
-    const amt = n === 1 ? bet1 : bet2;
-    if (amt > balance) {
-      toast.error("Saldo insuficiente");
+  const handleBet = async () => {
+    if (!isLoggedIn) {
+      toast.error("Faça login para apostar real!");
       return;
     }
-    if (amt <= 0) return;
-    if (phase !== "waiting") return;
-    onUpdateBalance(balance - amt);
-    if (n === 1) setHasBet1(true); else setHasBet2(true);
-  };
 
-  const cashOut = (n: 1 | 2) => {
-    if (phase !== "rising") return;
-    const amt = n === 1 ? bet1 : bet2;
-    const has = n === 1 ? hasBet1 : hasBet2;
-    const already = n === 1 ? cashed1 : cashed2;
-    if (!has || already) return;
-    onUpdateBalance(balance + amt * multiplier);
-    if (n === 1) setCashed1(true); else setCashed2(true);
-  };
-
-  const BetPanel = ({ n }: { n: 1 | 2 }) => {
-    const val = n === 1 ? bet1 : bet2;
-    const setVal = n === 1 ? setBet1 : setBet2;
-    const has = n === 1 ? hasBet1 : hasBet2;
-    const cashed = n === 1 ? cashed1 : cashed2;
-    return (
-      <div className="bg-[#1a1a1a] rounded-xl p-2.5 space-y-2">
-        <div className="flex bg-[#0f0f0f] rounded-lg p-0.5">
-          <button onClick={() => setTab("manual")} className={`flex-1 py-1 text-[10px] font-bold rounded ${tab === "manual" ? "bg-[#2a2a2a] text-white" : "text-gray-500"}`}>Aposta</button>
-          <button onClick={() => setTab("auto")} className={`flex-1 py-1 text-[10px] font-bold rounded ${tab === "auto" ? "bg-[#2a2a2a] text-white" : "text-gray-500"}`}>Auto</button>
-        </div>
-        <div className="flex items-center bg-[#0f0f0f] rounded-lg">
-          <button onClick={() => setVal(Math.max(1, val - 1))} disabled={has} className="px-2 py-2 text-white disabled:opacity-40"><Minus size={14} /></button>
-          <input 
-            type="number" 
-            value={val}
-            disabled={has}
-            onChange={(e) => setVal(Number(e.target.value))}
-            onBlur={(e) => {
-              const val = Number(e.target.value);
-              if (isNaN(val) || val < 1) setVal(1);
-            }}
-            inputMode="numeric"
-            className="flex-1 bg-transparent text-center text-white font-bold text-sm outline-none w-full"
-          />
-          <button onClick={() => setVal(val + 1)} disabled={has} className="px-2 py-2 text-white disabled:opacity-40"><Plus size={14} /></button>
-        </div>
-        <div className="grid grid-cols-4 gap-1">
-          {[32, 80, 160, 800].map(v => (
-            <button key={v} onClick={() => !has && setVal(prev => prev + v)} disabled={has} className="bg-[#0f0f0f] text-gray-300 text-[10px] font-bold py-1.5 rounded disabled:opacity-40">{v}</button>
-          ))}
-        </div>
-        {phase === "rising" && has && !cashed ? (
-          <button onClick={() => cashOut(n)} className="w-full py-3 rounded-lg font-extrabold text-sm bg-[#ffa726] text-black active:scale-[0.96] shadow-[0_0_20px_rgba(255,167,38,0.4)]">
-            Retirar<br /><span className="text-xs">{(val * multiplier).toFixed(2)} MZN</span>
-          </button>
-        ) : (
-          <button onClick={() => place(n)} disabled={has || phase !== "waiting"} className={`w-full py-3 rounded-lg font-extrabold text-sm transition-all ${has || phase !== "waiting" ? "bg-gray-700 text-gray-500" : "bg-[#00ff88] text-black active:scale-[0.96] shadow-[0_0_20px_rgba(0,255,136,0.4)]"}`}>
-            {has ? (cashed ? "RETIRADO" : "AGUARDE") : "Aposta"}
-            {!has && <div className="text-[10px] font-bold mt-0.5">{val.toFixed(2)} MZN</div>}
-          </button>
-        )}
-      </div>
-    );
-  };
-
-  // Curve path for SVG
-  const curvePath = () => {
-    const maxM = Math.max(multiplier, 1.5);
-    const points: string[] = [];
-    const steps = 40;
-    for (let i = 0; i <= steps; i++) {
-      const t = i / steps;
-      const m = 1 + (maxM - 1) * t;
-      const x = t * 100;
-      const y = 100 - Math.min(((m - 1) / Math.max(maxM - 1, 0.1)) * 90, 90);
-      points.push(`${i === 0 ? "M" : "L"}${x},${y}`);
+    if (phase !== "waiting") {
+      toast.error("Aguarde a próxima ronda.");
+      return;
     }
-    return points.join(" ");
+
+    if (betAmount > balance) {
+      toast.error("Saldo insuficiente!");
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/game/bet", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ roundId: currentRoundId.current, amount: betAmount }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
+      setActiveBetId(data.bet.id);
+      setHasBet(true);
+      onUpdateBalance(data.newBalance);
+      toast.success("Aposta aceite!");
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao apostar.");
+    }
   };
 
-  const planePos = () => {
-    const maxM = Math.max(multiplier, 1.5);
-    const x = Math.min(((multiplier - 1) / Math.max(maxM - 1, 0.1)) * 100, 100);
-    const y = 100 - Math.min(((multiplier - 1) / Math.max(maxM - 1, 0.1)) * 90, 90);
-    return { x, y };
+  const handleCashout = async () => {
+    if (phase !== "rising" || !hasBet || cashedOut) return;
+
+    try {
+      // Pedimos o cashout para o multiplicador atual visto na tela
+      const res = await fetch("/api/game/cashout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ roundId: currentRoundId.current, multiplier }),
+      });
+
+      const data = await res.json();
+      
+      if (!res.ok) {
+        // Se o servidor recusar, significa que o crash já aconteceu
+        setPhase("crashed");
+        setHasBet(false);
+        throw new Error(data.error);
+      }
+
+      setCashedOut(true);
+      setLastWin(data.winnings);
+      onUpdateBalance(data.newBalance);
+      toast.success(`Sacou ${data.winnings.toLocaleString()} MZN!`);
+    } catch (err: any) {
+      toast.error(err.message || "Muito tarde! Avião voou.");
+    }
   };
 
-  const pp = planePos();
+  // ==========================================
+  // RENDERIZAÇÃO
+  // ==========================================
 
   return (
-    <div className="min-h-screen bg-[#0f0f0f] flex flex-col text-white">
-      {/* Top bar */}
-      <div className="flex items-center gap-3 px-3 py-2.5 bg-black/40 border-b border-white/5">
-        <button onClick={onBack}><ArrowLeft size={20} className="text-gray-400" /></button>
-        <span className="text-xl font-extrabold italic text-[#ff3b3b]" style={{ fontFamily: "serif" }}>Aviator</span>
-        <div className="ml-auto flex items-center gap-2">
-          <span className="text-[#00ff88] font-bold text-sm">{balance.toFixed(2)} MZN</span>
-          <button className="p-1.5 bg-white/5 rounded-full"><MessageCircle size={16} className="text-gray-400" /></button>
-          <button className="p-1.5 bg-white/5 rounded-full"><Menu size={16} className="text-gray-400" /></button>
+    <div className="fixed inset-0 z-50 bg-background flex flex-col font-sans">
+      {/* Header */}
+      <div className="h-14 flex items-center justify-between px-3 bg-[#1B1F2D] border-b border-[#2A2F40]">
+        <div className="flex items-center gap-3">
+          <button onClick={onBack} className="w-8 h-8 rounded-full bg-[#2A2F40] flex items-center justify-center text-white active:scale-95">
+            <ArrowLeft size={18} />
+          </button>
+          <img src="/api/img/banner-aviator" className="h-6 object-contain rounded" alt="Logo" />
         </div>
-      </div>
-
-      {/* History */}
-      <div className="flex gap-1.5 overflow-x-auto px-3 py-2 bg-black/30 scrollbar-hide">
-        {history.map((m, i) => (
-          <span key={i} className={`text-[11px] font-bold px-2 py-1 rounded-full bg-black/60 whitespace-nowrap ${historyColor(m)}`}>
-            {m.toFixed(2)}x
-          </span>
-        ))}
-      </div>
-
-      {/* Game area */}
-      <div className="relative flex-1 mx-3 my-3 rounded-2xl overflow-hidden min-h-[260px]" style={{ background: "radial-gradient(ellipse at center, #1a1a1a 0%, #0a0a0a 70%)" }}>
-        {/* radial lines */}
-        <svg className="absolute inset-0 w-full h-full opacity-20" viewBox="0 0 100 100" preserveAspectRatio="none">
-          {[...Array(12)].map((_, i) => (
-            <line key={i} x1="50" y1="50" x2={50 + Math.cos(i * Math.PI / 6) * 80} y2={50 + Math.sin(i * Math.PI / 6) * 80} stroke="#ff3b3b" strokeWidth="0.15" />
-          ))}
-        </svg>
-
-        {phase === "rising" && (
-          <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-            <path d={curvePath()} stroke="#ff3b3b" strokeWidth="1" fill="none" strokeLinecap="round" />
-            <path d={`${curvePath()} L100,100 L0,100 Z`} fill="#ff3b3b" opacity="0.15" />
-          </svg>
-        )}
-
-        {phase === "rising" && (
-          <Plane size={28} className="absolute text-[#ff3b3b] drop-shadow-[0_0_10px_rgba(255,59,59,0.8)] transition-all duration-75" style={{ left: `${pp.x}%`, top: `${pp.y}%`, transform: "translate(-50%, -50%) rotate(-25deg)" }} />
-        )}
-
-        <div className="absolute inset-0 flex items-center justify-center">
-          {phase === "waiting" && (
-            <div className="text-center">
-              <p className="text-gray-400 text-xs mb-1">PrÃ³xima rodada em</p>
-              <p className="text-5xl font-extrabold font-mono">{countdown}</p>
-            </div>
-          )}
-          {phase === "rising" && (
-            <p className="text-6xl font-extrabold font-mono text-white drop-shadow-[0_0_20px_rgba(255,59,59,0.5)]">
-              {multiplier.toFixed(2)}x
-            </p>
-          )}
-          {phase === "crashed" && (
-            <div className="text-center animate-scale-in">
-              <p className="text-[#ff3b3b] text-sm font-bold">VOOU!</p>
-              <p className="text-5xl font-extrabold font-mono text-[#ff3b3b]">{multiplier.toFixed(2)}x</p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Bet panels */}
-      <div className="grid grid-cols-2 gap-2 px-3 pb-2">
-        <BetPanel n={1} />
-        <BetPanel n={2} />
-      </div>
-
-      {/* Players list */}
-      <div className="px-3 pb-4">
-        <div className="bg-[#1a1a1a] rounded-xl p-2">
-          <div className="grid grid-cols-4 gap-2 text-[9px] text-gray-500 font-bold px-2 pb-1 border-b border-white/5">
-            <span>Jogador</span><span className="text-right">Aposta</span><span className="text-right">Mult.</span><span className="text-right">Ganho</span>
+        <div className="flex items-center gap-3">
+          <div className="flex flex-col items-end">
+            <span className="text-[10px] text-gray-400 font-bold tracking-wider">SALDO</span>
+            <span className="text-sm font-extrabold text-green-500">{balance.toLocaleString("pt-BR", { minimumFractionDigits: 2 })} MT</span>
           </div>
-          <div className="max-h-28 overflow-y-auto">
-            {fakePlayers.map((p, i) => (
-              <div key={i} className="grid grid-cols-4 gap-2 text-[10px] px-2 py-1">
-                <span className="text-gray-300">{p.name}</span>
-                <span className="text-right text-gray-400">{p.bet}</span>
-                <span className={`text-right font-bold ${p.mult === 0 ? "text-gray-600" : historyColor(p.mult)}`}>{p.mult > 0 ? `${p.mult}x` : "-"}</span>
-                <span className={`text-right font-bold ${p.win > 0 ? "text-[#00ff88]" : "text-gray-600"}`}>{p.win > 0 ? p.win : "-"}</span>
+          <button className="w-8 h-8 rounded-full bg-[#2A2F40] flex items-center justify-center text-white">
+            <Menu size={18} />
+          </button>
+        </div>
+      </div>
+
+      {/* Histórico */}
+      <div className="h-8 bg-[#161925] flex items-center gap-2 px-2 overflow-x-auto hide-scrollbar">
+        <div className="flex gap-2 min-w-max">
+          {history.map((m, i) => (
+            <span key={i} className={`text-xs font-bold px-2 py-0.5 rounded bg-[#1B1F2D] ${m < 2 ? "text-blue-400" : m < 10 ? "text-purple-400" : "text-pink-400"}`}>
+              {m.toFixed(2)}x
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* Área do Jogo Principal */}
+      <div className="flex-1 relative bg-[#0D1018] overflow-hidden flex flex-col justify-center items-center">
+        {/* Background Grid */}
+        <div className="absolute inset-0 opacity-10 pointer-events-none" style={{
+          backgroundImage: "linear-gradient(rgba(255,255,255,0.2) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.2) 1px, transparent 1px)",
+          backgroundSize: "40px 40px"
+        }} />
+
+        {/* Mensagem central */}
+        {phase === "waiting" && (
+          <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center z-20">
+            <h2 className="text-red-500 font-extrabold text-2xl tracking-widest animate-pulse">
+              A DECOLAR EM
+            </h2>
+            <div className="text-4xl font-black text-white mt-2">
+              00:0{countdown}
+            </div>
+          </div>
+        )}
+
+        {phase === "crashed" && (
+          <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center z-20">
+            <h2 className="text-red-500 font-extrabold text-3xl tracking-widest">VOOU PARA LONGE!</h2>
+            <div className="text-5xl font-black text-red-500 mt-2">{multiplier.toFixed(2)}x</div>
+          </div>
+        )}
+
+        {phase === "rising" && (
+          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 text-center z-20">
+            <div className="text-6xl font-black text-white tracking-tighter drop-shadow-lg" style={{ color: multiplier > 2 ? "#EAB308" : "#fff" }}>
+              {multiplier.toFixed(2)}x
+            </div>
+          </div>
+        )}
+
+        {/* Avião Animado */}
+        <div className="absolute bottom-8 left-8 w-full h-full pointer-events-none z-10 flex items-end">
+          <Plane
+            size={phase === "crashed" ? 0 : 80}
+            className={`text-red-500 fill-red-500 transition-all ${
+              phase === "waiting" ? "opacity-100" : phase === "crashed" ? "opacity-0 scale-50" : ""
+            }`}
+            style={{
+              transform: phase === "rising" 
+                ? `translate(${Math.min(multiplier * 20, 200)}px, -${Math.min(multiplier * 30, 300)}px) rotate(-15deg)`
+                : "none",
+              transition: phase === "rising" ? "transform 0.1s linear" : "all 0.5s ease-out"
+            }}
+          />
+          {/* Rastro do avião */}
+          {phase === "rising" && (
+            <svg className="absolute bottom-10 left-10 w-[500px] h-[500px] overflow-visible -z-10">
+              <path
+                d={`M 0,0 Q 50,-50 ${Math.min(multiplier * 20, 200)},-${Math.min(multiplier * 30, 300)}`}
+                fill="none"
+                stroke="rgba(239, 68, 68, 0.4)"
+                strokeWidth="8"
+                className="animate-pulse"
+              />
+            </svg>
+          )}
+        </div>
+      </div>
+
+      {/* Controlos de Aposta (Apenas 1 por enquanto para mobile) */}
+      <div className="h-[200px] bg-[#161925] rounded-t-3xl border-t border-[#2A2F40] p-4 pb-8 flex flex-col gap-3">
+        <div className="flex gap-2">
+          <button className="flex-1 h-10 rounded-xl bg-red-600/20 text-red-500 font-extrabold text-sm border border-red-600/50">MANUAL</button>
+          <button className="flex-1 h-10 rounded-xl bg-[#2A2F40] text-gray-400 font-extrabold text-sm">AUTO</button>
+        </div>
+
+        <div className="flex items-center gap-3">
+          {/* Selector de valor */}
+          <div className="flex-1 bg-[#0D1018] rounded-xl flex items-center justify-between px-2 h-14 border border-[#2A2F40]">
+            <button onClick={() => setBetAmount(Math.max(10, betAmount - 10))} className="w-10 h-10 rounded-lg bg-[#2A2F40] flex items-center justify-center text-white font-bold">-</button>
+            <div className="flex flex-col items-center">
+              <span className="text-xl font-extrabold text-white">{betAmount}</span>
+              <span className="text-[10px] text-gray-400 font-bold">MZN</span>
+            </div>
+            <button onClick={() => setBetAmount(betAmount + 10)} className="w-10 h-10 rounded-lg bg-[#2A2F40] flex items-center justify-center text-white font-bold">+</button>
+          </div>
+
+          {/* Botão de Ação */}
+          <div className="flex-[1.2]">
+            {!hasBet && !cashedOut && (
+              <button
+                onClick={handleBet}
+                disabled={phase !== "waiting"}
+                className="w-full h-14 rounded-xl bg-green-500 text-white font-black text-lg shadow-[0_4px_0_0_#166534] active:translate-y-1 active:shadow-none disabled:opacity-50 transition-all flex flex-col items-center justify-center leading-tight"
+              >
+                <span>APOSTAR</span>
+                <span className="text-[10px] opacity-80 font-bold">{betAmount.toFixed(2)} MZN</span>
+              </button>
+            )}
+
+            {hasBet && !cashedOut && (
+              <button
+                onClick={handleCashout}
+                disabled={phase !== "rising"}
+                className="w-full h-14 rounded-xl bg-[#EAB308] text-white font-black text-lg shadow-[0_4px_0_0_#854D0E] active:translate-y-1 active:shadow-none disabled:opacity-50 transition-all flex flex-col items-center justify-center leading-tight animate-pulse"
+              >
+                <span>SAQUE</span>
+                <span className="text-xs">{(betAmount * multiplier).toFixed(2)} MZN</span>
+              </button>
+            )}
+
+            {cashedOut && (
+              <div className="w-full h-14 rounded-xl bg-[#2A2F40] border border-green-500/50 flex flex-col items-center justify-center text-green-500">
+                <span className="text-xs font-bold">GANHOU</span>
+                <span className="text-lg font-black">+{lastWin.toFixed(2)} MZN</span>
               </div>
-            ))}
+            )}
           </div>
         </div>
       </div>
@@ -270,4 +376,3 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
 };
 
 export default AviatorGame;
-

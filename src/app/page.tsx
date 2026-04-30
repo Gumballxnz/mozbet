@@ -3,8 +3,9 @@
 import { useTranslation } from "@/hooks/useTranslation";
 import { useAppStore } from "@/lib/store";
 import dynamic from "next/dynamic";
-import Image from "next/image";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
+import { supabase } from "@/lib/supabase";
 
 // Otimização Mobile: Code Splitting! O catálogo de jogos e suas dezenas de imagens 
 // não bloqueiam o carregamento inicial da página (First Contentful Paint)
@@ -15,149 +16,146 @@ const GameCatalog = dynamic(() => import("@/components/GameCatalog").then(mod =>
       <p className="text-muted-foreground animate-pulse">A carregar jogos...</p>
     </div>
   ),
-  ssr: true, // Renderiza a estrutura no servidor para SEO
+  ssr: true,
 });
 
-import { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
-
-const SLIDES = [
-  {
-    id: 1,
-    image: "/api/img/banner-promo",
-    badge: "NOVO JOGADOR",
-    title: "BÔNUS DE ",
-    highlight: "500%",
-    desc: "Registe-se agora e ganhe até 25.000 MT no seu primeiro depósito para jogar Aviator, Mines e muito mais.",
-    action: "RESGATAR BÔNUS",
-  },
-  {
-    id: 2,
-    image: "/api/img/banner-aviator",
-    badge: "O MAIS QUERIDO",
-    title: "VOE COM O ",
-    highlight: "AVIATOR",
-    desc: "O jogo que está a fazer milionários em Moçambique. Levante o dinheiro antes que o avião fuja!",
-    action: "JOGAR AVIATOR",
-  },
-  {
-    id: 3,
-    image: "/api/img/banner-mines",
-    badge: "CLÁSSICO",
-    title: "EXPLOSÃO DE ",
-    highlight: "GANHOS",
-    desc: "Cuidado com as minas! Quanto mais estrelas revelar, maior é o multiplicador. Pode sacar a qualquer momento.",
-    action: "JOGAR MINES",
-  },
-  {
-    id: 4,
-    image: "/api/img/banner-plinko",
-    badge: "CASINO",
-    title: "A BOLA DA ",
-    highlight: "SORTE",
-    desc: "Deixe a bola cair e veja a magia acontecer. Multiplicadores gigantescos à sua espera no fundo.",
-    action: "JOGAR PLINKO",
-  },
-  {
-    id: 5,
-    image: "/api/img/banner-taxi",
-    badge: "NOVIDADE",
-    title: "O TAXI DA ",
-    highlight: "FORTUNA",
-    desc: "Apanhe o chapa e multiplique o seu saldo na viagem! Exclusivo na MOZBET.",
-    action: "JOGAR TAXI",
-  }
-];
-
-export default function HomePage() {
+export default function Home() {
   const { t } = useTranslation();
-  const { setRegisterOpen, isLoggedIn } = useAppStore();
   const searchParams = useSearchParams();
-  const categoryFilter = searchParams.get("category") || null;
+  const { authMode, setAuthMode, setRegisterOpen } = useAppStore();
+  
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [banners, setBanners] = useState<any[]>([]);
 
+  // Carregar Banners dinamicamente do Supabase
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % SLIDES.length);
-    }, 5000);
-    return () => clearInterval(timer);
+    async function loadBanners() {
+      try {
+        const { data } = await supabase
+          .from("banners")
+          .select("*")
+          .eq("is_active", true)
+          .order("sort_order", { ascending: true });
+        
+        if (data && data.length > 0) {
+          setBanners(data);
+        }
+      } catch (err) {
+        console.error("Erro ao carregar banners:", err);
+      }
+    }
+    loadBanners();
   }, []);
 
+  // Animação do carrossel
+  useEffect(() => {
+    if (banners.length <= 1) return;
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % banners.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [banners.length]);
+
+  // Se houver redirect via URL, abre o modal de login (segurança)
+  useEffect(() => {
+    const error = searchParams.get("error");
+    if (error === "unauthorized") {
+      setAuthMode("login");
+      setRegisterOpen(true);
+    }
+  }, [searchParams, setAuthMode, setRegisterOpen]);
+
   return (
-    <div className="w-full">
-      {/* Carrossel de Banners Promocionais */}
+    <div className="flex flex-col pb-20">
+      {/* Navbar Superior (Específico Mobile) */}
+      <div className="flex items-center justify-between px-4 pt-4 pb-2">
+        <div className="flex flex-col">
+          <span className="text-sm font-bold text-muted-foreground">{t("welcome")}</span>
+          <h1 className="text-2xl font-black text-foreground tracking-tight leading-none">MOZBET</h1>
+        </div>
+      </div>
+
+      {/* Carrossel de Banners Promocionais Dinâmicos */}
       <section className="relative w-[calc(100%-24px)] mx-3 mt-3 aspect-[21/11] sm:aspect-[21/6] max-h-[400px] rounded-[28px] overflow-hidden group bg-surface-elevated">
-        {SLIDES.map((slide, index) => (
-          <div 
-            key={slide.id}
-            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
-              index === currentSlide ? "opacity-100 z-10" : "opacity-0 z-0"
-            }`}
-          >
-            <img
-              src={slide.image}
-              alt={slide.title}
-              className="absolute inset-0 w-full h-full object-cover opacity-60 sm:opacity-80 transition-transform duration-[6000ms] ease-out scale-100 group-hover:scale-105"
-            />
-            <div className="absolute inset-0 bg-gradient-to-r from-background via-background/90 to-transparent" />
-            
-            <div className="absolute inset-0 flex flex-col justify-center px-6 md:px-12 max-w-2xl">
-              <span className="inline-block px-3 py-1 bg-primary/20 text-primary border border-primary/30 rounded-full text-xs font-bold mb-3 w-max glow-primary">
-                {slide.badge}
-              </span>
-              <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight mb-2 text-white">
-                {slide.title} <span className="text-primary glow-primary">{slide.highlight}</span>
-              </h1>
-              <p className="text-sm md:text-lg text-muted-foreground mb-6 max-w-[80%]">
-                {slide.desc}
-              </p>
+        {banners.length > 0 ? (
+          banners.map((slide, index) => (
+            <div 
+              key={slide.id}
+              className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+                index === currentSlide ? "opacity-100 z-10" : "opacity-0 z-0"
+              }`}
+            >
+              <img
+                src={slide.image_url}
+                alt={slide.title}
+                className="absolute inset-0 w-full h-full object-cover opacity-60 sm:opacity-80 transition-transform duration-[6000ms] ease-out scale-100 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-background via-background/90 to-transparent" />
               
-              {!isLoggedIn && (
-                <Button 
-                  size="lg" 
-                  className="w-max px-8 font-bold text-lg shadow-[0_0_20px_rgba(0,255,127,0.4)] animate-pulse-glow"
-                  onClick={() => setRegisterOpen(true)}
-                >
-                  {slide.action}
-                </Button>
-              )}
+              <div className="absolute inset-0 flex flex-col justify-center px-6 sm:px-12 z-20">
+                <span className="inline-block w-fit px-3 py-1 rounded-full bg-primary/20 border border-primary/50 text-primary text-[10px] font-extrabold tracking-widest uppercase mb-3 shadow-[0_0_15px_rgba(var(--primary),0.3)]">
+                  {slide.badge}
+                </span>
+                <h2 className="text-3xl sm:text-5xl font-black text-white leading-[1.1] tracking-tight mb-2 drop-shadow-md">
+                  {slide.title} <br className="sm:hidden" />
+                  <span className="text-primary">{slide.highlight}</span>
+                </h2>
+                <p className="text-xs sm:text-base text-gray-300 max-w-[200px] sm:max-w-md font-medium leading-relaxed drop-shadow">
+                  {slide.description}
+                </p>
+                <div className="mt-5">
+                  <button className="h-10 px-6 rounded-xl bg-primary text-primary-foreground font-extrabold text-sm shadow-[0_4px_0_0_hsl(var(--primary-dark))] active:translate-y-1 active:shadow-none transition-all">
+                    {slide.action_text}
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center bg-secondary/20">
+            <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
+          </div>
+        )}
+
+        {/* Indicadores do carrossel */}
+        {banners.length > 1 && (
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-20">
+            {banners.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrentSlide(i)}
+                className={`transition-all duration-300 rounded-full h-1.5 ${
+                  i === currentSlide ? "w-6 bg-primary" : "w-1.5 bg-white/30 hover:bg-white/50"
+                }`}
+              />
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* Destaques Rápidos */}
+      <section className="flex gap-3 px-3 py-4 overflow-x-auto hide-scrollbar">
+        {[
+          { title: "Torneios", desc: "Prêmios Diários", icon: "🏆", bg: "from-amber-500/20 to-amber-600/5", border: "border-amber-500/20" },
+          { title: "VIP", desc: "Cashback até 20%", icon: "💎", bg: "from-purple-500/20 to-purple-600/5", border: "border-purple-500/20" },
+          { title: "Indique", desc: "Ganhe 500 MT", icon: "🤝", bg: "from-emerald-500/20 to-emerald-600/5", border: "border-emerald-500/20" },
+        ].map((item, i) => (
+          <div key={i} className={`flex-shrink-0 w-[140px] p-3 rounded-[20px] bg-gradient-to-br ${item.bg} border ${item.border} flex items-center gap-3 active:scale-95 transition-transform`}>
+            <span className="text-2xl drop-shadow-md">{item.icon}</span>
+            <div>
+              <h3 className="font-extrabold text-xs text-foreground/90">{item.title}</h3>
+              <p className="text-[9px] font-bold text-muted-foreground">{item.desc}</p>
             </div>
           </div>
         ))}
-        
-        {/* Indicadores do Carrossel (Dots) */}
-        <div className="absolute bottom-4 left-0 right-0 z-20 flex justify-center gap-2">
-          {SLIDES.map((_, idx) => (
-            <button
-              key={idx}
-              onClick={() => setCurrentSlide(idx)}
-              className={`relative overflow-hidden h-2.5 rounded-full transition-all duration-300 ${
-                idx === currentSlide ? "w-10 bg-white/30" : "w-2.5 bg-white/30 hover:bg-white/50"
-              }`}
-            >
-              {idx === currentSlide && (
-                <div 
-                  key={`progress-${idx}-${Date.now()}`}
-                  className="absolute top-0 left-0 bottom-0 bg-primary"
-                  style={{ animation: "fillProgress 5s linear forwards" }}
-                />
-              )}
-            </button>
-          ))}
-        </div>
       </section>
 
-      {/* Catálogo de Jogos */}
-      <section className="py-2 max-w-7xl mx-auto">
-        <GameCatalog />
-      </section>
-      
-      <style dangerouslySetInnerHTML={{__html: `
-        @keyframes fillProgress {
-          0% { width: 0%; }
-          100% { width: 100%; }
-        }
-      `}} />
+      {/* Divisor de Destaque */}
+      <div className="px-3 pb-2">
+        <div className="w-full h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+      </div>
+
+      <GameCatalog />
     </div>
   );
 }

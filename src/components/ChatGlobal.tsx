@@ -1,7 +1,10 @@
 "use client";
 
 import { X, Info, Send, Smile, BadgeCheck } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
+import { supabase } from "@/lib/supabase";
+import { useAppStore } from "@/lib/store";
+import { toast } from "sonner";
 
 interface ChatGlobalProps {
   isOpen: boolean;
@@ -9,77 +12,99 @@ interface ChatGlobalProps {
   onPlayGame?: (gameId: string) => void;
 }
 
-interface WinMessage {
-  id: number;
-  type: "win";
-  user: string;
-  game: string;
-  gameId: string;
-  multiplier: number;
-  amount: number;
-  bet: number;
-  time: string;
+interface ChatMessage {
+  id: string;
+  user_id: string;
+  username: string;
+  message: string;
+  type: "message" | "win_announcement" | "system";
+  metadata?: any;
+  created_at: string;
 }
 
-const GAMES = [
-  { id: "aviator", name: "Aviator", emoji: "✈️" },
-  { id: "taxi-crash", name: "Taxi Crash", emoji: "🚕" },
-  { id: "earplane", name: "Earplane", emoji: "🎧" },
-  { id: "purple-crash", name: "Crash", emoji: "🚀" },
-  { id: "plinko", name: "Plinko777", emoji: "🎯" },
-  { id: "mines", name: "Mines", emoji: "💣" },
-];
-
-const maskUser = () => {
-  const prefix = ["84", "85", "86", "87"][Math.floor(Math.random() * 4)];
-  const last = String(Math.floor(Math.random() * 10));
-  return `${prefix.slice(0, 1)}***${last}`;
-};
-
-const generateWin = (id: number): WinMessage => {
-  const game = GAMES[Math.floor(Math.random() * GAMES.length)];
-  const multiplier = +(Math.random() * 15 + 1.2).toFixed(2);
-  const isBigWin = Math.random() > 0.8;
-  const bet = isBigWin ? +(Math.random() * 5000 + 1000).toFixed(2) : +(Math.random() * 500 + 10).toFixed(2);
-  const amount = isBigWin ? +(40000 + Math.random() * 20000).toFixed(2) : +(bet * multiplier).toFixed(2);
-  
-  const now = new Date();
-  const time = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}:${String(now.getSeconds()).padStart(2, "0")}`;
-  return {
-    id,
-    type: "win",
-    user: maskUser(),
-    game: game.name,
-    gameId: game.id,
-    multiplier: isBigWin ? +(amount / bet).toFixed(2) : multiplier,
-    amount,
-    bet,
-    time,
-  };
-};
-
 export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalProps) {
-  const [messages, setMessages] = useState<WinMessage[]>([]);
+  const { isLoggedIn } = useAppStore();
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
-  const [online] = useState(() => Math.floor(Math.random() * 40) + 45);
+  const [isSending, setIsSending] = useState(false);
+  const [online] = useState(() => Math.floor(Math.random() * 40) + 45); // Fake online users count (can be updated to real presence later)
   const scrollRef = useRef<HTMLDivElement>(null);
-  const idRef = useRef(0);
+  const isFetched = useRef(false);
+
+  const fetchHistory = useCallback(async () => {
+    try {
+      const res = await fetch("/api/chat/history?limit=50");
+      const data = await res.json();
+      if (data.messages) {
+        setMessages(data.messages);
+        setTimeout(scrollToBottom, 100);
+      }
+    } catch (err) {
+      console.error("Erro ao buscar histórico do chat:", err);
+    }
+  }, []);
 
   useEffect(() => {
     if (!isOpen) return;
-    if (messages.length === 0) {
-      const seed = Array.from({ length: 4 }, () => generateWin(++idRef.current));
-      setMessages(seed);
-    }
-    const interval = setInterval(() => {
-      setMessages((prev) => [...prev.slice(-30), generateWin(++idRef.current)]);
-    }, 300000);
-    return () => clearInterval(interval);
-  }, [isOpen, messages.length]);
 
-  useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages]);
+    if (!isFetched.current) {
+      fetchHistory();
+      isFetched.current = true;
+    }
+
+    // Subscrever a novas mensagens
+    const channel = supabase
+      .channel("public:chat_messages")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "chat_messages" },
+        (payload) => {
+          const newMsg = payload.new as ChatMessage;
+          setMessages((prev) => [...prev, newMsg]);
+          setTimeout(scrollToBottom, 100);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [isOpen, fetchHistory]);
+
+  const scrollToBottom = () => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+    }
+  };
+
+  const handleSend = async () => {
+    if (!isLoggedIn) {
+      toast.error("Faz login para participar no chat");
+      return;
+    }
+    
+    if (!input.trim() || isSending) return;
+
+    const messageText = input.trim();
+    setInput("");
+    setIsSending(true);
+
+    try {
+      const res = await fetch("/api/chat/message", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: messageText }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao enviar");
+      setInput(messageText); // Devolver texto em caso de erro
+    } finally {
+      setIsSending(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -113,105 +138,108 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
 
         {/* Mensagens */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-          {messages.map((m) => (
-            <div key={m.id} className="space-y-2">
-              {/* Anúncio do bot */}
-              <div className="flex gap-2">
-                <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-extrabold text-xs shrink-0 relative">
-                  B
-                  <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[8px] bg-primary text-primary-foreground px-1 rounded font-extrabold">BOT</span>
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-1.5 mb-0.5">
-                    <span className="text-sm font-bold">captain</span>
-                    <BadgeCheck size={14} className="text-primary fill-primary text-background" />
-                    <span className="text-[10px] text-muted-foreground ml-auto">{m.time}</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    🌟 <strong className="text-foreground">*TOP WIN!*</strong> Wau! 😱 O usuário <strong className="text-foreground">*{m.user.slice(0, 2)}**</strong> <strong className="text-foreground">**{m.user.slice(-1)}*</strong> acaba de quebrar o recorde com{" "}
-                    <strong className="text-foreground">*{m.amount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })} MT*</strong> no <strong className="text-foreground">*{m.game}*</strong> com um multiplicador de <strong className="text-foreground">*{m.multiplier}x*</strong>! 🔥
-                  </p>
-                </div>
-              </div>
+          {messages.length === 0 && (
+            <div className="text-center text-muted-foreground text-sm mt-10">
+              Nenhuma mensagem ainda. Sê o primeiro a falar!
+            </div>
+          )}
 
-              {/* Card de vitória */}
-              <div className="flex gap-2">
+          {messages.map((m) => {
+            const timeStr = new Date(m.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+            
+            // 1. ANÚNCIO DE VITÓRIA (WIN_ANNOUNCEMENT)
+            if (m.type === "win_announcement") {
+              const meta = m.metadata || {};
+              return (
+                <div key={m.id} className="space-y-2">
+                  <div className="flex gap-2">
+                    <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-extrabold text-xs shrink-0 relative">
+                      B
+                      <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[8px] bg-primary text-primary-foreground px-1 rounded font-extrabold">BOT</span>
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-1.5 mb-0.5">
+                        <span className="text-sm font-bold">MOZBET</span>
+                        <BadgeCheck size={14} className="text-primary fill-primary text-background" />
+                        <span className="text-[10px] text-muted-foreground ml-auto">{timeStr}</span>
+                      </div>
+                      <div className="rounded-2xl p-4 mt-1" style={{ background: "linear-gradient(135deg, hsl(280 50% 25%), hsl(260 50% 20%))" }}>
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-extrabold text-white">{m.username}</span>
+                          </div>
+                          <BadgeCheck size={20} className="text-primary" />
+                        </div>
+                        <div className="grid grid-cols-2 gap-3 mb-3">
+                          <div>
+                            <p className="text-[10px] font-bold tracking-wider text-white/60 mb-0.5">SACOU:</p>
+                            <p className="text-2xl font-extrabold" style={{ color: "hsl(290 100% 70%)" }}>
+                              {meta.multiplier}x
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-bold tracking-wider text-white/60 mb-0.5">GANHO:</p>
+                            <p className="text-2xl font-extrabold text-primary leading-tight">
+                              {Number(meta.amount).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                            </p>
+                            <p className="text-base font-extrabold text-primary leading-tight">MZN</p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => onPlayGame?.("aviator")} // Futuramente pode vir do metadata
+                          className="w-full py-3 rounded-xl bg-white/5 hover:bg-white/10 text-white text-xs font-extrabold tracking-wider transition-colors"
+                        >
+                          JOGAR AGORA
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+
+            // 2. MENSAGEM NORMAL DO JOGADOR
+            return (
+              <div key={m.id} className="flex gap-2">
                 <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center shrink-0 text-base">
                   🧑🏽
                 </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <span className="text-sm font-bold">{m.user}</span>
-                    <span className="text-[10px] text-muted-foreground ml-auto">{m.time}</span>
+                <div className="flex-1 bg-secondary/30 rounded-2xl rounded-tl-none p-3 border border-border/50">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm font-bold text-primary">{m.username}</span>
+                    <span className="text-[10px] text-muted-foreground">{timeStr}</span>
                   </div>
-                  <div className="rounded-2xl p-4" style={{ background: "linear-gradient(135deg, hsl(280 50% 25%), hsl(260 50% 20%))" }}>
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-sm">🧑🏽</div>
-                        <span className="text-sm font-extrabold text-white">{m.user}</span>
-                      </div>
-                      <BadgeCheck size={20} className="text-primary" />
-                    </div>
-                    <div className="grid grid-cols-2 gap-3 mb-3">
-                      <div>
-                        <p className="text-[10px] font-bold tracking-wider text-white/60 mb-0.5">SACOU:</p>
-                        <p className="text-2xl font-extrabold" style={{ color: "hsl(290 100% 70%)" }}>
-                          {m.multiplier}x
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-bold tracking-wider text-white/60 mb-0.5">GANHO:</p>
-                        <p className="text-2xl font-extrabold text-primary leading-tight">
-                          {m.amount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                        </p>
-                        <p className="text-base font-extrabold text-primary leading-tight">MZN</p>
-                      </div>
-                    </div>
-                    <div className="border-t border-white/10 pt-3 grid grid-cols-2 gap-3 mb-3">
-                      <div>
-                        <p className="text-[10px] font-bold tracking-wider text-white/60 mb-0.5">RODADA:</p>
-                        <p className="text-base font-bold text-white">{(m.multiplier * 1.3).toFixed(2)}x</p>
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-bold tracking-wider text-white/60 mb-0.5">APOSTA:</p>
-                        <p className="text-base font-bold text-white">{m.bet.toLocaleString("pt-BR", { minimumFractionDigits: 2 })} MZN</p>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => onPlayGame?.(m.gameId)}
-                      className="w-full py-3 rounded-xl bg-white/5 hover:bg-white/10 text-white text-xs font-extrabold tracking-wider transition-colors"
-                    >
-                      JOGAR {m.game.toUpperCase()}
-                    </button>
-                  </div>
+                  <p className="text-sm text-foreground/90 break-words">{m.message}</p>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Input */}
-        <div className="border-t border-border p-3">
+        <div className="border-t border-border p-3 bg-background">
           <div className="flex items-center gap-2">
             <div className="flex-1 relative">
               <input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value.slice(0, 150))}
-                placeholder="Digite a sua mensagem..."
-                className="w-full bg-secondary rounded-xl px-4 py-3 pr-14 text-sm outline-none focus:ring-1 focus:ring-primary"
+                onKeyDown={(e) => e.key === "Enter" && handleSend()}
+                placeholder={isLoggedIn ? "Digite a sua mensagem..." : "Faça login para falar..."}
+                disabled={!isLoggedIn || isSending}
+                className="w-full bg-secondary rounded-xl px-4 py-3 pr-14 text-sm outline-none focus:ring-1 focus:ring-primary disabled:opacity-50"
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground font-mono">
                 {input.length}/150
               </span>
             </div>
-            <button className="w-11 h-11 rounded-xl bg-primary text-primary-foreground flex items-center justify-center active:scale-95 transition-all">
+            <button 
+              onClick={handleSend}
+              disabled={!isLoggedIn || !input.trim() || isSending}
+              className="w-11 h-11 rounded-xl bg-primary text-primary-foreground flex items-center justify-center active:scale-95 transition-all disabled:opacity-50 disabled:active:scale-100"
+            >
               <Send size={18} />
             </button>
-          </div>
-          <div className="flex items-center gap-3 mt-3 px-1">
-            <button className="text-muted-foreground"><Smile size={18} /></button>
-            <span className="ml-auto text-[10px] text-muted-foreground font-mono">150</span>
           </div>
         </div>
       </div>

@@ -25,7 +25,7 @@ export default function NotFound() {
       
       <Link href="/">
         <Button size="lg" className="px-8 font-bold">
-          {t("backToHome", "Voltar ao Início")}
+          {t("goHome")}
         </Button>
       </Link>
     </div>

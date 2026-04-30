@@ -157,23 +157,25 @@ function generateFakeMessage(): ChatMessage {
 
 // ===== COMPONENTE PRINCIPAL =====
 export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalProps) {
-  const { isLoggedIn } = useAppStore();
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const { isLoggedIn, fakeChatMessages: messages, setFakeChatMessages: setMessages } = useAppStore();
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
-  const [online, setOnline] = useState(() => Math.floor(Math.random() * 40) + 85);
+  const [online, setOnline] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const isFetched = useRef(false);
 
-  // Atualizar contagem de online periodicamente (flutuação natural)
+  // Sincronizar contagem de online com o servidor
   useEffect(() => {
     if (!isOpen) return;
-    const interval = setInterval(() => {
-      setOnline((prev) => {
-        const delta = Math.floor(Math.random() * 5) - 2; // -2 a +2
-        return Math.max(60, Math.min(150, prev + delta));
-      });
-    }, 15000);
+    const fetchStats = async () => {
+      try {
+        const res = await fetch("/api/game/stats");
+        const data = await res.json();
+        if (data.online) setOnline(data.online);
+      } catch (err) {}
+    };
+    fetchStats();
+    const interval = setInterval(fetchStats, 10000); // Atualiza a cada 10s
     return () => clearInterval(interval);
   }, [isOpen]);
 
@@ -221,17 +223,19 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
   useEffect(() => {
     if (!isOpen) return;
 
-    // Injetar 3-5 mensagens iniciais como se já existissem no chat
-    const initialMessages: ChatMessage[] = [];
-    const initialCount = Math.floor(Math.random() * 3) + 3;
-    for (let i = 0; i < initialCount; i++) {
-      const msg = generateFakeMessage();
-      const minutesAgo = (initialCount - i) * 2 + Math.floor(Math.random() * 3);
-      msg.created_at = new Date(Date.now() - minutesAgo * 60000).toISOString();
-      initialMessages.push(msg);
+    // Só injeta as iniciais se o chat ainda estiver vazio
+    if (messages.length === 0) {
+      const initialMessages: ChatMessage[] = [];
+      const initialCount = Math.floor(Math.random() * 3) + 3;
+      for (let i = 0; i < initialCount; i++) {
+        const msg = generateFakeMessage();
+        const minutesAgo = (initialCount - i) * 2 + Math.floor(Math.random() * 3);
+        msg.created_at = new Date(Date.now() - minutesAgo * 60000).toISOString();
+        initialMessages.push(msg);
+      }
+      setMessages([...initialMessages]);
+      setTimeout(scrollToBottom, 200);
     }
-    setMessages((prev) => [...initialMessages, ...prev]);
-    setTimeout(scrollToBottom, 200);
 
     // Mensagens contínuas com intervalo variável (5 a 15 segundos)
     let timeoutId: NodeJS.Timeout;
@@ -240,10 +244,8 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
       const delay = (Math.random() * 10 + 5) * 1000;
       timeoutId = setTimeout(() => {
         const newMsg = generateFakeMessage();
-        setMessages((prev) => {
-          const updated = [...prev, newMsg];
-          return updated.length > 100 ? updated.slice(-80) : updated;
-        });
+        // Zustand store access bypasses stale closures if we use the function form
+        setMessages([...useAppStore.getState().fakeChatMessages, newMsg].slice(-100));
         setTimeout(scrollToBottom, 100);
         scheduleNext();
       }, delay);
@@ -252,7 +254,7 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
     scheduleNext();
 
     return () => clearTimeout(timeoutId);
-  }, [isOpen]);
+  }, [isOpen, messages.length, setMessages]);
 
   // Anúncios de vitória do BOT MOZBET (mais espaçados)
   useEffect(() => {
@@ -278,12 +280,12 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
         created_at: new Date().toISOString()
       };
 
-      setMessages((prev) => [...prev, newBotMsg]);
+      setMessages([...useAppStore.getState().fakeChatMessages, newBotMsg].slice(-100));
       setTimeout(scrollToBottom, 100);
     }, 25000);
 
     return () => clearInterval(interval);
-  }, [isOpen]);
+  }, [isOpen, setMessages]);
 
   const scrollToBottom = () => {
     if (scrollRef.current) {

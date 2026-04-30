@@ -6,6 +6,7 @@ import dynamic from "next/dynamic";
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { LiveBetsTable } from "@/components/LiveBetsTable";
 
 // Otimização Mobile: Code Splitting! O catálogo de jogos e suas dezenas de imagens 
 // não bloqueiam o carregamento inicial da página (First Contentful Paint)
@@ -165,6 +166,9 @@ export default function Home() {
       </div>
 
       <GameCatalog />
+      
+      {/* Tabela de Apostas Ao Vivo */}
+      <LiveBetsTable />
     </div>
   );
 }

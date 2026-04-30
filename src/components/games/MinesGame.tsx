@@ -264,106 +264,124 @@ const MinesGame = ({ onClose, balance, onBet }: MinesGameProps) => {
       </div>
 
       {/* Painel de Apostas */}
-      <div className="bg-[#0f0f0f] p-5 pb-10 rounded-t-[3rem] border-t border-white/5 relative z-30 shadow-[0_-20px_60px_rgba(0,0,0,0.8)]">
-        <div className="flex gap-4 mb-4 border-b border-white/5">
-          <button className="pb-3 border-b-2 border-blue-500 text-blue-400 font-black tracking-wider text-[10px] px-2 uppercase">
-            Aposta
-          </button>
-        </div>
-
-        <div className="flex flex-col gap-5">
-          <div className="flex gap-2 overflow-x-auto no-scrollbar mb-2">
-            {[1, 5, 10, 50].map((v) => (
-              <button
-                key={v}
-                onClick={() => !isPlaying && setBetAmount((prev) => prev + v)}
-                disabled={isPlaying}
-                className="bg-black/40 border border-white/5 px-4 py-2 rounded-xl text-[10px] font-black text-gray-500 hover:text-gray-300 transition-colors disabled:opacity-40"
-              >
-                +{v}
-              </button>
-            ))}
+      <div className="bg-[#0f0f0f] w-full border-t border-white/5 relative z-30 shadow-[0_-20px_60px_rgba(0,0,0,0.8)] md:rounded-t-[3rem]">
+        <div className="max-w-md mx-auto p-5 pb-10">
+          <div className="flex gap-4 mb-4 border-b border-white/5">
+            <button className="pb-3 border-b-2 border-blue-500 text-blue-400 font-black tracking-wider text-[10px] px-2 uppercase">
+              Aposta
+            </button>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1.5">
-              <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest pl-1">
-                Valor da Aposta
-              </span>
-              <div className="bg-black/40 rounded-xl p-1 flex items-center border border-white/5 h-12">
+          <div className="flex flex-col gap-5">
+            <div className="flex gap-2 overflow-x-auto no-scrollbar mb-2">
+              {[1, 5, 10, 50].map((v) => (
                 <button
-                  onClick={() => !isPlaying && setBetAmount(Math.max(1, betAmount - 1))}
-                  className="w-10 h-full flex items-center justify-center text-gray-500"
-                >
-                  -
-                </button>
-                <input
-                  type="number"
-                  value={betAmount}
+                  key={v}
+                  onClick={() => !isPlaying && setBetAmount((prev) => prev + v)}
                   disabled={isPlaying}
-                  onChange={(e) => setBetAmount(Number(e.target.value))}
-                  onBlur={(e) => {
-                    const val = Number(e.target.value);
-                    if (isNaN(val) || val < 1) setBetAmount(1);
-                  }}
-                  inputMode="numeric"
-                  className="flex-1 bg-transparent text-center font-black text-sm italic outline-none w-full"
-                />
-                <button
-                  onClick={() => !isPlaying && setBetAmount(betAmount + 1)}
-                  className="w-10 h-full flex items-center justify-center text-gray-500"
+                  className="bg-black/40 border border-white/5 px-4 py-2 rounded-xl text-[10px] font-black text-gray-500 hover:text-gray-300 transition-colors disabled:opacity-40"
                 >
-                  +
+                  +{v}
                 </button>
-              </div>
+              ))}
             </div>
-            <div className="flex flex-col gap-1.5">
-              <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest pl-1">
-                Minas
-              </span>
-              <div
-                className="bg-black/40 rounded-xl flex items-center border border-white/5 h-12 relative px-4 group cursor-pointer"
-                onClick={() =>
-                  !isPlaying && setMineCount((m) => (m >= 24 ? 1 : m + 1))
-                }
-              >
-                <span className="flex-1 text-sm font-black text-blue-400">
-                  {mineCount}
-                </span>
-                <ChevronDown size={14} className="text-gray-500" />
-              </div>
-            </div>
-          </div>
 
-          {!isPlaying ? (
-            <button
-              onClick={handleStart}
-              disabled={isLoading}
-              className={`w-full py-4.5 rounded-2xl font-black text-lg tracking-widest transition-all active:scale-[0.98] ${
-                isLoading
-                  ? "bg-gray-700 text-gray-400"
-                  : "bg-gradient-to-r from-blue-600 to-indigo-600 shadow-[0_10px_25px_rgba(37,99,235,0.4)]"
-              }`}
-            >
-              {isLoading ? "INICIANDO..." : "APOSTAR"}
-            </button>
-          ) : (
-            <button
-              onClick={handleCashout}
-              disabled={revealedCount === 0 || isLoading}
-              className={`w-full py-4.5 rounded-2xl font-black text-lg tracking-widest transition-all active:scale-[0.98]
-                ${
-                  revealedCount === 0 || isLoading
-                    ? "bg-gray-800 text-gray-500 cursor-not-allowed"
-                    : "bg-gradient-to-r from-green-600 to-emerald-500 shadow-[0_10px_25px_rgba(16,185,129,0.3)]"
-                }
-              `}
-            >
-              {isLoading
-                ? "PROCESSANDO..."
-                : `SAQUE ${(betAmount * currentMultiplier).toFixed(2)} MT`}
-            </button>
-          )}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1.5">
+                <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest pl-1">
+                  Valor da Aposta
+                </span>
+                <div className="bg-black/40 rounded-xl p-1 flex items-center border border-white/5 h-12">
+                  <button
+                    onClick={() => !isPlaying && setBetAmount(Math.max(1, betAmount - 1))}
+                    className="w-10 h-full flex items-center justify-center text-gray-500 hover:text-white"
+                  >
+                    -
+                  </button>
+                  <input
+                    type="number"
+                    value={betAmount}
+                    disabled={isPlaying}
+                    onChange={(e) => setBetAmount(Number(e.target.value))}
+                    onBlur={(e) => {
+                      const val = Number(e.target.value);
+                      if (isNaN(val) || val < 1) setBetAmount(1);
+                    }}
+                    inputMode="numeric"
+                    className="flex-1 bg-transparent text-center font-black text-sm italic outline-none w-full"
+                  />
+                  <button
+                    onClick={() => !isPlaying && setBetAmount(betAmount + 1)}
+                    className="w-10 h-full flex items-center justify-center text-gray-500 hover:text-white"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest pl-1">
+                  Minas
+                </span>
+                <div className="bg-black/40 rounded-xl p-1 flex items-center border border-white/5 h-12">
+                  <button
+                    onClick={() => !isPlaying && setMineCount(Math.max(1, mineCount - 1))}
+                    className="w-10 h-full flex items-center justify-center text-gray-500 hover:text-white"
+                  >
+                    -
+                  </button>
+                  <input
+                    type="number"
+                    value={mineCount}
+                    disabled={isPlaying}
+                    onChange={(e) => setMineCount(Number(e.target.value))}
+                    onBlur={(e) => {
+                      const val = Number(e.target.value);
+                      if (isNaN(val) || val < 1) setMineCount(1);
+                      else if (val > 24) setMineCount(24);
+                    }}
+                    inputMode="numeric"
+                    className="flex-1 bg-transparent text-center font-black text-sm italic outline-none w-full text-blue-400"
+                  />
+                  <button
+                    onClick={() => !isPlaying && setMineCount(Math.min(24, mineCount + 1))}
+                    className="w-10 h-full flex items-center justify-center text-gray-500 hover:text-white"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {!isPlaying ? (
+              <button
+                onClick={handleStart}
+                disabled={isLoading}
+                className={`w-full py-4.5 rounded-2xl font-black text-lg tracking-widest transition-all active:scale-[0.98] ${
+                  isLoading
+                    ? "bg-gray-700 text-gray-400"
+                    : "bg-gradient-to-r from-blue-600 to-indigo-600 shadow-[0_10px_25px_rgba(37,99,235,0.4)] hover:brightness-110"
+                }`}
+              >
+                {isLoading ? "INICIANDO..." : "APOSTAR"}
+              </button>
+            ) : (
+              <button
+                onClick={handleCashout}
+                disabled={revealedCount === 0 || isLoading}
+                className={`w-full py-4.5 rounded-2xl font-black text-lg tracking-widest transition-all active:scale-[0.98]
+                  ${
+                    revealedCount === 0 || isLoading
+                      ? "bg-gray-800 text-gray-500 cursor-not-allowed"
+                      : "bg-gradient-to-r from-green-600 to-emerald-500 shadow-[0_10px_25px_rgba(16,185,129,0.3)] hover:brightness-110"
+                  }
+                `}
+              >
+                {isLoading
+                  ? "PROCESSANDO..."
+                  : `SAQUE ${(betAmount * currentMultiplier).toFixed(2)} MT`}
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

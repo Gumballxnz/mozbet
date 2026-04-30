@@ -48,6 +48,10 @@ interface AppState {
   mobileSidebarOpen: boolean;
   setMobileSidebarOpen: (open: boolean) => void;
 
+  // Chat Global
+  fakeChatMessages: any[];
+  setFakeChatMessages: (messages: any[]) => void;
+  
   // Jogo ativo
   activeGame: string | null;
   setActiveGame: (game: string | null) => void;
@@ -100,6 +104,10 @@ export const useAppStore = create<AppState>((set) => ({
   // Sidebar Mobile
   mobileSidebarOpen: false,
   setMobileSidebarOpen: (open) => set({ mobileSidebarOpen: open }),
+
+  // Chat Global
+  fakeChatMessages: [],
+  setFakeChatMessages: (messages) => set({ fakeChatMessages: messages }),
 
   // Jogo
   activeGame: null,

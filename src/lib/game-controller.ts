@@ -58,7 +58,34 @@ export function getRealOnlineCount(): number {
 
 // Gerar contagem FAKE de jogadores online (público — frontend)
 export function getFakeOnlineCount(): number {
-  return Math.floor(Math.random() * 60) + 80; // 80-140 fake
+  const now = new Date();
+  const hour = now.getHours();
+  const minute = now.getMinutes();
+  
+  // Seed baseada no dia, hora e minuto (para garantir o mesmo número globalmente no mesmo minuto)
+  const seed = (now.getDate() * 24 * 60) + (hour * 60) + minute;
+  
+  let rangeMin = 80;
+  let rangeMax = 150;
+
+  // Horários de pico (almoço e noite)
+  if ((hour >= 11 && hour <= 14) || (hour >= 18 && hour <= 23)) {
+    rangeMin = 350;
+    rangeMax = 580;
+  } else if (hour >= 2 && hour <= 6) {
+    // Madrugada
+    rangeMin = 40;
+    rangeMax = 90;
+  } else {
+    // Horário normal
+    rangeMin = 150;
+    rangeMax = 280;
+  }
+
+  // Variação "aleatória" mas determinística para o mesmo minuto
+  const pseudoRandom = Math.abs(Math.sin(seed * 9999));
+  
+  return Math.floor(rangeMin + pseudoRandom * (rangeMax - rangeMin));
 }
 
 // ==========================================

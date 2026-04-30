@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useAppStore } from "@/lib/store";
-import { User, Mail, Phone, Camera, Save, LogOut, Gift, KeyRound, Calendar, Hash, CheckSquare, Square } from "lucide-react";
+import { User, Mail, Phone, Camera, Save, LogOut, Gift, KeyRound, Calendar, Hash, CheckSquare, Square, ChevronLeft } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -114,10 +114,20 @@ export default function PerfilPage() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-4 py-8 space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-white mb-1">Área do Jogador</h1>
-        <p className="text-muted-foreground text-sm">Gerencie o seu perfil, segurança e preferências.</p>
+    <div className="max-w-2xl mx-auto p-4 py-8 space-y-6 animate-in fade-in">
+      <div className="flex items-center gap-3">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={() => router.push("/")}
+          className="bg-black/40 hover:bg-white/10 rounded-full w-10 h-10 border border-white/5"
+        >
+          <ChevronLeft className="w-5 h-5 text-white" />
+        </Button>
+        <div>
+          <h1 className="text-2xl font-bold text-white mb-1">Área do Jogador</h1>
+          <p className="text-muted-foreground text-sm">Gerencie o seu perfil, segurança e preferências.</p>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">

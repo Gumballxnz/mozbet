@@ -25,6 +25,10 @@ export default function PerfilPage() {
   const [selectedAvatar, setSelectedAvatar] = useState(AVATARS[0]);
   const [isSaving, setIsSaving] = useState(false);
   const [commercialOptIn, setCommercialOptIn] = useState(true);
+  
+  // Estados para OTP
+  const [showOtpInput, setShowOtpInput] = useState(false);
+  const [emailOtp, setEmailOtp] = useState("");
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -43,15 +47,45 @@ export default function PerfilPage() {
   const bonusBalance = 0; // Simulated bonus
 
   const handleSave = async () => {
+    // 1. Se tem email e ainda não pediu OTP, pede o OTP primeiro
+    if (email && email.includes("@") && !showOtpInput) {
+      setIsSaving(true);
+      try {
+        const res = await fetch("/api/profile/send-email-otp", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        });
+        const data = await res.json();
+        
+        if (!res.ok) throw new Error(data.error || "Erro ao pedir código.");
+        
+        toast.success("Enviámos um código para o teu e-mail.");
+        setShowOtpInput(true);
+      } catch (err: any) {
+        toast.error(err.message);
+      } finally {
+        setIsSaving(false);
+      }
+      return;
+    }
+
+    // 2. Se não tem email, ou já tem email e OTP, guarda o perfil
+    if (showOtpInput && !emailOtp) {
+      toast.error("Introduz o código de verificação enviado para o teu e-mail.");
+      return;
+    }
+
     setIsSaving(true);
     try {
       const res = await fetch("/api/profile/update", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, commercialOptIn, avatar: selectedAvatar }),
+        body: JSON.stringify({ email, otp: emailOtp, commercialOptIn, avatar: selectedAvatar }),
       });
 
-      if (!res.ok) throw new Error("Falha ao atualizar");
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Falha ao atualizar");
 
       if (typeof window !== "undefined") {
          localStorage.setItem("mozbet_avatar", selectedAvatar);
@@ -162,14 +196,49 @@ export default function PerfilPage() {
               <Mail className="w-4 h-4" />
               Adicionar Email
             </label>
-            <Input 
-              placeholder="seu.email@exemplo.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="bg-black/50 border-white/10 text-white"
-            />
+            <div className="flex gap-2">
+              <Input 
+                placeholder="seu.email@exemplo.com"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setShowOtpInput(false);
+                  setEmailOtp("");
+                }}
+                disabled={showOtpInput}
+                className="bg-black/50 border-white/10 text-white flex-1"
+              />
+              {showOtpInput && (
+                <Button 
+                  variant="outline"
+                  onClick={() => setShowOtpInput(false)}
+                  className="bg-black/40 border-white/10 hover:bg-white/5"
+                >
+                  Alterar
+                </Button>
+              )}
+            </div>
+            
+            {showOtpInput && (
+              <div className="mt-4 p-4 border border-primary/20 bg-primary/5 rounded-xl space-y-3 animate-in fade-in slide-in-from-top-2">
+                <label className="text-xs font-bold text-primary flex items-center gap-2">
+                  Verifica a tua Caixa de Entrada
+                </label>
+                <p className="text-[10px] text-muted-foreground leading-tight">
+                  Enviámos um código de 6 dígitos para <strong className="text-white">{email}</strong>. Introduz o código abaixo para confirmar e receber os bónus de boas-vindas.
+                </p>
+                <Input 
+                  placeholder="000000"
+                  value={emailOtp}
+                  onChange={(e) => setEmailOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  className="bg-black/50 border-primary/30 text-white text-center tracking-[0.5em] font-bold text-lg"
+                  maxLength={6}
+                />
+              </div>
+            )}
             
             {/* Checkbox Comercial */}
+            {!showOtpInput && (
             <div 
                className="flex items-start gap-2 mt-2 cursor-pointer"
                onClick={() => setCommercialOptIn(!commercialOptIn)}
@@ -181,6 +250,7 @@ export default function PerfilPage() {
                  Estou disposto a receber emails com ofertas comerciais, bónus exclusivos e novidades da plataforma MozBet.
                </p>
             </div>
+            )}
           </div>
           
           <div className="pt-2">

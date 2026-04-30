@@ -22,9 +22,35 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Token inválido" }, { status: 401 });
     }
 
-    const { email, commercialOptIn, avatar } = await req.json();
+    const { email, otp, commercialOptIn, avatar } = await req.json();
 
-    // 1. Atualizar base de dados
+    // Se email foi fornecido, verificar OTP obrigatório
+    if (email && email.includes("@")) {
+      if (!otp) {
+        return NextResponse.json({ error: "Código de verificação em falta." }, { status: 400 });
+      }
+
+      // 1. Verificar OTP no banco
+      const { data: otpRecord } = await supabaseAdmin
+        .from("otp_codes")
+        .select("*")
+        .eq("phone", email) // Guardamos o email na coluna phone
+        .eq("code", otp)
+        .single();
+
+      if (!otpRecord) {
+        return NextResponse.json({ error: "Código incorreto." }, { status: 400 });
+      }
+
+      if (new Date() > new Date(otpRecord.expires_at)) {
+        return NextResponse.json({ error: "O código expirou. Pede um novo." }, { status: 400 });
+      }
+
+      // Limpar OTP usado
+      await supabaseAdmin.from("otp_codes").delete().eq("id", otpRecord.id);
+    }
+
+    // 2. Atualizar base de dados
     const updateData: any = {};
     if (email !== undefined) updateData.email = email;
     if (commercialOptIn !== undefined) updateData.commercial_opt_in = commercialOptIn;

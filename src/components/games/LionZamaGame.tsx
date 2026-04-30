@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { ArrowLeft, Maximize2, RotateCw, Trophy, Coins, Zap, ShieldCheck, TrendingUp } from "lucide-react";
@@ -12,15 +12,15 @@ interface LionZamaProps {
 }
 
 const SYMBOLS = [
-  { icon: "ðŸ‡", name: "Uva", mult: 5, color: "text-purple-400" },
-  { icon: "ðŸŽ", name: "Maçã", mult: 8, color: "text-red-400" },
-  { icon: "ðŸŒ", name: "Banana", mult: 12, color: "text-yellow-400" },
-  { icon: "ðŸ‰", name: "Melancia", mult: 20, color: "text-green-400" },
+  { icon: "🍇", name: "Uva", mult: 5, color: "text-purple-400" },
+  { icon: "🍎", name: "Maçã", mult: 8, color: "text-red-400" },
+  { icon: "🍌", name: "Banana", mult: 12, color: "text-yellow-400" },
+  { icon: "🍉", name: "Melancia", mult: 20, color: "text-green-400" },
   { icon: "🔔", name: "Sino", mult: 30, color: "text-yellow-500" },
-  { icon: "â­", name: "Estrela", mult: 40, color: "text-blue-400" },
+  { icon: "⭐", name: "Estrela", mult: 40, color: "text-blue-400" },
   { icon: "77", name: "77", mult: 60, color: "text-red-600" },
   { icon: "BAR", name: "BAR", mult: 100, color: "text-white" },
-  { icon: "ðŸ¦", name: "Leão", mult: 500, color: "text-amber-500" },
+  { icon: "🦁", name: "Leão", mult: 500, color: "text-amber-500" },
 ];
 
 const REELS_COUNT = 3;
@@ -163,14 +163,14 @@ const LionZamaGame = ({ balance, onUpdateBalance, onBack }: LionZamaProps) => {
       <div className="flex-1 flex flex-col items-center justify-center p-4 relative">
         {/* Lion Background Image (placeholder for realism) */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg aspect-square opacity-10 pointer-events-none blur-sm">
-           <span className="text-[200px] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">ðŸ¦</span>
+           <span className="text-[200px] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">🦁</span>
         </div>
 
         {/* Slot Frame Premium */}
         <div className="w-full max-w-sm relative z-20">
            {/* Top Lion Emblem */}
            <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-24 h-24 bg-gradient-to-b from-fuchsia-600 to-purple-900 rounded-full border-4 border-fuchsia-400 flex items-center justify-center shadow-[0_0_30px_rgba(168,85,247,0.6)] z-30">
-              <span className="text-4xl animate-pulse">ðŸ¦</span>
+              <span className="text-4xl animate-pulse">🦁</span>
            </div>
 
            <div className="bg-[#120422] p-4 rounded-[2.5rem] border-[4px] border-fuchsia-500/40 shadow-[0_0_60px_rgba(168,85,247,0.4),inset_0_0_20px_rgba(0,0,0,0.8)] overflow-hidden">

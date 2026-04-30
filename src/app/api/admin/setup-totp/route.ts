@@ -17,7 +17,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Sessão inválida." }, { status: 401 });
     }
 
-    const payload = await verifyToken(token);
+    const payload = await verifyToken<{ id: string; phone: string; isAdmin: boolean }>(token);
     if (!payload || !payload.isAdmin) {
       return NextResponse.json({ error: "Acesso negado." }, { status: 403 });
     }

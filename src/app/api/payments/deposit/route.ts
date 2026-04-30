@@ -16,7 +16,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Sessão expirada. Faça login novamente." }, { status: 401 });
     }
 
-    const decoded = await verifyToken(token);
+    const decoded = await verifyToken<{ id: string; phone: string; is_admin: boolean; }>(token);
     if (!decoded) {
       return NextResponse.json({ error: "Token inválido." }, { status: 401 });
     }

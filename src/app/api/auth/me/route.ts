@@ -16,7 +16,7 @@ export async function GET(req: Request) {
     }
 
     // 2. Verificar e decodificar o JWT
-    const decoded = await verifyToken(token);
+    const decoded = await verifyToken<{ id: string; phone: string }>(token);
     if (!decoded) {
       return NextResponse.json({ user: null }, { status: 401 });
     }

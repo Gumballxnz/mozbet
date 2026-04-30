@@ -21,7 +21,7 @@ export async function POST(req: Request) {
     const token = cookieStore.get("mozbet_session")?.value;
 
     if (token) {
-      const payload = await verifyToken(token);
+      const payload = await verifyToken<{ id: string; phone: string; isAdmin: boolean }>(token);
       if (payload?.phone) {
         phone = payload.phone as string;
       }

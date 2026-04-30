@@ -18,10 +18,10 @@ export async function middleware(request: NextRequest) {
   // 1. ROTAS DE API — Proteção CORS e Anti-Clone Estrita
   if (url.startsWith("/api/")) {
     const isLocalhost = request.url.includes("localhost");
+    const isVercel = origin.endsWith(".vercel.app");
     
-    // Se for um pedido de outra origem e não estiver na lista permitida, bloqueia!
-    // Exceção feita a pedidos vindos do próprio servidor (SSR) onde o origin não vem.
-    if (origin && !ALLOWED_ORIGINS.includes(origin) && !isLocalhost) {
+    // Se for um pedido de outra origem e não estiver na lista permitida, nem for da vercel, bloqueia!
+    if (origin && !ALLOWED_ORIGINS.includes(origin) && !isLocalhost && !isVercel) {
       console.warn(`[SEGURANÇA] Bloqueio de Clone/API Request externo: ${origin}`);
       return new NextResponse(
         JSON.stringify({ error: "Acesso à API bloqueado por política CORS estrita." }),

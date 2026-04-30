@@ -71,6 +71,48 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
     };
   }, [isOpen, fetchHistory]);
 
+  // Lógica do BOT automático "nr 84*9 ganhou 20mil no aviator"
+  useEffect(() => {
+    if (!isOpen) return;
+    const interval = setInterval(() => {
+      const games = [
+        { id: "aviator", name: "Aviator" },
+        { id: "footballx", name: "Football X" },
+        { id: "megafruits", name: "Mega Fruits" },
+        { id: "taxi-crash", name: "Taxi Crash" }
+      ];
+      const g = games[Math.floor(Math.random() * games.length)];
+      const winAmount = Math.floor(Math.random() * 40000) + 500;
+      const prefix = ["84", "85", "86", "87"][Math.floor(Math.random() * 4)];
+      const lastDigit = Math.floor(Math.random() * 9);
+      const username = `${prefix}***${lastDigit}`;
+
+      const newBotMsg: ChatMessage = {
+        id: `bot-${Date.now()}`,
+        user_id: "system-bot",
+        username: "MOZBET BOT",
+        message: `${username} ganhou ${winAmount.toLocaleString("pt-MZ")} MT no ${g.name}!`,
+        type: "win_announcement",
+        metadata: {
+          username: username,
+          amount: winAmount,
+          game_id: g.id,
+          game_name: g.name
+        },
+        created_at: new Date().toISOString()
+      };
+
+      setMessages((prev) => [...prev, newBotMsg]);
+      setTimeout(() => {
+        if (scrollRef.current) {
+          scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+        }
+      }, 100);
+    }, 12000); // 12 seconds
+
+    return () => clearInterval(interval);
+  }, [isOpen]);
+
   const scrollToBottom = () => {
     if (scrollRef.current) {
       scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useAppStore } from "@/lib/store";
 import { useTranslation } from "@/hooks/useTranslation";
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,14 @@ import Link from "next/link";
 export function MobileHeader() {
   const { t, locale, setLocale } = useTranslation();
   const { isLoggedIn, user, openLogin, openRegister, setChatOpen, setDepositOpen, logout } = useAppStore();
+  
+  const [avatar, setAvatar] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setAvatar(localStorage.getItem("mozbet_avatar"));
+    }
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -55,10 +64,14 @@ export function MobileHeader() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="w-9 h-9 rounded-full bg-surface"
+                  className="w-9 h-9 rounded-full bg-surface p-0 overflow-hidden border border-white/5"
                   title="Perfil"
                 >
-                  <User className="w-4 h-4 text-muted-foreground" />
+                  {avatar ? (
+                    <img src={avatar} alt="Avatar" className="w-full h-full object-cover" />
+                  ) : (
+                    <User className="w-4 h-4 text-muted-foreground" />
+                  )}
                 </Button>
               </Link>
               <Button

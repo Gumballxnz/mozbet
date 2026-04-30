@@ -143,17 +143,17 @@ export default function Home() {
       </section>
 
       {/* Destaques Rápidos */}
-      <section className="flex gap-3 px-3 py-4 overflow-x-auto hide-scrollbar">
+      <section className="grid grid-cols-3 gap-2 px-3 py-4">
         {[
           { title: "Torneios", desc: "Prêmios Diários", icon: "🏆", bg: "from-amber-500/20 to-amber-600/5", border: "border-amber-500/20" },
-          { title: "VIP", desc: "Cashback até 20%", icon: "💎", bg: "from-purple-500/20 to-purple-600/5", border: "border-purple-500/20" },
+          { title: "VIP", desc: "Cashback 20%", icon: "💎", bg: "from-purple-500/20 to-purple-600/5", border: "border-purple-500/20" },
           { title: "Indique", desc: "Ganhe 500 MT", icon: "🤝", bg: "from-emerald-500/20 to-emerald-600/5", border: "border-emerald-500/20" },
         ].map((item, i) => (
-          <div key={i} className={`flex-shrink-0 w-[140px] p-3 rounded-[20px] bg-gradient-to-br ${item.bg} border ${item.border} flex items-center gap-3 active:scale-95 transition-transform`}>
-            <span className="text-2xl drop-shadow-md">{item.icon}</span>
-            <div>
-              <h3 className="font-extrabold text-xs text-foreground/90">{item.title}</h3>
-              <p className="text-[9px] font-bold text-muted-foreground">{item.desc}</p>
+          <div key={i} className={`p-2 rounded-[16px] bg-gradient-to-br ${item.bg} border ${item.border} flex flex-col items-center justify-center text-center gap-1 active:scale-95 transition-transform`}>
+            <span className="text-xl drop-shadow-md">{item.icon}</span>
+            <div className="flex flex-col items-center">
+              <h3 className="font-extrabold text-[10px] text-foreground/90 whitespace-nowrap">{item.title}</h3>
+              <p className="text-[8px] font-bold text-muted-foreground whitespace-nowrap">{item.desc}</p>
             </div>
           </div>
         ))}

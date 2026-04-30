@@ -1,20 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAppStore } from "@/lib/store";
-import { User, Mail, Phone, Camera, Save, LogOut } from "lucide-react";
+import { User, Mail, Phone, Camera, Save, LogOut, Gift, KeyRound, Calendar, Hash, CheckSquare, Square } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
-// Lista de avatares pré-definidos
 const AVATARS = [
-  "/assets/avatar-1.png",
-  "/assets/avatar-2.png",
-  "/assets/avatar-3.png",
-  "/assets/avatar-4.png",
-  "/assets/avatar-5.png",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Felix&backgroundColor=f59e0b",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Aneka&backgroundColor=10b981",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Jack&backgroundColor=3b82f6",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Molly&backgroundColor=8b5cf6",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Leo&backgroundColor=ef4444",
+  "https://api.dicebear.com/7.x/adventurer/svg?seed=Zoe&backgroundColor=ec4899",
 ];
 
 export default function PerfilPage() {
@@ -24,20 +24,39 @@ export default function PerfilPage() {
   const [email, setEmail] = useState("");
   const [selectedAvatar, setSelectedAvatar] = useState(AVATARS[0]);
   const [isSaving, setIsSaving] = useState(false);
+  const [commercialOptIn, setCommercialOptIn] = useState(true);
 
-  // Redireciona se não estiver logado
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedAvatar = localStorage.getItem("mozbet_avatar");
+      if (savedAvatar) setSelectedAvatar(savedAvatar);
+    }
+  }, []);
+
   if (!user) {
     if (typeof window !== "undefined") router.push("/");
     return null;
   }
 
+  const shortId = user.id ? user.id.split("-")[0].toUpperCase() : "MZ9982X";
+  const registerDate = user.createdAt ? new Date(user.createdAt).toLocaleDateString("pt-MZ") : new Date().toLocaleDateString("pt-MZ");
+  const bonusBalance = 0; // Simulated bonus
+
   const handleSave = async () => {
     setIsSaving(true);
-    // Simular chamada API para salvar avatar e email no Supabase
     setTimeout(() => {
       setIsSaving(false);
+      if (typeof window !== "undefined") {
+         localStorage.setItem("mozbet_avatar", selectedAvatar);
+      }
       toast.success("Perfil atualizado com sucesso!");
+      // Atualiza a página para o Header pegar o novo avatar
+      setTimeout(() => window.location.reload(), 1000);
     }, 1000);
+  };
+
+  const handleChangePassword = () => {
+    toast.info("Por questões de segurança, enviámos um código para o seu telemóvel para alterar a senha.");
   };
 
   const handleLogout = async () => {
@@ -51,34 +70,62 @@ export default function PerfilPage() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-4 py-8 space-y-8">
+    <div className="max-w-2xl mx-auto p-4 py-8 space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-white mb-2">O Meu Perfil</h1>
-        <p className="text-muted-foreground text-sm">Personalize a sua conta e defina um email de recuperação.</p>
+        <h1 className="text-2xl font-bold text-white mb-1">Área do Jogador</h1>
+        <p className="text-muted-foreground text-sm">Gerencie o seu perfil, segurança e preferências.</p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        {/* Info Box */}
+        <div className="bg-surface border border-white/5 p-4 rounded-2xl flex flex-col items-center justify-center text-center">
+          <Hash className="w-5 h-5 text-primary mb-2" />
+          <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">ID de Jogador</p>
+          <p className="font-black text-white">{shortId}</p>
+        </div>
+        <div className="bg-surface border border-white/5 p-4 rounded-2xl flex flex-col items-center justify-center text-center">
+          <Calendar className="w-5 h-5 text-primary mb-2" />
+          <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Membro Desde</p>
+          <p className="font-black text-white">{registerDate}</p>
+        </div>
       </div>
 
       <div className="bg-surface border border-white/5 p-6 rounded-2xl space-y-6">
         
+        {/* BONUS E SALDOS */}
+        <div className="flex items-center justify-between bg-black/40 border border-primary/20 rounded-xl p-4">
+           <div className="flex items-center gap-3">
+             <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                <Gift className="w-5 h-5 text-primary" />
+             </div>
+             <div>
+               <p className="text-xs text-muted-foreground font-bold">Saldo de Bónus</p>
+               <p className="text-xl font-black text-primary">{bonusBalance.toFixed(2)} MT</p>
+             </div>
+           </div>
+           <Button variant="outline" size="sm" className="border-primary text-primary hover:bg-primary hover:text-black">
+             Usar
+           </Button>
+        </div>
+
         {/* AVATARES */}
         <div className="space-y-4">
           <label className="text-sm font-medium text-white flex items-center gap-2">
             <Camera className="w-4 h-4" />
-            Escolher Avatar
+            Escolher Avatar de Cassino
           </label>
           <div className="flex flex-wrap gap-4">
             {AVATARS.map((avatar, idx) => (
               <button
                 key={idx}
                 onClick={() => setSelectedAvatar(avatar)}
-                className={`relative w-16 h-16 rounded-full overflow-hidden border-2 transition-all ${
+                className={`relative w-14 h-14 rounded-full overflow-hidden border-2 transition-all ${
                   selectedAvatar === avatar 
                     ? "border-primary scale-110 shadow-[0_0_15px_rgba(0,255,127,0.3)]" 
                     : "border-transparent opacity-50 hover:opacity-100"
                 }`}
               >
-                <div className="w-full h-full bg-white/10 flex items-center justify-center text-xl font-bold">
-                  <User className="w-6 h-6 text-muted-foreground" />
-                </div>
+                <img src={avatar} alt={`Avatar ${idx + 1}`} className="w-full h-full object-cover" />
               </button>
             ))}
           </div>
@@ -91,20 +138,19 @@ export default function PerfilPage() {
           <div className="space-y-2">
             <label className="text-sm font-medium text-white flex items-center gap-2">
               <Phone className="w-4 h-4" />
-              Número de Telemóvel (ID)
+              Número de Telemóvel
             </label>
             <Input 
               value={`+258 ${user.phone}`} 
               disabled 
               className="bg-black/50 border-white/10 text-muted-foreground opacity-70"
             />
-            <p className="text-[10px] text-muted-foreground">O número de telefone não pode ser alterado por motivos de segurança.</p>
           </div>
 
           <div className="space-y-2">
             <label className="text-sm font-medium text-white flex items-center gap-2">
               <Mail className="w-4 h-4" />
-              Email (Opcional)
+              Adicionar Email
             </label>
             <Input 
               placeholder="seu.email@exemplo.com"
@@ -112,19 +158,42 @@ export default function PerfilPage() {
               onChange={(e) => setEmail(e.target.value)}
               className="bg-black/50 border-white/10 text-white"
             />
-            <p className="text-[10px] text-muted-foreground">Adicione um email para receber notificações e ofertas exclusivas.</p>
+            
+            {/* Checkbox Comercial */}
+            <div 
+               className="flex items-start gap-2 mt-2 cursor-pointer"
+               onClick={() => setCommercialOptIn(!commercialOptIn)}
+            >
+               <div className="mt-0.5 text-primary">
+                 {commercialOptIn ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4 text-muted-foreground" />}
+               </div>
+               <p className="text-[10px] text-muted-foreground leading-tight">
+                 Estou disposto a receber emails com ofertas comerciais, bónus exclusivos e novidades da plataforma MozBet.
+               </p>
+            </div>
+          </div>
+          
+          <div className="pt-2">
+             <Button 
+               variant="outline" 
+               onClick={handleChangePassword}
+               className="w-full justify-start bg-black/40 border-white/10 text-white hover:bg-white/5"
+             >
+               <KeyRound className="w-4 h-4 mr-2 text-muted-foreground" />
+               Alterar Palavra-Passe
+             </Button>
           </div>
         </div>
 
         <Button 
           onClick={handleSave} 
           disabled={isSaving}
-          className="w-full bg-primary text-black hover:bg-primary/90 font-bold"
+          className="w-full bg-primary text-black hover:bg-primary/90 font-bold h-12"
         >
           {isSaving ? "A Salvar..." : (
             <>
               <Save className="w-4 h-4 mr-2" />
-              Guardar Alterações
+              Guardar Preferências
             </>
           )}
         </Button>
@@ -134,7 +203,7 @@ export default function PerfilPage() {
       <Button 
         variant="destructive" 
         onClick={handleLogout}
-        className="w-full bg-red-500/10 text-red-500 hover:bg-red-500/20"
+        className="w-full bg-red-500/10 text-red-500 hover:bg-red-500/20 h-12"
       >
         <LogOut className="w-4 h-4 mr-2" />
         Sair da Conta

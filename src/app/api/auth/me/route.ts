@@ -24,7 +24,7 @@ export async function GET(req: Request) {
     // 3. Buscar os dados mais recentes do usuário no banco (ex: saldo atualizado)
     const { data: user, error } = await supabaseAdmin
       .from("users")
-      .select("id, phone, balance, has_deposited, created_at, is_admin, is_active")
+      .select("id, phone, email, balance, has_deposited, created_at, is_admin, is_active")
       .eq("id", decoded.id)
       .single();
 
@@ -44,6 +44,7 @@ export async function GET(req: Request) {
       user: {
         id: user.id,
         phone: user.phone,
+        email: user.email,
         balance: Number(user.balance),
         hasDeposited: user.has_deposited,
         createdAt: user.created_at,

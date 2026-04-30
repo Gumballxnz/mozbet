@@ -67,14 +67,39 @@ export async function POST(req: Request) {
         to: [email],
         subject: "Código de Verificação MozBet",
         html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #111; color: #fff; padding: 20px; border-radius: 10px;">
-            <h1 style="color: #00FF7F; text-align: center;">MOZBET</h1>
-            <p>Olá,</p>
-            <p>Usaste este e-mail para atualizar o teu perfil na MozBet. Para confirmar que este e-mail te pertence, introduz o seguinte código de segurança de 6 dígitos:</p>
-            <div style="background-color: #222; padding: 15px; text-align: center; font-size: 24px; font-weight: bold; letter-spacing: 5px; border-radius: 8px; margin: 20px 0;">
-              ${code}
+          <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #0f172a; color: #f8fafc; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
+            
+            <!-- HEADER BANNER -->
+            <div style="background: linear-gradient(135deg, #00FF7F 0%, #008f47 100%); padding: 30px; text-align: center;">
+              <h1 style="color: #ffffff; margin: 0; font-size: 32px; font-weight: 900; letter-spacing: 2px; text-shadow: 0 2px 10px rgba(0,0,0,0.2);">
+                MOZ<span style="color: #0f172a;">BET</span>
+              </h1>
             </div>
-            <p style="font-size: 12px; color: #888;">Este código expira em 5 minutos. Se não pediste isto, ignora este e-mail.</p>
+
+            <!-- BODY -->
+            <div style="padding: 40px 30px; text-align: center;">
+              <h2 style="margin-top: 0; color: #ffffff; font-size: 20px;">Confirma o teu E-mail</h2>
+              <p style="line-height: 1.6; color: #cbd5e1; font-size: 15px; margin-bottom: 30px;">
+                Usaste este endereço para atualizar o teu perfil na plataforma. Para garantir a segurança da tua conta, introduz o seguinte código de 6 dígitos:
+              </p>
+              
+              <div style="background-color: #1e293b; padding: 20px; border-radius: 12px; margin: 0 auto 30px auto; border: 1px dashed #00FF7F; display: inline-block;">
+                <p style="margin: 0; font-size: 36px; font-weight: 900; color: #00FF7F; letter-spacing: 8px;">
+                  ${code}
+                </p>
+              </div>
+              
+              <p style="font-size: 13px; color: #64748b; margin: 0;">
+                Este código expira em 5 minutos. Se não fizeste este pedido, ignora este e-mail.
+              </p>
+            </div>
+            
+            <!-- FOOTER -->
+            <div style="background-color: #020617; padding: 20px; text-align: center; border-top: 1px solid #1e293b;">
+              <p style="color: #64748b; font-size: 12px; margin: 0;">
+                © ${new Date().getFullYear()} MozBet. Todos os direitos reservados.
+              </p>
+            </div>
           </div>
         `,
       });

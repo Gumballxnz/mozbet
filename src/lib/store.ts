@@ -7,6 +7,7 @@ import { type Locale } from "@/lib/i18n";
 interface User {
   id: string;
   phone: string;
+  email?: string;
   balance: number;
   hasDeposited: boolean;
   createdAt: string;

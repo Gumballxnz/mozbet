@@ -21,7 +21,7 @@ export default function PerfilPage() {
   const { user, logout } = useAppStore();
   const router = useRouter();
   
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(user?.email || "");
   const [selectedAvatar, setSelectedAvatar] = useState(AVATARS[0]);
   const [isSaving, setIsSaving] = useState(false);
   const [commercialOptIn, setCommercialOptIn] = useState(true);

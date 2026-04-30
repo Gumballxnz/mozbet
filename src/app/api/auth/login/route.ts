@@ -53,7 +53,7 @@ export async function POST(req: Request) {
     // 1. Buscar usuário
     const { data: user, error: dbError } = await supabaseAdmin
       .from("users")
-      .select("id, phone, password_hash, balance, has_deposited, created_at, is_active, is_admin")
+      .select("id, phone, email, password_hash, balance, has_deposited, created_at, is_active, is_admin")
       .eq("phone", cleanPhone)
       .single();
 
@@ -95,6 +95,7 @@ export async function POST(req: Request) {
         user: {
           id: user.id,
           phone: user.phone,
+          email: user.email,
           balance: Number(user.balance),
           hasDeposited: user.has_deposited,
           createdAt: user.created_at,

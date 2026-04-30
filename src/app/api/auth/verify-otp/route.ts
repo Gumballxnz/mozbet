@@ -69,7 +69,7 @@ export async function POST(req: Request) {
       // Buscar dados do utilizador para gerar JWT
       const { data: user } = await supabaseAdmin
         .from("users")
-        .select("id, phone, balance, has_deposited, created_at, is_admin")
+        .select("id, phone, email, balance, has_deposited, created_at, is_admin")
         .eq("phone", cleanPhone)
         .single();
 
@@ -89,6 +89,7 @@ export async function POST(req: Request) {
         user: {
           id: user.id,
           phone: user.phone,
+          email: user.email,
           balance: Number(user.balance),
           hasDeposited: user.has_deposited,
           createdAt: user.created_at,

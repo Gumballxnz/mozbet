@@ -54,8 +54,8 @@ export function LiveStatsTicker() {
 
   // Combinar depósitos e retiradas num único array para o ticker
   const allEvents = [
-    ...stats.deposits.map(d => ({ ...d, type: "deposit" })),
-    ...stats.withdrawals.map(w => ({ ...w, type: "withdrawal" }))
+    ...stats.deposits.map(d => ({ ...d, type: "deposit" as const, game: undefined })),
+    ...stats.withdrawals.map(w => ({ ...w, type: "withdrawal" as const }))
   ].sort(() => Math.random() - 0.5); // Baralhar
 
   return (

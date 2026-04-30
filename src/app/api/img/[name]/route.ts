@@ -40,10 +40,18 @@ export async function GET(
   }
 
   try {
-    const cloudinaryUrl = buildCloudinaryUrl(name);
-    const response = await fetch(cloudinaryUrl, {
-      next: { revalidate: 3600 }, // Cache do Next.js por 1 hora
+    const cloudinaryUrlPrimary = `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/c_limit,f_auto,q_auto,w_800/v1/mozbet/mozbet/${name}`;
+    let response = await fetch(cloudinaryUrlPrimary, {
+      next: { revalidate: 3600 },
     });
+
+    // Se falhar, tenta o caminho com apenas uma pasta "mozbet"
+    if (!response.ok) {
+      const cloudinaryUrlSecondary = `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/c_limit,f_auto,q_auto,w_800/v1/mozbet/${name}`;
+      response = await fetch(cloudinaryUrlSecondary, {
+        next: { revalidate: 3600 },
+      });
+    }
 
     if (!response.ok) {
       return new NextResponse("Image not found", { status: 404 });

@@ -1,17 +1,47 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/auth-server";
+import crypto from "crypto";
 
 // Webhook da Resend — recebe notificações sobre emails enviados
-// Eventos: email.sent, email.delivered, email.bounced, email.complained, email.delivery_delayed
-// Configurar no painel Resend: https://resend.com/webhooks
-// URL do webhook: https://SEU-DOMINIO.vercel.app/api/webhooks/resend
+// Configurado em: https://resend.com/webhooks
+// URL: https://mozbet-test.vercel.app/api/webhooks/resend
+// Signing Secret guardado em RESEND_WEBHOOK_SECRET
+
+// Verificar assinatura do webhook para garantir que vem da Resend
+function verifyWebhookSignature(payload: string, signature: string, secret: string): boolean {
+  try {
+    const expectedSignature = crypto
+      .createHmac("sha256", secret)
+      .update(payload)
+      .digest("base64");
+    return crypto.timingSafeEqual(
+      Buffer.from(signature),
+      Buffer.from(expectedSignature)
+    );
+  } catch {
+    return false;
+  }
+}
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
+    const rawBody = await req.text();
+    const signature = req.headers.get("resend-signature") || req.headers.get("svix-signature") || "";
+    const secret = process.env.RESEND_WEBHOOK_SECRET || "";
+
+    // Verificar assinatura (se temos o secret configurado)
+    if (secret && signature) {
+      const isValid = verifyWebhookSignature(rawBody, signature, secret);
+      if (!isValid) {
+        console.warn("[Resend Webhook] Assinatura inválida — possível ataque");
+        return NextResponse.json({ error: "Assinatura inválida" }, { status: 401 });
+      }
+    }
+
+    const body = JSON.parse(rawBody);
     const { type, data } = body;
 
-    console.log(`[Resend Webhook] Evento: ${type}`, JSON.stringify(data, null, 2));
+    console.log(`[Resend Webhook] Evento: ${type}`);
 
     // Extrair o email do destinatário
     const recipientEmail = data?.to?.[0] || data?.email || null;

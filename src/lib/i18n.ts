@@ -40,6 +40,7 @@ export const translations = {
     wrongCredentials: "Número ou palavra-passe incorretos.",
     accountNotFound: "Conta não encontrada. Registe-se primeiro.",
     unexpectedError: "Erro inesperado. Tente novamente.",
+    loginRequired: "O login é obrigatório para jogar a dinheiro real.",
     bestExperience: "A melhor experiência de jogos virtual",
 
     // Depósito
@@ -143,6 +144,7 @@ export const translations = {
     wrongCredentials: "Wrong number or password.",
     accountNotFound: "Account not found. Register first.",
     unexpectedError: "Unexpected error. Try again.",
+    loginRequired: "Login is required to play for real money.",
     bestExperience: "The best virtual gaming experience",
 
     // Deposit

@@ -18,14 +18,11 @@ export function GameCatalog() {
   useEffect(() => {
     async function loadGames() {
       try {
-        const { data } = await supabase
-          .from("games")
-          .select("*")
-          .eq("is_active", true)
-          .order("sort_order", { ascending: true });
+        const res = await fetch("/api/content/games");
+        const data = await res.json();
         
-        if (data) {
-          setGames(data);
+        if (data.games) {
+          setGames(data.games);
         }
       } catch (err) {
         console.error("Erro ao carregar jogos:", err);

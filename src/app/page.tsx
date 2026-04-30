@@ -27,18 +27,15 @@ export default function Home() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [banners, setBanners] = useState<any[]>([]);
 
-  // Carregar Banners dinamicamente do Supabase
+  // Carregar Banners dinamicamente da API interna
   useEffect(() => {
     async function loadBanners() {
       try {
-        const { data } = await supabase
-          .from("banners")
-          .select("*")
-          .eq("is_active", true)
-          .order("sort_order", { ascending: true });
+        const res = await fetch("/api/content/banners");
+        const data = await res.json();
         
-        if (data && data.length > 0) {
-          setBanners(data);
+        if (data.banners && data.banners.length > 0) {
+          setBanners(data.banners);
         }
       } catch (err) {
         console.error("Erro ao carregar banners:", err);

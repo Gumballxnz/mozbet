@@ -86,7 +86,7 @@ export default function HomePage() {
   return (
     <div className="w-full">
       {/* Carrossel de Banners Promocionais */}
-      <section className="relative w-full aspect-[21/9] sm:aspect-[21/6] md:aspect-[21/5] max-h-[400px] bg-surface-elevated overflow-hidden group">
+      <section className="relative w-[calc(100%-24px)] mx-3 mt-3 aspect-[21/11] sm:aspect-[21/6] max-h-[400px] rounded-[28px] overflow-hidden group bg-surface-elevated">
         {SLIDES.map((slide, index) => (
           <div 
             key={slide.id}

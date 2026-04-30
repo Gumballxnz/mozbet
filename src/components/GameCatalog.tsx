@@ -21,7 +21,7 @@ export function GameCatalog() {
   };
 
   return (
-    <div className="px-3 pt-2 pb-24">
+    <div className="px-3 pt-2 pb-6">
       {/* Header da secção */}
       <div className="flex items-center justify-between mt-2 mb-3">
         <div className="flex items-center gap-2">

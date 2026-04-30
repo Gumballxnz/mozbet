@@ -23,15 +23,15 @@ export function Footer() {
 
         {/* Secção de Pagamentos */}
         <div className="pt-6 pb-2">
-          <h3 className="text-left text-lg font-bold text-white mb-4">Payments</h3>
+          <h3 className="text-left text-lg font-bold text-white mb-4">Métodos de Pagamento</h3>
           <div className="flex gap-4">
-            <div className="flex flex-col items-center justify-center bg-[#252031] rounded-xl w-28 h-20 border border-white/5 shadow-inner">
-              <SmartphoneNfc className="w-8 h-8 text-white/60 mb-1" strokeWidth={1.5} />
-              <span className="text-white/80 font-bold text-sm">m-pesa</span>
+            <div className="flex flex-col items-center justify-center bg-red-600/10 rounded-2xl w-28 h-20 border border-red-500/20 shadow-inner">
+              <span className="text-red-500 font-extrabold text-lg tracking-tight mb-0.5">m-pesa</span>
+              <div className="w-8 h-1 bg-red-500 rounded-full opacity-50"></div>
             </div>
-            <div className="flex flex-col items-center justify-center bg-[#252031] rounded-xl w-28 h-20 border border-white/5 shadow-inner">
-              <SmartphoneNfc className="w-8 h-8 text-white/60 mb-1" strokeWidth={1.5} />
-              <span className="text-white/80 font-bold text-sm">e-Mola</span>
+            <div className="flex flex-col items-center justify-center bg-orange-500/10 rounded-2xl w-28 h-20 border border-orange-500/20 shadow-inner">
+              <span className="text-orange-500 font-extrabold text-lg tracking-tight mb-0.5 italic">e-Mola</span>
+              <div className="w-8 h-1 bg-orange-500 rounded-full opacity-50"></div>
             </div>
           </div>
         </div>

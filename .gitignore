@@ -42,3 +42,5 @@ next-env.d.ts
 
 # Ignorar todos os ficheiros Markdown
 *.md
+
+!README.md

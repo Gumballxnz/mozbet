@@ -9,7 +9,7 @@ import Link from "next/link";
 
 export function MobileHeader() {
   const { t, locale, setLocale } = useTranslation();
-  const { isLoggedIn, user, openLogin, openRegister, setChatOpen, logout } = useAppStore();
+  const { isLoggedIn, user, openLogin, openRegister, setChatOpen, setDepositOpen, logout } = useAppStore();
 
   const handleLogout = async () => {
     try {

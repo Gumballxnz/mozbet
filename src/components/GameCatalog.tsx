@@ -130,46 +130,10 @@ function GameCard({
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent pointer-events-none" />
       
-      <div className="absolute inset-x-0 bottom-0 p-3 flex flex-col gap-2 transform md:translate-y-2 md:group-hover:translate-y-0 transition-transform">
+      <div className="absolute inset-x-0 bottom-0 p-3 flex flex-col gap-2 transform transition-transform">
         <h3 className="font-bold text-sm text-white truncate drop-shadow-md">
           {game.name}
         </h3>
-        
-        {/* Se NÃO estiver logado: Apenas DEMO. No desktop fica invisível até hover, no mobile fica opaco (opacity-80) para dar dica */}
-        {!isLoggedIn && (
-          <div className="flex opacity-80 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-            <div className="w-full flex items-center justify-center h-8 text-[10px] bg-black/60 backdrop-blur-md rounded-md text-white font-bold border border-white/20 uppercase">
-              {t("demoMode")}
-            </div>
-          </div>
-        )}
-
-        {/* Se ESTIVER logado: No mobile, tap no card joga REAL. No desktop, mostramos botões. */}
-        {isLoggedIn && (
-          <div className="hidden md:flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-            <Button 
-              size="sm" 
-              className="flex-1 h-8 text-[10px] bg-primary text-black font-extrabold px-0 hover:bg-primary/90"
-              onClick={(e) => {
-                e.stopPropagation();
-                router.push(`/jogar/${game.id}?mode=real`);
-              }}
-            >
-              {t("realMode")}
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="flex-1 h-8 text-[10px] bg-black/50 backdrop-blur-sm px-0 text-white border-white/20 hover:bg-white/20"
-              onClick={(e) => {
-                e.stopPropagation();
-                router.push(`/jogar/${game.id}?mode=demo`);
-              }}
-            >
-              {t("demoMode")}
-            </Button>
-          </div>
-        )}
       </div>
     </div>
   );

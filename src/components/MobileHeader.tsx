@@ -9,7 +9,7 @@ import Link from "next/link";
 
 export function MobileHeader() {
   const { t, locale, setLocale } = useTranslation();
-  const { isLoggedIn, user, setRegisterOpen, setDepositOpen, setChatOpen, logout } = useAppStore();
+  const { isLoggedIn, user, openLogin, openRegister, setChatOpen, logout } = useAppStore();
 
   const handleLogout = async () => {
     try {
@@ -23,24 +23,14 @@ export function MobileHeader() {
   return (
     <header className="glass sticky top-0 z-40 w-full px-4 py-3 flex items-center justify-between">
       {/* Logo */}
-      <div className="flex items-center gap-2">
-        <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shadow-[0_0_15px_rgba(0,255,127,0.3)]">
-          <span className="text-black font-extrabold text-lg">M</span>
-        </div>
-        <span className="text-lg font-extrabold tracking-tight hidden sm:block">
-          MOZ<span className="text-primary">BET</span>
+      <Link href="/" className="flex items-center gap-1 active:scale-95 transition-transform">
+        <span className="text-xl font-extrabold tracking-tight text-white">
+          MOZ<span className="text-primary glow-primary">BET</span>
         </span>
-      </div>
+      </Link>
 
       {/* Ações */}
       <div className="flex items-center gap-2">
-        {/* Toggle Idioma */}
-        <button
-          onClick={() => setLocale(locale === "pt" ? "en" : "pt")}
-          className="text-xs font-bold text-muted-foreground hover:text-foreground transition-colors mr-1"
-        >
-          {locale === "pt" ? "EN" : "PT"}
-        </button>
 
         {isLoggedIn && user ? (
           <>
@@ -89,14 +79,14 @@ export function MobileHeader() {
               variant="outline"
               size="sm"
               className="text-xs h-9"
-              onClick={() => setRegisterOpen(true)}
+              onClick={() => openLogin()}
             >
               {t("enter")}
             </Button>
             <Button
               size="sm"
               className="text-xs h-9 shadow-[0_0_15px_rgba(0,255,127,0.3)]"
-              onClick={() => setRegisterOpen(true)}
+              onClick={() => openRegister()}
             >
               {t("register")}
             </Button>

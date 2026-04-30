@@ -7,11 +7,13 @@ import {
   X, Gamepad2, Flame, Dices, Cherry, Rocket, 
   Target, Headphones, HelpCircle, Shield, User, LogOut
 } from "lucide-react";
+import { useTranslation } from "@/hooks/useTranslation";
 import { useAppStore } from "@/lib/store";
 import { GAMES } from "@/lib/games";
 
 export function MobileSidebar() {
   const pathname = usePathname();
+  const { locale, setLocale } = useTranslation();
   const { 
     mobileSidebarOpen, setMobileSidebarOpen, 
     setChatOpen, isLoggedIn, user, logout 
@@ -164,6 +166,15 @@ export function MobileSidebar() {
               <span className="text-sm font-medium">Sair da Conta</span>
             </button>
           )}
+
+          {/* Toggle Idioma */}
+          <button 
+            onClick={() => setLocale(locale === "pt" ? "en" : "pt")}
+            className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg bg-surface hover:bg-white/5 transition-colors mt-2 border border-white/5"
+          >
+            <span className="text-sm font-medium text-muted-foreground">Idioma</span>
+            <span className="text-xs font-bold bg-white/10 px-2 py-1 rounded text-white uppercase">{locale}</span>
+          </button>
         </div>
       </div>
     </>

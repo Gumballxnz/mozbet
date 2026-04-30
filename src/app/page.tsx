@@ -133,18 +133,33 @@ export default function HomePage() {
             <button
               key={idx}
               onClick={() => setCurrentSlide(idx)}
-              className={`w-2.5 h-2.5 rounded-full transition-all ${
-                idx === currentSlide ? "bg-primary w-8" : "bg-white/30 hover:bg-white/50"
+              className={`relative overflow-hidden h-2.5 rounded-full transition-all duration-300 ${
+                idx === currentSlide ? "w-10 bg-white/30" : "w-2.5 bg-white/30 hover:bg-white/50"
               }`}
-            />
+            >
+              {idx === currentSlide && (
+                <div 
+                  key={`progress-${idx}-${Date.now()}`}
+                  className="absolute top-0 left-0 bottom-0 bg-primary"
+                  style={{ animation: "fillProgress 5s linear forwards" }}
+                />
+              )}
+            </button>
           ))}
         </div>
       </section>
 
       {/* Catálogo de Jogos */}
-      <section className="px-4 py-8 max-w-7xl mx-auto">
+      <section className="py-2 max-w-7xl mx-auto">
         <GameCatalog />
       </section>
+      
+      <style dangerouslySetInnerHTML={{__html: `
+        @keyframes fillProgress {
+          0% { width: 0%; }
+          100% { width: 100%; }
+        }
+      `}} />
     </div>
   );
 }

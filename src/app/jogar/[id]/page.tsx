@@ -61,17 +61,15 @@ function GameContent({ gameId }: { gameId: string }) {
   );
 }
 
+import { use } from "react";
+
 export default function PlayGamePage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  // No Next.js 16, params é async mas em client components usamos use()
-  // Vamos usar uma abordagem simples com pathname
-  const searchParams = useSearchParams();
-  const gameId = typeof window !== "undefined" 
-    ? window.location.pathname.split("/jogar/")[1]?.split("?")[0] 
-    : "";
+  const resolvedParams = use(params);
+  const gameId = resolvedParams.id;
 
   if (!gameId) {
     return (

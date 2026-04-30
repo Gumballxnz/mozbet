@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ShieldCheck } from "lucide-react";
+import { ShieldCheck, SmartphoneNfc } from "lucide-react";
 
 export function Footer() {
   return (
@@ -19,6 +19,21 @@ export function Footer() {
           <Link href="/termos-e-condicoes" className="hover:text-white transition-colors">Termos e Condições</Link>
           <Link href="/politica-de-privacidade" className="hover:text-white transition-colors">Privacidade</Link>
           <Link href="/jogo-responsavel" className="hover:text-white transition-colors">Jogo Responsável</Link>
+        </div>
+
+        {/* Secção de Pagamentos */}
+        <div className="pt-6 pb-2">
+          <h3 className="text-left text-lg font-bold text-white mb-4">Payments</h3>
+          <div className="flex gap-4">
+            <div className="flex flex-col items-center justify-center bg-[#252031] rounded-xl w-28 h-20 border border-white/5 shadow-inner">
+              <SmartphoneNfc className="w-8 h-8 text-white/60 mb-1" strokeWidth={1.5} />
+              <span className="text-white/80 font-bold text-sm">m-pesa</span>
+            </div>
+            <div className="flex flex-col items-center justify-center bg-[#252031] rounded-xl w-28 h-20 border border-white/5 shadow-inner">
+              <SmartphoneNfc className="w-8 h-8 text-white/60 mb-1" strokeWidth={1.5} />
+              <span className="text-white/80 font-bold text-sm">e-Mola</span>
+            </div>
+          </div>
         </div>
 
         <div className="flex flex-wrap justify-center items-center gap-4 text-xs text-muted-foreground/50 pt-4 border-t border-white/5">

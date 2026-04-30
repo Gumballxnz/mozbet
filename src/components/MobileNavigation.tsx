@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, Search, Menu } from "lucide-react";
 import { useAppStore } from "@/lib/store";
+import { toast } from "sonner";
 
 export function MobileNavigation() {
   const pathname = usePathname();
@@ -16,18 +17,6 @@ export function MobileNavigation() {
 
   const navItems = [
     {
-      name: "Home",
-      href: "/",
-      icon: Home,
-      isActive: pathname === "/",
-    },
-    {
-      name: "Buscar",
-      href: "/?category=crash",
-      icon: Search,
-      isActive: pathname.includes("category"),
-    },
-    {
       name: "Menu",
       href: "#",
       icon: Menu,
@@ -35,6 +24,23 @@ export function MobileNavigation() {
       onClick: (e: React.MouseEvent) => {
         e.preventDefault();
         setMobileSidebarOpen(true);
+      }
+    },
+    {
+      name: "Home",
+      href: "/",
+      icon: Home,
+      isActive: pathname === "/",
+    },
+    {
+      name: "Buscar",
+      href: "#",
+      icon: Search,
+      isActive: false,
+      onClick: (e: React.MouseEvent) => {
+        e.preventDefault();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        toast.info("Catálogo", { description: "Navegue pela lista de jogos acima." });
       }
     },
   ];

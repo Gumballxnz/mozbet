@@ -22,9 +22,9 @@ type ModalStep = "form" | "otp" | "forgot" | "forgot-otp" | "new-password";
 
 export function RegisterModal() {
   const { t } = useTranslation();
-  const { registerOpen, setRegisterOpen, login: setGlobalUser } = useAppStore();
+  const { registerOpen, setRegisterOpen, login: setGlobalUser, authMode } = useAppStore();
   
-  const [isLogin, setIsLogin] = useState(false);
+  const [isLogin, setIsLogin] = useState(authMode === "login");
   const [step, setStep] = useState<ModalStep>("form");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
@@ -53,6 +53,13 @@ export function RegisterModal() {
     }, 1000);
     return () => clearInterval(timer);
   }, [otpCountdown]);
+
+  // Sincronizar com o store quando o modal abre
+  useEffect(() => {
+    if (registerOpen) {
+      setIsLogin(authMode === "login");
+    }
+  }, [registerOpen, authMode]);
 
   // Validação dinâmica do formulário
   const isFormValid = isLogin

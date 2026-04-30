@@ -28,11 +28,14 @@ interface AppState {
 
   // Modais
   registerOpen: boolean;
+  authMode: "login" | "register";
   depositOpen: boolean;
   chatOpen: boolean;
   helpOpen: boolean;
   profileOpen: boolean;
   setRegisterOpen: (open: boolean) => void;
+  openLogin: () => void;
+  openRegister: () => void;
   setDepositOpen: (open: boolean) => void;
   setChatOpen: (open: boolean) => void;
   setHelpOpen: (open: boolean) => void;
@@ -76,11 +79,14 @@ export const useAppStore = create<AppState>((set) => ({
 
   // Modais
   registerOpen: false,
+  authMode: "register",
   depositOpen: false,
   chatOpen: false,
   helpOpen: false,
   profileOpen: false,
   setRegisterOpen: (open) => set({ registerOpen: open }),
+  openLogin: () => set({ registerOpen: true, authMode: "login" }),
+  openRegister: () => set({ registerOpen: true, authMode: "register" }),
   setDepositOpen: (open) => set({ depositOpen: open }),
   setChatOpen: (open) => set({ chatOpen: open }),
   setHelpOpen: (open) => set({ helpOpen: open }),

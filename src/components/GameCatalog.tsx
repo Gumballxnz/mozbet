@@ -21,15 +21,18 @@ export function GameCatalog() {
   };
 
   return (
-    <div className="px-4 pt-8 pb-24">
+    <div className="px-3 pt-2 pb-24">
       {/* Header da secção */}
-      <div className="flex items-center justify-between mt-4 mb-4">
+      <div className="flex items-center justify-between mt-2 mb-3">
         <div className="flex items-center gap-2">
           <Gamepad2 size={20} className="text-primary" />
           <h2 className="text-xl font-extrabold">{t("games")}</h2>
         </div>
-        <button className="flex items-center gap-1 text-sm text-muted-foreground">
-          {t("viewAll")} <ChevronRight size={16} />
+        <button 
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-white transition-colors"
+        >
+          Ver Todos <ChevronRight size={14} />
         </button>
       </div>
 
@@ -39,7 +42,7 @@ export function GameCatalog() {
           <button
             key={game.id}
             onClick={() => handleGameClick(game.id)}
-            className="relative rounded-2xl overflow-hidden aspect-square group active:scale-[0.97] transition-all cursor-pointer text-left shadow-lg bg-card"
+            className="relative rounded-[28px] overflow-hidden aspect-[4/5] group active:scale-[0.97] transition-all cursor-pointer text-left shadow-lg bg-card"
           >
             <Image
               src={game.banner}

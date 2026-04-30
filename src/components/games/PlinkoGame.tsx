@@ -1,8 +1,9 @@
-﻿"use client";
+"use client";
 
 import { useState, useCallback } from "react";
 import { ArrowLeft, Maximize2, Menu, Minus, Plus } from "lucide-react";
 import { toast } from "sonner";
+import { useAppStore } from "@/lib/store";
 
 interface Props {
   balance: number;
@@ -21,7 +22,8 @@ const slotColor = (m: number) => {
 };
 
 const PlinkoGame = ({ balance, onUpdateBalance, onBack }: Props) => {
-  const [bet, setBet] = useState(1);
+  const { isLoggedIn, updateBalance } = useAppStore();
+  const [bet, setBet] = useState(10);
   const [pins, setPins] = useState<12 | 14 | 16>(16);
   const [risk, setRisk] = useState<"green" | "yellow" | "red">("red");
   const [dropping, setDropping] = useState(false);
@@ -33,42 +35,64 @@ const PlinkoGame = ({ balance, onUpdateBalance, onBack }: Props) => {
 
   const MULTIPLIERS = pins === 16 ? MULTIPLIERS_16 : pins === 14 ? MULTIPLIERS_14 : MULTIPLIERS_12;
 
-  const drop = useCallback(() => {
+  const drop = useCallback(async () => {
+    if (!isLoggedIn) {
+      toast.error("Faça login para jogar a dinheiro real!");
+      return;
+    }
+
     if (bet > balance) {
       toast.error("Saldo insuficiente");
       return;
     }
+    
     if (dropping || bet <= 0) return;
-    onUpdateBalance(balance - bet);
+    
     setDropping(true);
     setFinalSlot(null);
     setAnimStep(-1);
 
-    const rows = pins;
-    const p: number[] = [];
-    let pos = 0;
-    for (let i = 0; i < rows; i++) {
-      pos += Math.random() > 0.5 ? 1 : -1;
-      const slot = Math.max(0, Math.min(MULTIPLIERS.length - 1, Math.round((pos + rows) / 2)));
-      p.push(slot);
+    try {
+      // O saldo é descontado no backend. Nós apenas pedimos a animação e o resultado.
+      const res = await fetch("/api/game/plinko/play", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ betAmount: bet, pins, risk })
+      });
+
+      const data = await res.json();
+      
+      if (!res.ok) throw new Error(data.error);
+
+      // Atualizar o saldo subtraindo a aposta no front-end para resposta imediata
+      updateBalance(balance - bet);
+
+      const serverPath = data.path;
+      const fs = data.finalSlot;
+      const win = data.winnings;
+      const newBalance = data.newBalance;
+
+      setPath(serverPath);
+      let step = 0;
+      
+      const iv = setInterval(() => {
+        setAnimStep(step);
+        step++;
+        if (step >= pins) {
+          clearInterval(iv);
+          setLastWin(win);
+          setFinalSlot(fs);
+          setDropping(false);
+          updateBalance(newBalance); // Saldo final após o ganho
+        }
+      }, 180);
+
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || "Erro ao iniciar o jogo");
+      setDropping(false);
     }
-    setPath(p);
-    let step = 0;
-    const iv = setInterval(() => {
-      setAnimStep(step);
-      step++;
-      if (step >= rows) {
-        clearInterval(iv);
-        const fs = p[p.length - 1];
-        const mult = MULTIPLIERS[fs];
-        const win = bet * mult;
-        onUpdateBalance(balance - bet + win);
-        setLastWin(win);
-        setFinalSlot(fs);
-        setDropping(false);
-      }
-    }, 180);
-  }, [dropping, bet, balance, onUpdateBalance, pins, MULTIPLIERS]);
+  }, [dropping, bet, balance, updateBalance, pins, risk, isLoggedIn]);
 
   return (
     <div className="min-h-screen flex flex-col text-white" style={{ background: "linear-gradient(135deg, #6a11cb 0%, #2575fc 100%)" }}>
@@ -135,7 +159,7 @@ const PlinkoGame = ({ balance, onUpdateBalance, onBack }: Props) => {
             {(["green", "yellow", "red"] as const).map(r => {
               const color = r === "green" ? "bg-green-500" : r === "yellow" ? "bg-yellow-500" : "bg-red-500";
               return (
-                <button key={r} onClick={() => setRisk(r)} className={`w-10 h-10 rounded-full ${color} ${risk === r ? "ring-4 ring-white" : "opacity-60"} shadow-lg`} />
+                <button key={r} onClick={() => !dropping && setRisk(r)} className={`w-10 h-10 rounded-full ${color} ${risk === r ? "ring-4 ring-white" : "opacity-60"} shadow-lg`} />
               );
             })}
           </div>
@@ -145,7 +169,7 @@ const PlinkoGame = ({ balance, onUpdateBalance, onBack }: Props) => {
           <p className="text-[10px] text-white/70 mb-1.5">Número de pinos</p>
           <div className="grid grid-cols-3 gap-2">
             {([12, 14, 16] as const).map(p => (
-              <button key={p} onClick={() => setPins(p)} className={`py-2 rounded-xl font-bold text-xs ${pins === p ? "bg-white text-purple-900" : "bg-black/30 text-white/80"}`}>
+              <button key={p} onClick={() => !dropping && setPins(p)} className={`py-2 rounded-xl font-bold text-xs ${pins === p ? "bg-white text-purple-900" : "bg-black/30 text-white/80"}`}>
                 {p}
               </button>
             ))}
@@ -191,4 +215,3 @@ const PlinkoGame = ({ balance, onUpdateBalance, onBack }: Props) => {
 };
 
 export default PlinkoGame;
-

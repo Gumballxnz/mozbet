@@ -20,6 +20,8 @@ const MinesGame = lazy(() => import("@/components/games/MinesGame"));
 const MegaFruitsGame = lazy(() => import("@/components/games/MegaFruitsGame"));
 const LionZamaGame = lazy(() => import("@/components/games/LionZamaGame"));
 
+import { LiveStatsTicker } from "@/components/LiveStatsTicker";
+
 function GameContent({ gameId, isDemo }: { gameId: string, isDemo: boolean }) {
   const router = useRouter();
   const { user, updateBalance, setRegisterOpen } = useAppStore();
@@ -75,6 +77,7 @@ function GameContent({ gameId, isDemo }: { gameId: string, isDemo: boolean }) {
 
   return (
     <div className="fixed inset-0 z-50 bg-black">
+      <LiveStatsTicker />
       <Suspense fallback={loading}>
         {gameId === "aviator" && <AviatorGame {...gameProps} />}
         {gameId === "taxi-crash" && <TaxiCrashGame {...gameProps} />}

@@ -61,7 +61,7 @@ const AugustusCrashGame = ({ onClose, balance, onBet }: AugustusCrashGameProps) 
   const handleCashout = () => {
     if (isPlaying && !isCrashed) {
       const win = betAmount * multiplier;
-      toast.success(`VocÃª ganhou ${win.toFixed(2)} MT!`);
+      toast.success(`Você ganhou ${win.toFixed(2)} MT!`);
       setIsPlaying(false);
       setHistory(prevH => [multiplier, ...prevH.slice(0, 5)]);
     }

@@ -160,7 +160,7 @@ const TaxiCrashGame = ({ balance, onUpdateBalance, onBack }: Props) => {
       {/* Top bar */}
       <div className="flex items-center gap-3 px-3 py-2.5">
         <button onClick={onBack}><ArrowLeft size={20} /></button>
-        <span className="text-xs font-bold">ðŸš• Taxi Crash</span>
+        <span className="text-xs font-bold">🚕 Taxi Crash</span>
         <div className="ml-auto flex items-center gap-2">
           <span className="px-3 py-1 rounded-full bg-[#1e3a5f] text-[#ffcc00] font-bold text-xs">{balance.toFixed(2)} MZN</span>
           <button className="p-1.5 bg-[#1e3a5f] rounded-full"><Maximize2 size={14} /></button>
@@ -186,12 +186,12 @@ const TaxiCrashGame = ({ balance, onUpdateBalance, onBack }: Props) => {
         </div>
         {/* Car */}
         <div className="absolute bottom-3 text-3xl transition-all duration-100" style={{ left: `${carX}%` }}>
-          {phase === "crashed" ? "ðŸ’¥" : "ðŸš•"}
+          {phase === "crashed" ? "ðŸ’¥" : "🚕"}
         </div>
 
         {/* Multiplier */}
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-          <p className="text-white/90 text-xs font-bold mb-1 drop-shadow">PontuaÃ§Ã£o actual</p>
+          <p className="text-white/90 text-xs font-bold mb-1 drop-shadow">Pontuação actual</p>
           {phase === "waiting" ? (
             <p className="text-4xl font-extrabold font-mono drop-shadow-lg">{countdown}s</p>
           ) : (
@@ -208,14 +208,14 @@ const TaxiCrashGame = ({ balance, onUpdateBalance, onBack }: Props) => {
 
       {/* Stats */}
       <div className="px-3 pb-4 mt-3">
-        <p className="text-xs font-bold text-white/70 mb-2">EstatÃ­sticas de jogo</p>
+        <p className="text-xs font-bold text-white/70 mb-2">Estatísticas de jogo</p>
         <div className="flex gap-1 overflow-x-auto pb-2 scrollbar-hide">
-          {["apostas", "multiplicador", "grandes vitÃ³rias", "sua sessÃ£o"].map(t => (
+          {["apostas", "multiplicador", "grandes vitórias", "sua sessão"].map(t => (
             <button key={t} onClick={() => setStatsTab(t)} className={`px-3 py-1.5 rounded-lg text-[10px] font-bold whitespace-nowrap capitalize ${statsTab === t ? "bg-[#ffcc00] text-black" : "bg-[#1e3a5f] text-white/70"}`}>{t}</button>
           ))}
         </div>
         <div className="bg-[#1e3a5f] rounded-lg p-3 text-[10px] text-white/60 text-center">
-          Nenhum dado disponÃ­vel na aba "{statsTab}"
+          Nenhum dado disponível na aba "{statsTab}"
         </div>
       </div>
     </div>

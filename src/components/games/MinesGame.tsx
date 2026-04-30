@@ -73,7 +73,7 @@ const MinesGame = ({ onClose, balance, onBet }: MinesGameProps) => {
         });
         setGrid(newGrid);
         setIsPlaying(false);
-        toast.error("BOMBA! Que azar, vocÃª perdeu esta rodada.");
+        toast.error("BOMBA! Que azar, você perdeu esta rodada.");
       } else {
         // Safe!
         const newGrid = [...grid];
@@ -85,7 +85,7 @@ const MinesGame = ({ onClose, balance, onBet }: MinesGameProps) => {
         toast.success("Seguro! Continue assim.");
       }
     } catch (error) {
-      console.error("Erro ao processar clique na cÃ©lula:", error);
+      console.error("Erro ao processar clique na célula:", error);
       toast.error("Ops! Algo deu errado ao revelar o campo.");
     }
   };
@@ -95,7 +95,7 @@ const MinesGame = ({ onClose, balance, onBet }: MinesGameProps) => {
       if (!isPlaying || revealedCount === 0) return;
       const currentMult = calculateMultiplier(mineCount, revealedCount - 1);
       const win = betAmount * currentMult;
-      toast.success(`ParabÃ©ns! VocÃª fez o saque de ${win.toFixed(2)} MT!`);
+      toast.success(`Parabéns! Você fez o saque de ${win.toFixed(2)} MT!`);
       setIsPlaying(false);
       
       // Reveal everything
@@ -138,7 +138,7 @@ const MinesGame = ({ onClose, balance, onBet }: MinesGameProps) => {
         {/* Next Multiplier Card */}
         <div className="w-full max-w-sm mb-6 relative">
           <div className="bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 p-4 text-center">
-             <div className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">PrÃ³ximo Multiplicador</div>
+             <div className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Próximo Multiplicador</div>
              <div className="text-4xl font-black text-blue-400 drop-shadow-[0_0_15px_rgba(59,130,246,0.4)] tracking-tighter italic">
                {nextMultiplier.toFixed(2)}x
              </div>
@@ -182,7 +182,7 @@ const MinesGame = ({ onClose, balance, onBet }: MinesGameProps) => {
       <div className="bg-[#0f0f0f] p-5 pb-10 rounded-t-[3rem] border-t border-white/5 relative z-30 shadow-[0_-20px_60px_rgba(0,0,0,0.8)]">
         <div className="flex gap-4 mb-4 border-b border-white/5">
           <button className="pb-3 border-b-2 border-blue-500 text-blue-400 font-black tracking-wider text-[10px] px-2 uppercase">Aposta</button>
-          <button className="pb-3 text-gray-600 font-bold tracking-wider text-[10px] px-2 uppercase hover:text-gray-400">AutomÃ¡tico</button>
+          <button className="pb-3 text-gray-600 font-bold tracking-wider text-[10px] px-2 uppercase hover:text-gray-400">Automático</button>
         </div>
 
         <div className="flex flex-col gap-5">

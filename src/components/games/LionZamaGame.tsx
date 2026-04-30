@@ -13,14 +13,14 @@ interface LionZamaProps {
 
 const SYMBOLS = [
   { icon: "ðŸ‡", name: "Uva", mult: 5, color: "text-purple-400" },
-  { icon: "ðŸŽ", name: "MaÃ§Ã£", mult: 8, color: "text-red-400" },
+  { icon: "ðŸŽ", name: "Maçã", mult: 8, color: "text-red-400" },
   { icon: "ðŸŒ", name: "Banana", mult: 12, color: "text-yellow-400" },
   { icon: "ðŸ‰", name: "Melancia", mult: 20, color: "text-green-400" },
   { icon: "ðŸ””", name: "Sino", mult: 30, color: "text-yellow-500" },
   { icon: "â­", name: "Estrela", mult: 40, color: "text-blue-400" },
   { icon: "77", name: "77", mult: 60, color: "text-red-600" },
   { icon: "BAR", name: "BAR", mult: 100, color: "text-white" },
-  { icon: "ðŸ¦", name: "LeÃ£o", mult: 500, color: "text-amber-500" },
+  { icon: "ðŸ¦", name: "Leão", mult: 500, color: "text-amber-500" },
 ];
 
 const REELS_COUNT = 3;
@@ -213,7 +213,7 @@ const LionZamaGame = ({ balance, onUpdateBalance, onBack }: LionZamaProps) => {
 
         {/* Win Display */}
         <div className="mt-8 bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 py-3 px-8 text-center shadow-xl">
-           <div className="text-[10px] font-black text-fuchsia-400/60 uppercase tracking-[0.3em] mb-1">Ãšltima VitÃ³ria</div>
+           <div className="text-[10px] font-black text-fuchsia-400/60 uppercase tracking-[0.3em] mb-1">Última Vitória</div>
            <div className="text-2xl font-black text-white italic tracking-tighter drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]">
               {lastWin.toFixed(2)} MT
            </div>

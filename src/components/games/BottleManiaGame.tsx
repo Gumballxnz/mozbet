@@ -71,7 +71,7 @@ const BottleManiaGame = ({ onClose, balance, onBet }: BottleManiaGameProps) => {
           <div className="text-green-400 font-black text-4xl sm:text-5xl drop-shadow-[0_0_20px_rgba(74,222,128,0.4)] tracking-tighter italic">
             {multiplier > 0 ? `${multiplier}x` : '50,000x'}
           </div>
-          <div className="text-[10px] font-bold text-cyan-400/60 tracking-[0.3em] uppercase mt-1">Multiplicador MÃ¡ximo</div>
+          <div className="text-[10px] font-bold text-cyan-400/60 tracking-[0.3em] uppercase mt-1">Multiplicador Máximo</div>
         </div>
 
         {/* Bottles Container */}

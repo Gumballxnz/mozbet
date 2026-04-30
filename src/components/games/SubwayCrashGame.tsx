@@ -52,7 +52,7 @@ const SubwayCrashGame = ({ onClose, balance, onBet }: SubwayCrashGameProps) => {
   const handleCashout = () => {
     if (isPlaying && !isCrashed) {
       const win = betAmount * multiplier;
-      toast.success(`Escapou! VocÃª ganhou ${win.toFixed(2)} MT!`);
+      toast.success(`Escapou! Você ganhou ${win.toFixed(2)} MT!`);
       setIsPlaying(false);
       setHistory(prevH => [multiplier, ...prevH.slice(0, 5)]);
     }
@@ -130,7 +130,7 @@ const SubwayCrashGame = ({ onClose, balance, onBet }: SubwayCrashGameProps) => {
            </div>
            <div className={`mt-2 flex items-center gap-2 px-3 py-1 bg-yellow-500/10 border border-yellow-500/20 rounded-full transition-opacity ${isPlaying ? 'opacity-100' : 'opacity-0'}`}>
               <Gauge size={12} className="text-yellow-500 animate-pulse" />
-              <span className="text-[9px] font-black text-yellow-500 tracking-widest uppercase">Velocidade MÃ¡xima</span>
+              <span className="text-[9px] font-black text-yellow-500 tracking-widest uppercase">Velocidade Máxima</span>
            </div>
         </div>
 

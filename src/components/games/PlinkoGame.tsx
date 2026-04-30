@@ -116,7 +116,7 @@ const PlinkoGame = ({ balance, onUpdateBalance, onBack }: Props) => {
       <div className="px-4 py-4 space-y-3">
         <div className="grid grid-cols-2 gap-2">
           <div className="bg-black/30 rounded-xl p-2 border-2 border-[#00ff88]/60 shadow-[0_0_15px_rgba(0,255,136,0.3)]">
-            <p className="text-[9px] text-white/60">Ãšltimo ganho</p>
+            <p className="text-[9px] text-white/60">Último ganho</p>
             <p className="text-lg font-extrabold text-[#00ff88]">{lastWin.toFixed(2)} MT</p>
           </div>
           <div className="bg-purple-900/60 rounded-xl p-2">
@@ -142,7 +142,7 @@ const PlinkoGame = ({ balance, onUpdateBalance, onBack }: Props) => {
         </div>
 
         <div>
-          <p className="text-[10px] text-white/70 mb-1.5">NÃºmero de pinos</p>
+          <p className="text-[10px] text-white/70 mb-1.5">Número de pinos</p>
           <div className="grid grid-cols-3 gap-2">
             {([12, 14, 16] as const).map(p => (
               <button key={p} onClick={() => setPins(p)} className={`py-2 rounded-xl font-bold text-xs ${pins === p ? "bg-white text-purple-900" : "bg-black/30 text-white/80"}`}>
@@ -183,7 +183,7 @@ const PlinkoGame = ({ balance, onUpdateBalance, onBack }: Props) => {
         </div>
 
         <button onClick={drop} disabled={dropping} className={`w-full py-3.5 rounded-xl font-extrabold text-sm ${dropping ? "bg-white/10 text-white/40" : "bg-gradient-to-r from-pink-500 to-purple-600 text-white active:scale-[0.96] shadow-[0_0_20px_rgba(236,72,153,0.5)]"}`}>
-          {dropping ? "A CAIR..." : `LANÃ‡AR BOLA â€” ${bet} MT`}
+          {dropping ? "A CAIR..." : `LANÇAR BOLA — ${bet} MT`}
         </button>
       </div>
     </div>

@@ -85,7 +85,7 @@ const EarplaneGame = ({ balance, onUpdateBalance, onBack }: Props) => {
     const amt = n === 1 ? bet1 : bet2;
     if (phase !== "waiting" || amt <= 0) return;
     if (amt > balance) {
-      toast.error("Saldo insuficiente", { description: "FaÃ§a um depÃ³sito para continuar a apostar." });
+      toast.error("Saldo insuficiente", { description: "Faça um depósito para continuar a apostar." });
       return;
     }
     onUpdateBalance(balance - amt);
@@ -189,7 +189,7 @@ const EarplaneGame = ({ balance, onUpdateBalance, onBack }: Props) => {
         <div className="absolute inset-0 flex items-center justify-center">
           {phase === "waiting" && (
             <div className="text-center">
-              <p className="text-gray-400 text-xs mb-1">PrÃ³xima em</p>
+              <p className="text-gray-400 text-xs mb-1">Próxima em</p>
               <p className="text-5xl font-extrabold font-mono">{countdown}s</p>
             </div>
           )}

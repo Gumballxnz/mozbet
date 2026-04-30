@@ -52,7 +52,7 @@ const FishinatorGame = ({ onClose, balance, onBet }: FishinatorGameProps) => {
   const handleCashout = () => {
     if (isPlaying && !isCrashed) {
       const win = betAmount * multiplier;
-      toast.success(`Pescado! VocÃª ganhou ${win.toFixed(2)} MT!`);
+      toast.success(`Pescado! Você ganhou ${win.toFixed(2)} MT!`);
       setIsPlaying(false);
       setHistory(prevH => [multiplier, ...prevH.slice(0, 5)]);
     }
@@ -197,7 +197,7 @@ const FishinatorGame = ({ onClose, balance, onBet }: FishinatorGameProps) => {
               onClick={handleStart}
               className="w-full py-4.5 bg-gradient-to-r from-green-600 to-emerald-500 rounded-2xl font-black text-xl tracking-wider shadow-[0_8px_30px_rgba(16,185,129,0.3)] active:scale-[0.98] transition-all"
             >
-              LANÃ‡AR LINHA
+              LANÇAR LINHA
             </button>
           ) : (
             <button 

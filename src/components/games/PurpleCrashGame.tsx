@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { ArrowLeft, Volume2, Menu, Maximize2, Plane, Minus, Plus, X } from "lucide-react";
@@ -200,7 +200,7 @@ const PurpleCrashGame = ({ balance, onUpdateBalance, onBack }: Props) => {
         )}
 
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <p className="text-white/70 text-xs font-bold mb-1">PontuaÃ§Ã£o actual</p>
+          <p className="text-white/70 text-xs font-bold mb-1">Pontuação actual</p>
           {phase === "waiting" ? (
             <p className="text-5xl font-extrabold font-mono">{countdown}s</p>
           ) : (
@@ -215,9 +215,9 @@ const PurpleCrashGame = ({ balance, onUpdateBalance, onBack }: Props) => {
       </div>
 
       <div className="px-3 pb-4 mt-3">
-        <p className="text-xs font-bold text-white/70 mb-2">EstatÃ­sticas de jogo</p>
+        <p className="text-xs font-bold text-white/70 mb-2">Estatísticas de jogo</p>
         <div className="flex gap-1 overflow-x-auto pb-2 scrollbar-hide">
-          {["apostas", "multiplicador", "grandes vitÃ³rias", "sua sessÃ£o"].map(t => (
+          {["apostas", "multiplicador", "grandes vitórias", "sua sessão"].map(t => (
             <button key={t} onClick={() => setStatsTab(t)} className={`px-3 py-1.5 rounded-lg text-[10px] font-bold whitespace-nowrap capitalize ${statsTab === t ? "bg-[#00a86b] text-white" : "bg-[#0f3d3e] text-white/70"}`}>{t}</button>
           ))}
         </div>
@@ -234,15 +234,15 @@ const PurpleCrashGame = ({ balance, onUpdateBalance, onBack }: Props) => {
               <span className="font-bold">Menu</span>
               <button onClick={() => setMenuOpen(false)}><X size={18} /></button>
             </div>
-            {["Tutoriais", "InstruÃ§Ãµes", "HistÃ³rico de apostas", "EstatÃ­sticas da sessÃ£o"].map(m => (
+            {["Tutoriais", "Instruções", "Histórico de apostas", "Estatísticas da sessão"].map(m => (
               <button key={m} className="w-full text-left px-3 py-2 rounded-lg bg-[#063030] text-sm">{m}</button>
             ))}
             <div className="pt-2">
               <p className="text-[11px] text-white/60 mb-1">Idioma</p>
               <select value={lang} onChange={e => setLang(e.target.value)} className="w-full bg-[#063030] text-sm rounded-lg px-3 py-2 outline-none">
-                <option value="PT">PortuguÃªs</option>
+                <option value="PT">Português</option>
                 <option value="EN">English</option>
-                <option value="ES">EspaÃ±ol</option>
+                <option value="ES">Español</option>
               </select>
             </div>
           </div>

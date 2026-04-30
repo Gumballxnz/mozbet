@@ -52,7 +52,7 @@ const FootballXGame = ({ onClose, balance, onBet }: FootballXGameProps) => {
   const handleCashout = () => {
     if (isPlaying && !isCrashed) {
       const win = betAmount * multiplier;
-      toast.success(`GOL! VocÃª ganhou ${win.toFixed(2)} MT!`);
+      toast.success(`GOL! Você ganhou ${win.toFixed(2)} MT!`);
       setIsPlaying(false);
       setHistory(prevH => [multiplier, ...prevH.slice(0, 5)]);
     }

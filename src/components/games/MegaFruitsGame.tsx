@@ -98,7 +98,7 @@ const MegaFruitsGame = ({ balance, onUpdateBalance, onBack }: MegaFruitsProps) =
       setLastWin(totalWin);
       setWinningLine(wonLine);
       onUpdateBalance(balance - betAmount + totalWin);
-      toast.success(`PARABÃ‰NS! VocÃª ganhou ${totalWin.toFixed(2)} MT!`, {
+      toast.success(`PARABÉNS! Você ganhou ${totalWin.toFixed(2)} MT!`, {
         icon: "ðŸŽ°",
         className: "bg-yellow-500 text-black font-bold"
       });
@@ -149,7 +149,7 @@ const MegaFruitsGame = ({ balance, onUpdateBalance, onBack }: MegaFruitsProps) =
           
           {/* Jackpot Display */}
           <div className="mb-6 bg-black/80 rounded-2xl border-2 border-yellow-500/40 py-2 px-4 text-center">
-             <div className="text-[10px] font-black text-yellow-500/60 uppercase tracking-widest">Ãšltimo Ganho</div>
+             <div className="text-[10px] font-black text-yellow-500/60 uppercase tracking-widest">Último Ganho</div>
              <div className="text-3xl font-black text-yellow-400 drop-shadow-[0_0_10px_rgba(255,215,0,0.5)] italic">
                {lastWin.toFixed(2)} MT
              </div>

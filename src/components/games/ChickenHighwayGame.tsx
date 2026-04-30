@@ -13,7 +13,7 @@ interface ChickenHighwayGameProps {
 
 const ChickenHighwayGame = ({ onClose, balance, onBet }: ChickenHighwayGameProps) => {
   const [betAmount, setBetAmount] = useState(10);
-  const [difficulty, setDifficulty] = useState("FÃ¡cil");
+  const [difficulty, setDifficulty] = useState("Fácil");
   const [isPlaying, setIsPlaying] = useState(false);
   const [multiplier, setMultiplier] = useState(1.0);
   const [isCrashed, setIsCrashed] = useState(false);
@@ -53,7 +53,7 @@ const ChickenHighwayGame = ({ onClose, balance, onBet }: ChickenHighwayGameProps
   const handleCashout = () => {
     if (isPlaying && !isCrashed) {
       const win = betAmount * multiplier;
-      toast.success(`VocÃª ganhou ${win.toFixed(2)} MT!`);
+      toast.success(`Você ganhou ${win.toFixed(2)} MT!`);
       setIsPlaying(false);
       setHistory(prevH => [multiplier, ...prevH.slice(0, 4)]);
     }
@@ -199,7 +199,7 @@ const ChickenHighwayGame = ({ onClose, balance, onBet }: ChickenHighwayGameProps
           </div>
           
           <button 
-            onClick={() => setDifficulty(d => d === "FÃ¡cil" ? "MÃ©dio" : d === "MÃ©dio" ? "DifÃ­cil" : "FÃ¡cil")}
+            onClick={() => setDifficulty(d => d === "Fácil" ? "Médio" : d === "Médio" ? "Difícil" : "Fácil")}
             className="bg-black/40 border border-white/5 rounded-2xl flex flex-col items-center justify-center px-4"
           >
             <span className="text-[9px] font-bold text-gray-500 uppercase tracking-tighter">Dificuldade</span>

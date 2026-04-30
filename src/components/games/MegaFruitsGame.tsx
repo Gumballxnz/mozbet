@@ -12,12 +12,12 @@ interface MegaFruitsProps {
 }
 
 const SYMBOLS = [
-  { icon: "ðŸ’", name: "Cereja", mult: 2 },
-  { icon: "ðŸŒ", name: "Banana", mult: 3 },
-  { icon: "ðŸŠ", name: "Laranja", mult: 5 },
-  { icon: "ðŸ‰", name: "Melancia", mult: 10 },
-  { icon: "ðŸ“", name: "Morango", mult: 20 },
-  { icon: "ðŸ‡", name: "Uva", mult: 50 },
+  { icon: "🍒", name: "Cereja", mult: 2 },
+  { icon: "🍌", name: "Banana", mult: 3 },
+  { icon: "🍊", name: "Laranja", mult: 5 },
+  { icon: "🍉", name: "Melancia", mult: 10 },
+  { icon: "🍓", name: "Morango", mult: 20 },
+  { icon: "🍇", name: "Uva", mult: 50 },
   { icon: "💎", name: "777", mult: 100 },
 ];
 

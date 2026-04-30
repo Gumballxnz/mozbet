@@ -28,6 +28,13 @@ const nextConfig: NextConfig = {
   images: {
     formats: ["image/webp", "image/avif"],
     deviceSizes: [360, 414, 768, 1024, 1440],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "res.cloudinary.com",
+        pathname: "/dm3glrwax/**",
+      },
+    ],
   },
 };
 

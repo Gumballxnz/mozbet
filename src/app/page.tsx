@@ -24,7 +24,7 @@ import { useSearchParams } from "next/navigation";
 const SLIDES = [
   {
     id: 1,
-    image: "/assets/banner-promo.jpg",
+    image: "https://res.cloudinary.com/dm3glrwax/image/upload/c_limit,f_auto,q_auto,w_800/v1/mozbet/mozbet/banner-promo",
     badge: "NOVO JOGADOR",
     title: "BÔNUS DE ",
     highlight: "500%",
@@ -33,7 +33,7 @@ const SLIDES = [
   },
   {
     id: 2,
-    image: "/assets/banner-aviator.jpg",
+    image: "https://res.cloudinary.com/dm3glrwax/image/upload/c_limit,f_auto,q_auto,w_800/v1/mozbet/mozbet/banner-aviator",
     badge: "O MAIS QUERIDO",
     title: "VOE COM O ",
     highlight: "AVIATOR",
@@ -42,7 +42,7 @@ const SLIDES = [
   },
   {
     id: 3,
-    image: "/assets/banner-mines.jpg",
+    image: "https://res.cloudinary.com/dm3glrwax/image/upload/c_limit,f_auto,q_auto,w_800/v1/mozbet/mozbet/banner-mines",
     badge: "CLÁSSICO",
     title: "EXPLOSÃO DE ",
     highlight: "GANHOS",
@@ -51,7 +51,7 @@ const SLIDES = [
   },
   {
     id: 4,
-    image: "/assets/banner-plinko.jpg",
+    image: "https://res.cloudinary.com/dm3glrwax/image/upload/c_limit,f_auto,q_auto,w_800/v1/mozbet/mozbet/banner-plinko",
     badge: "CASINO",
     title: "A BOLA DA ",
     highlight: "SORTE",
@@ -60,7 +60,7 @@ const SLIDES = [
   },
   {
     id: 5,
-    image: "/assets/banner-taxi.jpg",
+    image: "https://res.cloudinary.com/dm3glrwax/image/upload/c_limit,f_auto,q_auto,w_800/v1/mozbet/mozbet/banner-taxi",
     badge: "NOVIDADE",
     title: "O TAXI DA ",
     highlight: "FORTUNA",

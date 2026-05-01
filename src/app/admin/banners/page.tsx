@@ -1,104 +1,89 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Pencil, Lock, Loader2 } from "lucide-react";
+
+const CDN = "https://res.cloudinary.com/dm3glrwax/image/upload/c_limit,f_auto,q_auto,w_800/v1/mozbet/mozbet";
+
+interface BannerData {
+  id: string;
+  title: string;
+  highlight: string;
+  description: string;
+  badge: string;
+  action_text: string;
+  image_url: string;
+  link_url: string;
+  sort_order: number;
+  is_active: boolean;
+}
 
 export default function AdminBannersPage() {
-  const [banners, setBanners] = useState<any[]>([]);
+  const [banners, setBanners] = useState<BannerData[]>([]);
+  const [originals, setOriginals] = useState<Record<string, BannerData>>({});
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [savingId, setSavingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchBanners = async () => {
     setLoading(true);
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from("banners")
       .select("*")
       .order("sort_order", { ascending: true });
     
     if (data && data.length > 0) {
       setBanners(data);
+      // Guardar cópia original de cada banner para detecção de alterações
+      const origMap: Record<string, BannerData> = {};
+      data.forEach(b => { origMap[b.id] = { ...b }; });
+      setOriginals(origMap);
     } else {
-      // Injetar Fisicamente os 5 Banners Originais na BD para resolver o problema permanentemente
-      const defaultBanners = [
-        { 
-          id: crypto.randomUUID(), 
-          title: "Aviator", 
-          highlight: "Ganhe Já", 
-          description: "O Jogo de Explosão mais popular do Mundo. Voe alto e ganhe!", 
-          badge: "HOT", 
-          action_text: "Jogar Agora", 
-          image_url: "https://res.cloudinary.com/dm3glrwax/image/upload/c_limit,f_auto,q_auto,w_800/v1/mozbet/mozbet/banner-aviator", 
-          link_url: "/aviator", 
-          sort_order: 1, 
-          is_active: true 
-        },
-        { 
-          id: crypto.randomUUID(), 
-          title: "Plinko", 
-          highlight: "Multiplique", 
-          description: "Deixe cair a bola e multiplique o seu dinheiro até 1000x.", 
-          badge: "NOVO", 
-          action_text: "Apostar Agora", 
-          image_url: "https://res.cloudinary.com/dm3glrwax/image/upload/c_limit,f_auto,q_auto,w_800/v1/mozbet/mozbet/banner-plinko", 
-          link_url: "/plinko", 
-          sort_order: 2, 
-          is_active: true 
-        },
-        { 
-          id: crypto.randomUUID(), 
-          title: "Mines", 
-          highlight: "Cuidado com a Bomba", 
-          description: "Quantas estrelas consegues encontrar antes da explosão?", 
-          badge: "CLÁSSICO", 
-          action_text: "Jogar Agora", 
-          image_url: "https://res.cloudinary.com/dm3glrwax/image/upload/c_limit,f_auto,q_auto,w_800/v1/mozbet/mozbet/banner-mines", 
-          link_url: "/mines", 
-          sort_order: 3, 
-          is_active: true 
-        },
-        { 
-          id: crypto.randomUUID(), 
-          title: "Fortune", 
-          highlight: "Tiger", 
-          description: "A sorte do tigre chegou a Moçambique. Ganha o super bónus!", 
-          badge: "POPULAR", 
-          action_text: "Tentar a Sorte", 
-          image_url: "https://res.cloudinary.com/dm3glrwax/image/upload/c_limit,f_auto,q_auto,w_800/v1/mozbet/mozbet/game-tiger", 
-          link_url: "/tiger", 
-          sort_order: 4, 
-          is_active: true 
-        },
-        { 
-          id: crypto.randomUUID(), 
-          title: "Bónus VIP", 
-          highlight: "20% Cashback", 
-          description: "Junta-te ao clube de jogadores VIP e recebe dinheiro de volta todas as semanas.", 
-          badge: "EXCLUSIVO", 
-          action_text: "Ver Regras", 
-          image_url: "https://res.cloudinary.com/dm3glrwax/image/upload/c_limit,f_auto,q_auto,w_800/v1/mozbet/mozbet/banner-promo", 
-          link_url: "/vip", 
-          sort_order: 5, 
-          is_active: true 
-        }
+      // Injetar defaults se BD vazia
+      const defaultBanners: BannerData[] = [
+        { id: crypto.randomUUID(), title: "Aviator", highlight: "Ganhe Já", description: "O Jogo de Explosão mais popular do Mundo. Voe alto e ganhe!", badge: "HOT", action_text: "Jogar Agora", image_url: `${CDN}/banner-aviator`, link_url: "/aviator", sort_order: 1, is_active: true },
+        { id: crypto.randomUUID(), title: "Plinko", highlight: "Multiplique", description: "Deixe cair a bola e multiplique o seu dinheiro até 1000x.", badge: "NOVO", action_text: "Apostar Agora", image_url: `${CDN}/banner-plinko`, link_url: "/plinko", sort_order: 2, is_active: true },
+        { id: crypto.randomUUID(), title: "Mines", highlight: "Cuidado com a Bomba", description: "Quantas estrelas consegues encontrar antes da explosão?", badge: "CLÁSSICO", action_text: "Jogar Agora", image_url: `${CDN}/banner-mines`, link_url: "/mines", sort_order: 3, is_active: true },
+        { id: crypto.randomUUID(), title: "Fortune", highlight: "Tiger", description: "A sorte do tigre chegou a Moçambique. Ganha o super bónus!", badge: "POPULAR", action_text: "Tentar a Sorte", image_url: `${CDN}/game-tiger`, link_url: "/tiger", sort_order: 4, is_active: true },
+        { id: crypto.randomUUID(), title: "Bónus VIP", highlight: "20% Cashback", description: "Junta-te ao clube de jogadores VIP e recebe dinheiro de volta todas as semanas.", badge: "EXCLUSIVO", action_text: "Ver Regras", image_url: `${CDN}/banner-promo`, link_url: "/vip", sort_order: 5, is_active: true },
       ];
-      // Apenas popular a UI visualmente para ele editar e gravar se quiser.
       setBanners(defaultBanners);
+      const origMap: Record<string, BannerData> = {};
+      defaultBanners.forEach(b => { origMap[b.id] = { ...b }; });
+      setOriginals(origMap);
     }
     setLoading(false);
   };
 
-  useEffect(() => {
-    fetchBanners();
-  }, []);
+  useEffect(() => { fetchBanners(); }, []);
 
-  const handleUpdate = async (id: string, field: string, value: any) => {
+  const handleUpdate = (id: string, field: string, value: any) => {
     setBanners(prev => prev.map(b => b.id === id ? { ...b, [field]: value } : b));
   };
 
-  const handleSave = async (banner: any) => {
+  // Verifica se houve alteração real num banner específico
+  const hasChanges = useCallback((banner: BannerData): boolean => {
+    const orig = originals[banner.id];
+    if (!orig) return true; // Novo banner, nunca gravado
+    return (
+      orig.title !== banner.title ||
+      orig.highlight !== banner.highlight ||
+      orig.description !== banner.description ||
+      orig.badge !== banner.badge ||
+      orig.action_text !== banner.action_text ||
+      orig.image_url !== banner.image_url ||
+      orig.link_url !== banner.link_url ||
+      orig.is_active !== banner.is_active
+    );
+  }, [originals]);
+
+  const handleSave = async (banner: BannerData) => {
+    setSavingId(banner.id);
     try {
       const res = await fetch("/api/admin/banners", {
         method: "PUT",
@@ -106,15 +91,32 @@ export default function AdminBannersPage() {
         body: JSON.stringify(banner),
       });
 
-      if (!res.ok) throw new Error("Falha ao salvar");
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || "Falha ao salvar");
+      }
       toast.success("Banner atualizado com sucesso!");
-    } catch (err) {
-      toast.error("Erro ao guardar as alterações");
+      // Atualizar a cópia original para refletir o novo estado gravado
+      setOriginals(prev => ({ ...prev, [banner.id]: { ...banner } }));
+      setEditingId(null);
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao guardar as alterações");
+    } finally {
+      setSavingId(null);
     }
   };
 
+  const handleCancelEdit = (bannerId: string) => {
+    // Reverter para os dados originais
+    const orig = originals[bannerId];
+    if (orig) {
+      setBanners(prev => prev.map(b => b.id === bannerId ? { ...orig } : b));
+    }
+    setEditingId(null);
+  };
+
   if (loading) {
-    return <div className="text-white p-8">A sincronizar sistema de banners...</div>;
+    return <div className="text-white p-8 flex items-center gap-3"><Loader2 className="w-5 h-5 animate-spin" /> A sincronizar sistema de banners...</div>;
   }
 
   return (
@@ -122,16 +124,25 @@ export default function AdminBannersPage() {
       <div className="flex justify-between items-end">
         <div>
           <h1 className="text-2xl font-extrabold text-white">Carrossel de Destaques</h1>
-          <p className="text-muted-foreground">Insira a URL original da imagem. O sistema criará um Proxy encriptado para os clientes.</p>
+          <p className="text-muted-foreground">Clique em <Pencil className="w-3 h-3 inline" /> para editar. Alterações só são gravadas ao clicar em Guardar.</p>
         </div>
-        <Button onClick={() => setBanners([...banners, { id: crypto.randomUUID(), title: "", highlight: "", description: "", badge: "", action_text: "", image_url: "", link_url: "", sort_order: banners.length + 1, is_active: true }])} className="bg-primary text-black font-extrabold">
+        <Button onClick={() => {
+          const newBanner: BannerData = { id: crypto.randomUUID(), title: "", highlight: "", description: "", badge: "", action_text: "", image_url: "", link_url: "", sort_order: banners.length + 1, is_active: true };
+          setBanners([...banners, newBanner]);
+          setEditingId(newBanner.id);
+        }} className="bg-primary text-black font-extrabold">
           + Adicionar Banner
         </Button>
       </div>
 
       <div className="flex flex-col gap-6">
-          {banners.map((banner) => (
-            <div key={banner.id} className={`bg-surface p-6 rounded-2xl border ${banner.is_active ? 'border-white/10' : 'border-red-900/50 opacity-60'} flex flex-col lg:flex-row gap-6 shadow-xl relative transition-all`}>
+        {banners.map((banner) => {
+          const isEditing = editingId === banner.id;
+          const changed = hasChanges(banner);
+          const isSaving = savingId === banner.id;
+
+          return (
+            <div key={banner.id} className={`bg-surface p-6 rounded-2xl border ${banner.is_active ? 'border-white/10' : 'border-red-900/50 opacity-60'} ${isEditing ? 'ring-2 ring-primary/50' : ''} flex flex-col lg:flex-row gap-6 shadow-xl relative transition-all`}>
               
               {/* Preview Horizontal do Banner */}
               <div className="w-full lg:w-[450px] shrink-0 bg-black rounded-xl overflow-hidden aspect-[21/9] relative border border-white/5">
@@ -156,51 +167,83 @@ export default function AdminBannersPage() {
 
               {/* Formulário Desktop */}
               <div className="flex-1 space-y-4">
+                {/* Botão de Editar / Bloquear */}
+                <div className="flex justify-end">
+                  {!isEditing ? (
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      onClick={() => setEditingId(banner.id)}
+                      className="border-primary/30 text-primary hover:bg-primary/20 gap-2"
+                    >
+                      <Pencil className="w-3.5 h-3.5" /> Editar Dados
+                    </Button>
+                  ) : (
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      onClick={() => handleCancelEdit(banner.id)}
+                      className="border-red-500/30 text-red-400 hover:bg-red-500/20 gap-2"
+                    >
+                      <Lock className="w-3.5 h-3.5" /> Cancelar Edição
+                    </Button>
+                  )}
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1 col-span-2">
                     <label className="text-xs font-bold text-gray-400">URL da Imagem</label>
-                    <Input value={banner.image_url || ''} onChange={(e) => handleUpdate(banner.id, "image_url", e.target.value)} className="bg-black h-9" />
+                    <Input value={banner.image_url || ''} onChange={(e) => handleUpdate(banner.id, "image_url", e.target.value)} className="bg-black h-9" disabled={!isEditing} />
                   </div>
                   
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-gray-400">Título Principal</label>
-                    <Input value={banner.title || ''} onChange={(e) => handleUpdate(banner.id, "title", e.target.value)} className="bg-black h-9" />
+                    <Input value={banner.title || ''} onChange={(e) => handleUpdate(banner.id, "title", e.target.value)} className="bg-black h-9" disabled={!isEditing} />
                   </div>
                   
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-gray-400">Destaque (Verde)</label>
-                    <Input value={banner.highlight || ''} onChange={(e) => handleUpdate(banner.id, "highlight", e.target.value)} className="bg-black h-9" />
+                    <Input value={banner.highlight || ''} onChange={(e) => handleUpdate(banner.id, "highlight", e.target.value)} className="bg-black h-9" disabled={!isEditing} />
                   </div>
 
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-gray-400">Badge (Etiqueta)</label>
-                    <Input value={banner.badge || ''} onChange={(e) => handleUpdate(banner.id, "badge", e.target.value)} className="bg-black h-9" />
+                    <Input value={banner.badge || ''} onChange={(e) => handleUpdate(banner.id, "badge", e.target.value)} className="bg-black h-9" disabled={!isEditing} />
                   </div>
 
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-gray-400">Texto do Botão</label>
-                    <Input value={banner.action_text || ''} onChange={(e) => handleUpdate(banner.id, "action_text", e.target.value)} className="bg-black h-9" />
+                    <Input value={banner.action_text || ''} onChange={(e) => handleUpdate(banner.id, "action_text", e.target.value)} className="bg-black h-9" disabled={!isEditing} />
                   </div>
 
                   <div className="space-y-1 col-span-2">
                     <label className="text-xs font-bold text-gray-400">Descrição Menor</label>
-                    <Input value={banner.description || ''} onChange={(e) => handleUpdate(banner.id, "description", e.target.value)} className="bg-black h-9" />
+                    <Input value={banner.description || ''} onChange={(e) => handleUpdate(banner.id, "description", e.target.value)} className="bg-black h-9" disabled={!isEditing} />
                   </div>
                 </div>
 
                 <div className="flex items-center justify-between pt-4 border-t border-white/10 mt-auto">
                   <div className="flex items-center gap-2">
-                    <Switch checked={banner.is_active !== false} onCheckedChange={(c) => handleUpdate(banner.id, "is_active", c)} />
+                    <Switch checked={banner.is_active !== false} onCheckedChange={(c) => handleUpdate(banner.id, "is_active", c)} disabled={!isEditing} />
                     <span className="text-sm font-bold text-white">Ativo (Visível)</span>
                   </div>
-                  <Button onClick={() => handleSave(banner)} className="bg-primary text-black font-extrabold hover:bg-primary/90">
-                    Guardar Alterações
-                  </Button>
+                  
+                  {isEditing && (
+                    <Button 
+                      onClick={() => handleSave(banner)} 
+                      disabled={!changed || isSaving}
+                      className="bg-primary text-black font-extrabold hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed gap-2"
+                    >
+                      {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
+                      {isSaving ? "A Gravar..." : changed ? "Guardar Alterações" : "Sem Alterações"}
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>
-          ))}
-        </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

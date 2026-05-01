@@ -71,7 +71,7 @@ export default function AdminGamesPage() {
                 id: g.id,
                 name: g.name,
                 banner_url: g.banner,
-                category: g.categoryId,
+                category: g.category,
                 rtp_display: "97.5%",
                 is_hot: g.hot || false,
                 is_active: true

@@ -18,15 +18,26 @@ export default async function AdminDashboard() {
     .eq("type", "DEPOSIT")
     .eq("status", "COMPLETED");
 
+  // Buscar levantamentos completos
+  const { data: withdrawalsRaw } = await supabaseAdmin
+    .from("transactions")
+    .select("created_at, amount")
+    .eq("type", "WITHDRAWAL")
+    .eq("status", "COMPLETED");
+
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold text-white mb-2">Visão Geral do Negócio</h1>
-        <p className="text-muted-foreground">Monitorize o crescimento financeiro e a atividade dos seus clientes.</p>
+        <h1 className="text-3xl font-bold text-white mb-2">Monitoramento Financeiro Avançado</h1>
+        <p className="text-muted-foreground">Métricas de crescimento, fluxo de caixa e atividade em tempo real.</p>
       </div>
 
       {/* Componente Client de Gráficos (Recharts) */}
-      <AdminCharts depositsRaw={depositsRaw || []} usersRaw={usersRaw || []} />
+      <AdminCharts 
+        depositsRaw={depositsRaw || []} 
+        usersRaw={usersRaw || []} 
+        withdrawalsRaw={withdrawalsRaw || []}
+      />
     </div>
   );
 }

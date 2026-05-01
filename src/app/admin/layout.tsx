@@ -97,7 +97,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </div>
             <div className="text-sm">
               <p className="font-bold text-white">Admin</p>
-              <p className="text-xs text-muted-foreground">+258 {user?.phone}</p>
+              <p className="text-xs text-muted-foreground">{user?.phone ? `+258 ${user.phone.substring(0, 2)} *** ** ${user.phone.substring(user.phone.length - 2)}` : ''}</p>
             </div>
           </div>
           <Button 

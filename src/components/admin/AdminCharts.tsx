@@ -1,27 +1,35 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
-import { format, subDays, startOfDay, parseISO, isAfter } from "date-fns";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from "recharts";
+import { format, subDays, startOfDay, parseISO, isAfter, subPeriods } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/lib/supabase";
+import { TrendingUp, TrendingDown, Wallet, Users, ArrowUpRight, ArrowDownRight, Activity } from "lucide-react";
+import { formatMZN } from "@/lib/utils";
 
 interface Props {
   depositsRaw: { created_at: string; amount: number }[];
   usersRaw: { created_at: string; balance: number }[];
+  withdrawalsRaw: { created_at: string; amount: number }[];
 }
 
-export function AdminCharts({ depositsRaw: initialDeposits, usersRaw: initialUsers }: Props) {
+export function AdminCharts({ depositsRaw: initialDeposits, usersRaw: initialUsers, withdrawalsRaw: initialWithdrawals }: Props) {
   const [filter, setFilter] = useState<"hoje" | "7d" | "30d" | "tudo">("7d");
   const [deposits, setDeposits] = useState(initialDeposits);
+  const [withdrawals, setWithdrawals] = useState(initialWithdrawals);
   const [users, setUsers] = useState(initialUsers);
 
   // Subscrever ao Realtime para Gráficos
   useEffect(() => {
     const channel = supabase.channel('admin-charts')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'transactions', filter: 'type=eq.DEPOSIT' }, payload => {
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'transactions' }, payload => {
         if (payload.new.status === 'COMPLETED') {
-           setDeposits(prev => [...prev, { created_at: payload.new.created_at, amount: payload.new.amount }]);
+           if (payload.new.type === 'DEPOSIT') {
+             setDeposits(prev => [...prev, { created_at: payload.new.created_at, amount: payload.new.amount }]);
+           } else if (payload.new.type === 'WITHDRAWAL') {
+             setWithdrawals(prev => [...prev, { created_at: payload.new.created_at, amount: payload.new.amount }]);
+           }
         }
       })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'users' }, payload => {
@@ -34,25 +42,26 @@ export function AdminCharts({ depositsRaw: initialDeposits, usersRaw: initialUse
     };
   }, []);
 
-  // Totais Acumulados Absolutos
-  const acumuladoDepositos = useMemo(() => deposits.reduce((acc, curr) => acc + Number(curr.amount), 0), [deposits]);
-  const acumuladoUsuarios = users.length;
-  const acumuladoRetido = useMemo(() => users.reduce((acc, curr) => acc + Number(curr.balance || 0), 0), [users]);
+  // Dados globais para as caixas de resumo
+  const totalDeposits = useMemo(() => deposits.reduce((acc, curr) => acc + Number(curr.amount), 0), [deposits]);
+  const totalWithdrawals = useMemo(() => withdrawals.reduce((acc, curr) => acc + Number(curr.amount), 0), [withdrawals]);
+  const ggr = totalDeposits - totalWithdrawals; // Gross Gaming Revenue
+  const totalRetained = useMemo(() => users.reduce((acc, curr) => acc + Number(curr.balance || 0), 0), [users]);
+  const totalUsers = users.length;
 
   const chartData = useMemo(() => {
     const now = new Date();
     
-    // Se "tudo", descobrimos o dia do primeiro registo (ou assumimos 90 dias máximo para performance no gráfico)
+    // Configuração de Períodos
     const daysToSub = filter === "hoje" ? 1 : filter === "7d" ? 7 : filter === "30d" ? 30 : 90;
     const startDate = startOfDay(subDays(now, daysToSub - 1));
 
-    const dataMap = new Map<string, { date: string; displayDate: string; depositos: number; usuarios: number }>();
+    const dataMap = new Map<string, { date: string; displayDate: string; depositos: number; levantamentos: number; usuarios: number }>();
     
     if (filter === "hoje") {
-      // Para "hoje", vamos agrupar por horas do dia
       for (let i = 0; i <= 23; i++) {
         const key = `${i.toString().padStart(2, '0')}:00`;
-        dataMap.set(key, { date: key, displayDate: key, depositos: 0, usuarios: 0 });
+        dataMap.set(key, { date: key, displayDate: key, depositos: 0, levantamentos: 0, usuarios: 0 });
       }
     } else {
       for (let i = daysToSub - 1; i >= 0; i--) {
@@ -62,12 +71,13 @@ export function AdminCharts({ depositsRaw: initialDeposits, usersRaw: initialUse
           date: key,
           displayDate: filter === "7d" ? format(d, "EEEE", { locale: ptBR }) : format(d, "dd MMM", { locale: ptBR }),
           depositos: 0,
+          levantamentos: 0,
           usuarios: 0
         });
       }
     }
 
-    // Populate Deposits
+    // Preencher Depósitos
     deposits.forEach(dep => {
       const d = parseISO(dep.created_at);
       if (filter === "hoje") {
@@ -83,7 +93,23 @@ export function AdminCharts({ depositsRaw: initialDeposits, usersRaw: initialUse
       }
     });
 
-    // Populate Users
+    // Preencher Levantamentos
+    withdrawals.forEach(withd => {
+      const d = parseISO(withd.created_at);
+      if (filter === "hoje") {
+        if (format(d, "yyyy-MM-dd") === format(now, "yyyy-MM-dd")) {
+          const hourKey = `${format(d, "HH")}:00`;
+          if (dataMap.has(hourKey)) dataMap.get(hourKey)!.levantamentos += Number(withd.amount);
+        }
+      } else {
+        if (isAfter(d, startDate) || format(d, "yyyy-MM-dd") === format(startDate, "yyyy-MM-dd")) {
+          const key = format(d, "yyyy-MM-dd");
+          if (dataMap.has(key)) dataMap.get(key)!.levantamentos += Number(withd.amount);
+        }
+      }
+    });
+
+    // Preencher Utilizadores
     users.forEach(u => {
       const d = parseISO(u.created_at);
       if (filter === "hoje") {
@@ -100,29 +126,115 @@ export function AdminCharts({ depositsRaw: initialDeposits, usersRaw: initialUse
     });
 
     return Array.from(dataMap.values());
-  }, [deposits, users, filter]);
+  }, [deposits, withdrawals, users, filter]);
+
+  // Totais do período selecionado
+  const periodDeposits = chartData.reduce((acc, curr) => acc + curr.depositos, 0);
+  const periodWithdrawals = chartData.reduce((acc, curr) => acc + curr.levantamentos, 0);
+  const periodGGR = periodDeposits - periodWithdrawals;
 
   return (
     <div className="space-y-6">
       
-      {/* Cards de Acumulados */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-[#101116] border border-[#2A2F40] p-4 rounded-xl flex flex-col justify-center shadow-lg">
-          <span className="text-[10px] uppercase font-bold tracking-wider text-gray-500 mb-1">Total Histórico Depósitos</span>
-          <span className="text-2xl font-black text-white glow-primary">{acumuladoDepositos.toLocaleString("pt-BR", { minimumFractionDigits: 2 })} MZN</span>
+      {/* 4 Cards Principais - Estilo Stripe/Utmify */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        
+        {/* Card 1: Receita Bruta (Depósitos) */}
+        <div className="bg-[#101116] border border-[#2A2F40] p-5 rounded-2xl flex flex-col justify-between shadow-xl relative overflow-hidden group hover:border-primary/50 transition-colors">
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+             <ArrowUpRight className="w-16 h-16 text-primary" />
+          </div>
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+              <Wallet className="w-4 h-4" />
+            </div>
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Receita Bruta</span>
+          </div>
+          <div>
+            <span className="text-3xl font-black text-white">{formatMZN(totalDeposits)}</span>
+            <div className="flex items-center gap-2 mt-2">
+               <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full flex items-center gap-1">
+                 <TrendingUp className="w-3 h-3" /> Hoje
+               </span>
+               <span className="text-xs text-gray-500">Histórico Total</span>
+            </div>
+          </div>
         </div>
-        <div className="bg-[#101116] border border-[#2A2F40] p-4 rounded-xl flex flex-col justify-center shadow-lg">
-          <span className="text-[10px] uppercase font-bold tracking-wider text-gray-500 mb-1">Total Utilizadores</span>
-          <span className="text-2xl font-black text-sky-500">{acumuladoUsuarios.toLocaleString("pt-BR")} Contas</span>
+
+        {/* Card 2: Receita Líquida (GGR) */}
+        <div className="bg-[#101116] border border-[#2A2F40] p-5 rounded-2xl flex flex-col justify-between shadow-xl relative overflow-hidden group hover:border-sky-500/50 transition-colors">
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+             <Activity className="w-16 h-16 text-sky-500" />
+          </div>
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-8 h-8 rounded-lg bg-sky-500/10 flex items-center justify-center text-sky-500">
+              <Activity className="w-4 h-4" />
+            </div>
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Lucro Operacional</span>
+          </div>
+          <div>
+            <span className="text-3xl font-black text-white">{formatMZN(ggr)}</span>
+            <div className="flex items-center gap-2 mt-2">
+               <span className="text-xs font-bold text-sky-500 bg-sky-500/10 px-2 py-0.5 rounded-full flex items-center gap-1">
+                 GGR
+               </span>
+               <span className="text-xs text-gray-500">Depósitos - Levantamentos</span>
+            </div>
+          </div>
         </div>
-        <div className="bg-[#101116] border border-[#2A2F40] p-4 rounded-xl flex flex-col justify-center shadow-lg">
-          <span className="text-[10px] uppercase font-bold tracking-wider text-gray-500 mb-1">Passivo Retido nas Contas</span>
-          <span className="text-2xl font-black text-red-500">{acumuladoRetido.toLocaleString("pt-BR", { minimumFractionDigits: 2 })} MZN</span>
+
+        {/* Card 3: Passivo Retido */}
+        <div className="bg-[#101116] border border-[#2A2F40] p-5 rounded-2xl flex flex-col justify-between shadow-xl relative overflow-hidden group hover:border-orange-500/50 transition-colors">
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+             <Wallet className="w-16 h-16 text-orange-500" />
+          </div>
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-8 h-8 rounded-lg bg-orange-500/10 flex items-center justify-center text-orange-500">
+              <Wallet className="w-4 h-4" />
+            </div>
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Passivo dos Clientes</span>
+          </div>
+          <div>
+            <span className="text-3xl font-black text-white">{formatMZN(totalRetained)}</span>
+            <div className="flex items-center gap-2 mt-2">
+               <span className="text-xs font-bold text-orange-500 bg-orange-500/10 px-2 py-0.5 rounded-full flex items-center gap-1">
+                 Risco
+               </span>
+               <span className="text-xs text-gray-500">Saldos nas Contas</span>
+            </div>
+          </div>
         </div>
+
+        {/* Card 4: Total de Utilizadores */}
+        <div className="bg-[#101116] border border-[#2A2F40] p-5 rounded-2xl flex flex-col justify-between shadow-xl relative overflow-hidden group hover:border-purple-500/50 transition-colors">
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+             <Users className="w-16 h-16 text-purple-500" />
+          </div>
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-500">
+              <Users className="w-4 h-4" />
+            </div>
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Base de Utilizadores</span>
+          </div>
+          <div>
+            <span className="text-3xl font-black text-white">{totalUsers.toLocaleString('pt-BR')} <span className="text-lg text-gray-500 font-medium">Contas</span></span>
+            <div className="flex items-center gap-2 mt-2">
+               <span className="text-xs font-bold text-purple-500 bg-purple-500/10 px-2 py-0.5 rounded-full flex items-center gap-1">
+                 Total
+               </span>
+               <span className="text-xs text-gray-500">Registos Únicos</span>
+            </div>
+          </div>
+        </div>
+
       </div>
 
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mt-8">
-        <h2 className="text-xl font-bold text-white">Desempenho no Período</h2>
+      {/* Controlos do Gráfico Principal */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mt-10 mb-2">
+        <div>
+          <h2 className="text-xl font-bold text-white">Fluxo de Caixa vs Levantamentos</h2>
+          <p className="text-sm text-gray-400">Análise de volume transacional no período selecionado.</p>
+        </div>
         <div className="flex bg-[#14161E] rounded-lg border border-[#2A2F40] p-1 flex-wrap">
           <button onClick={() => setFilter("hoje")} className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${filter === "hoje" ? "bg-primary text-black" : "text-gray-400 hover:text-white"}`}>Hoje</button>
           <button onClick={() => setFilter("7d")} className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${filter === "7d" ? "bg-primary text-black" : "text-gray-400 hover:text-white"}`}>7 Dias</button>
@@ -131,55 +243,51 @@ export function AdminCharts({ depositsRaw: initialDeposits, usersRaw: initialUse
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* GRÁFICO DE RECEITAS */}
-        <div className="bg-[#101116] border border-[#2A2F40] rounded-2xl p-4 sm:p-6 shadow-xl">
-          <div className="mb-6">
-            <h3 className="text-gray-400 text-sm font-bold uppercase tracking-wider mb-1">Volume de Depósitos ({filter.toUpperCase()})</h3>
-            <p className="text-2xl font-black text-white glow-primary">
-              {chartData.reduce((acc, curr) => acc + curr.depositos, 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-            </p>
+      {/* GRÁFICO PRINCIPAL (Área Dupla) */}
+      <div className="bg-[#101116] border border-[#2A2F40] rounded-2xl p-4 sm:p-6 shadow-xl">
+        <div className="flex flex-wrap gap-6 mb-8 border-b border-[#2A2F40] pb-6">
+          <div>
+             <span className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1">Volume Depósitos</span>
+             <span className="text-2xl font-black text-primary">{formatMZN(periodDeposits)}</span>
           </div>
-          <div className="h-[250px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorDepositos" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#28A745" stopOpacity={0.4}/>
-                    <stop offset="95%" stopColor="#28A745" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#2A2F40" vertical={false} />
-                <XAxis dataKey="displayDate" stroke="#6B7280" fontSize={11} tickLine={false} axisLine={false} />
-                <YAxis stroke="#6B7280" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(val) => `MZN ${val >= 1000 ? (val/1000).toFixed(1)+'k' : val}`} />
-                <Tooltip contentStyle={{ backgroundColor: '#1A1D27', borderColor: '#2A2F40', borderRadius: '8px', color: '#fff' }} itemStyle={{ color: '#28A745', fontWeight: 'bold' }} />
-                <Area type="monotone" dataKey="depositos" name="Depósitos" stroke="#28A745" strokeWidth={3} fillOpacity={1} fill="url(#colorDepositos)" />
-              </AreaChart>
-            </ResponsiveContainer>
+          <div>
+             <span className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1">Volume Saídas</span>
+             <span className="text-2xl font-black text-red-500">{formatMZN(periodWithdrawals)}</span>
+          </div>
+          <div>
+             <span className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1">Lucro no Período (GGR)</span>
+             <span className={`text-2xl font-black ${periodGGR >= 0 ? 'text-sky-400' : 'text-red-500'}`}>{formatMZN(periodGGR)}</span>
           </div>
         </div>
-
-        {/* GRÁFICO DE REGISTOS */}
-        <div className="bg-[#101116] border border-[#2A2F40] rounded-2xl p-4 sm:p-6 shadow-xl">
-          <div className="mb-6">
-            <h3 className="text-gray-400 text-sm font-bold uppercase tracking-wider mb-1">Novos Utilizadores ({filter.toUpperCase()})</h3>
-            <p className="text-2xl font-black text-sky-500">
-              {chartData.reduce((acc, curr) => acc + curr.usuarios, 0).toLocaleString()}
-            </p>
-          </div>
-          <div className="h-[250px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#2A2F40" vertical={false} />
-                <XAxis dataKey="displayDate" stroke="#6B7280" fontSize={11} tickLine={false} axisLine={false} />
-                <YAxis stroke="#6B7280" fontSize={11} tickLine={false} axisLine={false} />
-                <Tooltip contentStyle={{ backgroundColor: '#1A1D27', borderColor: '#2A2F40', borderRadius: '8px', color: '#fff' }} itemStyle={{ color: '#0EA5E9', fontWeight: 'bold' }} cursor={{ fill: '#1A1D27' }} />
-                <Bar dataKey="usuarios" name="Registos" fill="#0EA5E9" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+        
+        <div className="h-[350px] w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <defs>
+                <linearGradient id="colorDepositos" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#28A745" stopOpacity={0.5}/>
+                  <stop offset="95%" stopColor="#28A745" stopOpacity={0}/>
+                </linearGradient>
+                <linearGradient id="colorLevantamentos" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#EF4444" stopOpacity={0.5}/>
+                  <stop offset="95%" stopColor="#EF4444" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#2A2F40" vertical={false} />
+              <XAxis dataKey="displayDate" stroke="#6B7280" fontSize={11} tickLine={false} axisLine={false} />
+              <YAxis stroke="#6B7280" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(val) => `MZN ${val >= 1000 ? (val/1000).toFixed(1)+'k' : val}`} />
+              <Tooltip 
+                contentStyle={{ backgroundColor: '#1A1D27', borderColor: '#2A2F40', borderRadius: '12px', color: '#fff', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)' }} 
+                itemStyle={{ fontWeight: 'bold' }} 
+              />
+              <Legend verticalAlign="top" height={36} iconType="circle" />
+              <Area type="monotone" dataKey="depositos" name="Entradas (Depósitos)" stroke="#28A745" strokeWidth={3} fillOpacity={1} fill="url(#colorDepositos)" />
+              <Area type="monotone" dataKey="levantamentos" name="Saídas (Levantamentos)" stroke="#EF4444" strokeWidth={3} fillOpacity={1} fill="url(#colorLevantamentos)" />
+            </AreaChart>
+          </ResponsiveContainer>
         </div>
       </div>
+
     </div>
   );
 }

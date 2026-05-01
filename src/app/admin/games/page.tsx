@@ -76,11 +76,7 @@ export default function AdminGamesPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {games.map((game) => (
-            <div key={game.id} className="bg-surface p-4 rounded-2xl border border-white/10 flex flex-col gap-4 relative">
-              <Button onClick={() => setGames(games.filter(g => g.id !== game.id))} variant="destructive" size="icon" className="absolute top-2 right-2 w-6 h-6 z-10 rounded-full">
-                x
-              </Button>
-              
+            <div key={game.id} className={`bg-surface p-4 rounded-2xl border ${game.is_active ? 'border-white/10' : 'border-red-900/50 opacity-60'} flex flex-col gap-4 relative transition-all`}>
               {/* Preview da Capa */}
               <div className="relative aspect-[4/5] rounded-xl overflow-hidden w-full max-w-[150px] mx-auto shadow-xl">
                 <img src={game.banner_url} alt={game.name} className="absolute inset-0 w-full h-full object-cover" />

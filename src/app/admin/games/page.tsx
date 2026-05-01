@@ -18,8 +18,23 @@ export default function AdminGamesPage() {
       .select("*")
       .order("sort_order", { ascending: true });
     
-    if (data) setGames(data);
-    if (error) toast.error("Erro ao carregar jogos");
+    if (data && data.length > 0) {
+      setGames(data);
+    } else {
+      // Auto-populate from hardcoded list if DB is empty
+      const { GAMES } = await import("@/lib/games");
+      const dbGames = GAMES.map(g => ({
+        id: g.id,
+        name: g.name,
+        banner_url: g.banner,
+        category: g.category,
+        rtp_display: "97.5%",
+        is_hot: g.hot || false,
+        is_active: true
+      }));
+      setGames(dbGames);
+      // Opcional: auto-save to DB here if needed
+    }
     setLoading(false);
   };
 
@@ -47,7 +62,7 @@ export default function AdminGamesPage() {
   };
 
   if (loading) {
-    return <div className="text-white p-8">A carregar catálogo de jogos...</div>;
+    return <div className="text-white p-8">A sincronizar catálogo de jogos...</div>;
   }
 
   return (
@@ -55,34 +70,11 @@ export default function AdminGamesPage() {
       <div className="flex justify-between items-end">
         <div>
           <h1 className="text-2xl font-extrabold text-white">Gestão do Catálogo de Jogos</h1>
-          <p className="text-muted-foreground">Altera as capas dos jogos, ativa o selo HOT e gere as percentagens RTP.</p>
+          <p className="text-muted-foreground">Todos os jogos pré-carregados. Altere RTPs e destaques.</p>
         </div>
-        <Button onClick={() => setGames([...games, { id: crypto.randomUUID(), name: "Novo Jogo", banner_url: "/api/img/banner-aviator", category: "Crash", rtp_display: "97.0%", is_hot: false, is_active: true }])} className="bg-primary text-black font-extrabold">
-          + Adicionar Jogo
-        </Button>
       </div>
 
-      {games.length === 0 ? (
-        <div className="flex flex-col items-center justify-center p-12 border-2 border-dashed border-white/10 rounded-2xl bg-surface">
-           <p className="text-gray-400 mb-4">O Catálogo de Jogos da Base de Dados está vazio.</p>
-           <Button onClick={async () => {
-              const { GAMES } = await import("@/lib/games");
-              const dbGames = GAMES.map(g => ({
-                id: g.id,
-                name: g.name,
-                banner_url: g.banner,
-                category: g.category,
-                rtp_display: "97.5%",
-                is_hot: g.hot || false,
-                is_active: true
-              }));
-              setGames(dbGames);
-           }} variant="outline" className="border-primary text-primary">
-             Importar 14 Jogos Iniciais
-           </Button>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {games.map((game) => (
             <div key={game.id} className="bg-surface p-4 rounded-2xl border border-white/10 flex flex-col gap-4 relative">
               <Button onClick={() => setGames(games.filter(g => g.id !== game.id))} variant="destructive" size="icon" className="absolute top-2 right-2 w-6 h-6 z-10 rounded-full">

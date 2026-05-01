@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
 
 interface Banner {
   id: string;
@@ -29,6 +30,21 @@ export function BannerCarousel({ initialBanners }: { initialBanners: Banner[] })
       loadBanners();
     }
   }, [initialBanners]);
+
+  // Realtime Supabase Banners
+  useEffect(() => {
+    const channel = supabase.channel('public-banners')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'banners' }, async () => {
+        // Quando alterado no CRM, puxa de novo os banners ativos
+        const { data } = await supabase.from('banners').select('*').order('sort_order', { ascending: true });
+        if (data && data.length > 0) setBanners(data);
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   useEffect(() => {
     if (banners.length <= 1) return;
@@ -65,7 +81,7 @@ export function BannerCarousel({ initialBanners }: { initialBanners: Banner[] })
           }`}
         >
           <img
-            src={slide.image_url}
+            src={slide.image_url?.startsWith("http") ? `/api/proxy-image?url=${encodeURIComponent(slide.image_url)}` : slide.image_url}
             alt={slide.title}
             className="absolute inset-0 w-full h-full object-cover opacity-60 sm:opacity-80 transition-transform duration-[6000ms] ease-out scale-100 group-hover:scale-105"
           />

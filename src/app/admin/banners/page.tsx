@@ -18,8 +18,15 @@ export default function AdminBannersPage() {
       .select("*")
       .order("sort_order", { ascending: true });
     
-    if (data) setBanners(data);
-    if (error) toast.error("Erro ao carregar banners");
+    if (data && data.length > 0) {
+      setBanners(data);
+    } else {
+      // Auto-iniciar com placeholders se estiver vazio
+      setBanners([
+        { id: crypto.randomUUID(), image_url: "https://via.placeholder.com/800x400/0B0C10/FF0000?text=Banner+Original+1", link_url: "/aviator", sort_order: 1, is_active: true },
+        { id: crypto.randomUUID(), image_url: "https://via.placeholder.com/800x400/0B0C10/00FF00?text=Banner+Original+2", link_url: "/plinko", sort_order: 2, is_active: true },
+      ]);
+    }
     setLoading(false);
   };
 
@@ -28,7 +35,6 @@ export default function AdminBannersPage() {
   }, []);
 
   const handleUpdate = async (id: string, field: string, value: any) => {
-    // Atualiza localmente logo (optimistic UI)
     setBanners(prev => prev.map(b => b.id === id ? { ...b, [field]: value } : b));
   };
 
@@ -41,37 +47,29 @@ export default function AdminBannersPage() {
       });
 
       if (!res.ok) throw new Error("Falha ao salvar");
-      toast.success(`Banner atualizado com sucesso!`);
+      toast.success("Banner atualizado com sucesso!");
     } catch (err) {
       toast.error("Erro ao guardar as alterações");
     }
   };
 
   if (loading) {
-    return <div className="text-white p-8">A carregar banners...</div>;
+    return <div className="text-white p-8">A sincronizar sistema de banners...</div>;
   }
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-end">
         <div>
-          <h1 className="text-2xl font-extrabold text-white">Gestão de Banners</h1>
-          <p className="text-muted-foreground">Altera textos, URLs de imagens e a ordem dos slides na homepage.</p>
+          <h1 className="text-2xl font-extrabold text-white">Central de Banners</h1>
+          <p className="text-muted-foreground">Insira a URL original da imagem. O sistema criará um Proxy encriptado para os clientes.</p>
         </div>
-        <Button onClick={() => setBanners([...banners, { id: crypto.randomUUID(), title: "Novo Título", highlight: "Destaque", description: "Descrição...", badge: "NOVO", action_text: "Apostar", image_url: "/api/img/banner-aviator", is_active: true }])} className="bg-primary text-black font-extrabold">
+        <Button onClick={() => setBanners([...banners, { id: crypto.randomUUID(), image_url: "", link_url: "", sort_order: banners.length + 1, is_active: true }])} className="bg-primary text-black font-extrabold">
           + Adicionar Banner
         </Button>
       </div>
 
-      {banners.length === 0 ? (
-        <div className="flex flex-col items-center justify-center p-12 border-2 border-dashed border-white/10 rounded-2xl bg-surface">
-           <p className="text-gray-400 mb-4">Nenhum banner encontrado no sistema.</p>
-           <Button onClick={() => setBanners([{ id: crypto.randomUUID(), title: "Aviator", highlight: "Ganhe Já", description: "Voe alto", badge: "HOT", action_text: "Jogar", image_url: "/api/img/banner-aviator", is_active: true }])} variant="outline" className="border-primary text-primary">
-             Criar Banner Inicial
-           </Button>
-        </div>
-      ) : (
-        <div className="grid gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {banners.map((banner) => (
             <div key={banner.id} className="bg-surface p-6 rounded-2xl border border-white/10 flex flex-col xl:flex-row gap-6 shadow-xl relative">
               <Button onClick={() => setBanners(banners.filter(b => b.id !== banner.id))} variant="destructive" size="sm" className="absolute top-4 right-4 z-10">

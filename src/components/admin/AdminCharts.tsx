@@ -1,22 +1,43 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 import { format, subDays, startOfDay, parseISO, isAfter } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { supabase } from "@/lib/supabase";
 
 interface Props {
   depositsRaw: { created_at: string; amount: number }[];
   usersRaw: { created_at: string; balance: number }[];
 }
 
-export function AdminCharts({ depositsRaw, usersRaw }: Props) {
+export function AdminCharts({ depositsRaw: initialDeposits, usersRaw: initialUsers }: Props) {
   const [filter, setFilter] = useState<"hoje" | "7d" | "30d" | "tudo">("7d");
+  const [deposits, setDeposits] = useState(initialDeposits);
+  const [users, setUsers] = useState(initialUsers);
+
+  // Subscrever ao Realtime para Gráficos
+  useEffect(() => {
+    const channel = supabase.channel('admin-charts')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'transactions', filter: 'type=eq.DEPOSIT' }, payload => {
+        if (payload.new.status === 'COMPLETED') {
+           setDeposits(prev => [...prev, { created_at: payload.new.created_at, amount: payload.new.amount }]);
+        }
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'users' }, payload => {
+        setUsers(prev => [...prev, { created_at: payload.new.created_at, balance: payload.new.balance || 0 }]);
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   // Totais Acumulados Absolutos
-  const acumuladoDepositos = useMemo(() => depositsRaw.reduce((acc, curr) => acc + Number(curr.amount), 0), [depositsRaw]);
-  const acumuladoUsuarios = usersRaw.length;
-  const acumuladoRetido = useMemo(() => usersRaw.reduce((acc, curr) => acc + Number(curr.balance || 0), 0), [usersRaw]);
+  const acumuladoDepositos = useMemo(() => deposits.reduce((acc, curr) => acc + Number(curr.amount), 0), [deposits]);
+  const acumuladoUsuarios = users.length;
+  const acumuladoRetido = useMemo(() => users.reduce((acc, curr) => acc + Number(curr.balance || 0), 0), [users]);
 
   const chartData = useMemo(() => {
     const now = new Date();
@@ -47,7 +68,7 @@ export function AdminCharts({ depositsRaw, usersRaw }: Props) {
     }
 
     // Populate Deposits
-    depositsRaw.forEach(dep => {
+    deposits.forEach(dep => {
       const d = parseISO(dep.created_at);
       if (filter === "hoje") {
         if (format(d, "yyyy-MM-dd") === format(now, "yyyy-MM-dd")) {
@@ -63,7 +84,7 @@ export function AdminCharts({ depositsRaw, usersRaw }: Props) {
     });
 
     // Populate Users
-    usersRaw.forEach(u => {
+    users.forEach(u => {
       const d = parseISO(u.created_at);
       if (filter === "hoje") {
         if (format(d, "yyyy-MM-dd") === format(now, "yyyy-MM-dd")) {
@@ -79,7 +100,7 @@ export function AdminCharts({ depositsRaw, usersRaw }: Props) {
     });
 
     return Array.from(dataMap.values());
-  }, [depositsRaw, usersRaw, filter]);
+  }, [deposits, users, filter]);
 
   return (
     <div className="space-y-6">

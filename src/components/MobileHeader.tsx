@@ -27,6 +27,8 @@ export function MobileHeader() {
     const charCode = user.id.charCodeAt(0) + user.id.charCodeAt(user.id.length - 1);
     return AVATARS[charCode % AVATARS.length];
   }, [user]);
+
+  return (
     <header className="glass sticky top-0 z-40 w-full px-4 py-3 flex items-center justify-between">
       {/* Logo */}
       <Link href="/" className="flex items-center gap-1 active:scale-95 transition-transform">

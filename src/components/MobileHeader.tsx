@@ -192,7 +192,7 @@ export function MobileHeader() {
             ) : (
               notifications.map((notif) => (
                 <div key={notif.id} className={`p-4 hover:bg-white/5 transition-colors cursor-pointer border-l-2 ${notif.is_read ? 'border-transparent' : 'border-primary'}`}>
-                  <h4 className="font-bold text-sm text-white mb-1">{notif.title}</h4>
+                  <h4 className="font-bold text-sm text-white mb-1 capitalize">{notif.type || "Notificação"}</h4>
                   <p className="text-xs text-muted-foreground leading-snug">
                     {notif.message}
                   </p>

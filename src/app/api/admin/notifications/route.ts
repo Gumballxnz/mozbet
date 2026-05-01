@@ -22,14 +22,15 @@ export async function POST(req: NextRequest) {
 
     const { user_id, title, message } = await req.json();
 
-    if (!title || !message) {
-      return NextResponse.json({ error: "Título e mensagem obrigatórios" }, { status: 400 });
+    if (!message) {
+      return NextResponse.json({ error: "Mensagem obrigatória" }, { status: 400 });
     }
 
+    // A tabela real tem: id, user_id, message, type, is_read, created_at
     const { error } = await supabaseAdmin.from('notifications').insert({ 
       user_id: user_id || null, 
-      title,
-      message 
+      message: title ? `${title}: ${message}` : message,
+      type: "alert"
     });
 
     if (error) {

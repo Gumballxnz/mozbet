@@ -50,7 +50,7 @@ export async function POST(req: Request) {
     const isValid = verifyTOTP(user.totp_secret, code);
 
     if (!isValid) {
-      return NextResponse.json({ error: "Código inválido ou expirado." }, { status: 401 });
+      return NextResponse.json({ error: "Código inválido ou expirado. Verifique o Google Authenticator." }, { status: 400 });
     }
 
     // Se é a primeira vez (ativação)

@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { supabaseAdmin, verifyToken } from "@/lib/auth-server";
+import { cookies } from "next/headers";
 
 const SYSTEM_PROMPT = `Você é o assistente virtual oficial de suporte ao cliente da casa de apostas MOZBET em Moçambique.
 Regras estritas que você deve seguir:
@@ -45,7 +47,6 @@ const MODELS = [
 
 async function tryGemini(apiKey: string, contents: any[], modelIdx = 0): Promise<string | null> {
   if (modelIdx >= MODELS.length) return null;
-
   const model = MODELS[modelIdx];
 
   try {
@@ -62,7 +63,6 @@ async function tryGemini(apiKey: string, contents: any[], modelIdx = 0): Promise
           generationConfig: {
             temperature: 0.3,
             maxOutputTokens: 400,
-            // Desativar o "thinking" interno do 2.5-flash para respostas rápidas
             ...(model.includes("2.5") ? { thinkingConfig: { thinkingBudget: 0 } } : {}),
           },
         }),
@@ -100,24 +100,69 @@ async function tryGemini(apiKey: string, contents: any[], modelIdx = 0): Promise
 
 export async function POST(req: Request) {
   try {
-    const { message, history } = await req.json();
+    const { message, history: frontendHistory } = await req.json();
 
     if (!message) {
       return NextResponse.json({ error: "Mensagem vazia." }, { status: 400 });
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
+    // Tentar identificar o utilizador logado para persistir histórico
+    const cookieStore = await cookies();
+    const token = cookieStore.get("mozbet_session")?.value;
+    let userId: string | null = null;
 
-    // Sem chave → respostas automáticas
-    if (!apiKey || apiKey === "sua-chave-api-do-google-gemini-aqui") {
-      return NextResponse.json({ response: getAutoReply(message) });
+    if (token) {
+      const payload = await verifyToken<{ id: string }>(token).catch(() => null);
+      if (payload?.id) userId = payload.id;
     }
 
-    // Montar histórico (últimas 6 mensagens para poupar tokens)
-    const hist = (history || []).slice(-6).map((m: { role: string; content: string }) => ({
+    // Gravar mensagem do utilizador no BD
+    if (userId) {
+      await supabaseAdmin.from("support_messages").insert({
+        user_id: userId,
+        role: "user",
+        content: message,
+      });
+    }
+
+    const apiKey = process.env.GEMINI_API_KEY;
+
+    if (!apiKey || apiKey === "sua-chave-api-do-google-gemini-aqui") {
+      const fallbackReply = getAutoReply(message);
+      if (userId) {
+        await supabaseAdmin.from("support_messages").insert({ user_id: userId, role: "model", content: fallbackReply });
+      }
+      return NextResponse.json({ response: fallbackReply });
+    }
+
+    // Obter histórico. Se logado: BD (últimas 10). Se anónimo: Frontend (últimas 6).
+    let finalHistory: { role: string; content: string }[] = [];
+    
+    if (userId) {
+      const { data: dbHistory } = await supabaseAdmin
+        .from("support_messages")
+        .select("role, content")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(10);
+      
+      if (dbHistory) {
+        finalHistory = dbHistory.reverse();
+      }
+    } else {
+      finalHistory = (frontendHistory || []).slice(-6);
+    }
+
+    const hist = finalHistory.map(m => ({
       role: m.role === "user" ? "user" : "model",
       parts: [{ text: m.content }],
     }));
+
+    // Retirar a última mensagem do usuário do histórico se ela já estiver lá,
+    // pois vamos passar a atual manualmente.
+    if (hist.length > 0 && hist[hist.length - 1].parts[0].text === message) {
+      hist.pop();
+    }
 
     const contents = [
       { role: "user", parts: [{ text: SYSTEM_PROMPT }] },
@@ -127,13 +172,18 @@ export async function POST(req: Request) {
     ];
 
     const reply = await tryGemini(apiKey, contents);
+    const finalReply = reply || getAutoReply(message);
 
-    if (reply) {
-      return NextResponse.json({ response: reply });
+    // Gravar resposta da IA no BD
+    if (userId) {
+      await supabaseAdmin.from("support_messages").insert({
+        user_id: userId,
+        role: "model",
+        content: finalReply,
+      });
     }
 
-    // Fallback final — nunca falha
-    return NextResponse.json({ response: getAutoReply(message) });
+    return NextResponse.json({ response: finalReply });
   } catch (error) {
     console.error("[Suporte] Erro geral:", error);
     return NextResponse.json({ response: getAutoReply("ajuda") });

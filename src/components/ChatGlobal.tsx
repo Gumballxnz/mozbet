@@ -115,44 +115,56 @@ const MESSAGE_TEMPLATES: Array<(id: string, amount: number, game: string) => str
   (_id, _a, _g) => `Bom dia a todos 🌅 vamos lucrar!`,
 ];
 
-// Controle para nunca repetir mensagens na mesma sessão
-let usedTemplateIndices = new Set<number>();
-
-function getUniqueTemplate(): (id: string, amount: number, game: string) => string {
-  if (usedTemplateIndices.size >= MESSAGE_TEMPLATES.length) {
-    usedTemplateIndices.clear();
+// Motor Determinístico de Mensagens
+function getDeterministicChatMessages(count: number): ChatMessage[] {
+  const now = Date.now();
+  const currentSecond = Math.floor(now / 1000);
+  const results: ChatMessage[] = [];
+  
+  // Como o chat global tem uma velocidade que pode variar com o número de utilizadores,
+  // vamos gerar mensagens para cada 3 segundos como base determinística
+  for (let i = count; i >= 0; i--) {
+    const seed = currentSecond - (i * 3); // Mensagem a cada 3 segundos
+    
+    // Filtro para não gerar a CADA 3 segundos sempre, mas dar espaços realistas
+    const probability = (Math.abs(Math.sin(seed * 1111)) * 100) % 100;
+    if (probability > 70) continue; // 70% de chance de ter uma mensagem nestes 3s
+    
+    const pseudoRandom = (Math.abs(Math.sin(seed * 9999)) * 10000) % 1;
+    const templateIdx = Math.floor(pseudoRandom * MESSAGE_TEMPLATES.length);
+    const templateFn = MESSAGE_TEMPLATES[templateIdx];
+    
+    const avatarIdx = Math.floor((Math.abs(Math.cos(seed * 8888)) * 10000) % SITE_AVATARS.length);
+    const avatar = SITE_AVATARS[avatarIdx];
+    
+    const chars = "ABCDEF0123456789";
+    let playerId = "";
+    for (let j = 0; j < 8; j++) {
+      playerId += chars[Math.floor(((pseudoRandom * 100) + j) % chars.length)];
+    }
+    const maskedId = maskPlayerId(playerId);
+    
+    const gameIdx = Math.floor((Math.abs(Math.sin(seed * 7777)) * 10000) % GAME_POOL.length);
+    const game = GAME_POOL[gameIdx];
+    
+    const amounts = [150, 200, 350, 500, 750, 1000, 1200, 1500, 2000, 2500, 3000, 4500, 5000, 7500, 10000, 15000, 20000];
+    const amountIdx = Math.floor((Math.abs(Math.cos(seed * 6666)) * 10000) % amounts.length);
+    const amount = amounts[amountIdx];
+    
+    const messageText = templateFn(maskedId, amount, game.name);
+    
+    results.push({
+      id: `det-${seed}`,
+      user_id: `fake-${playerId}`,
+      username: maskedId,
+      message: messageText,
+      type: "fake_user",
+      avatar,
+      metadata: { game_id: game.id, game_name: game.name, amount },
+      created_at: new Date(seed * 1000).toISOString(),
+    });
   }
-  let idx: number;
-  do {
-    idx = Math.floor(Math.random() * MESSAGE_TEMPLATES.length);
-  } while (usedTemplateIndices.has(idx));
-  usedTemplateIndices.add(idx);
-  return MESSAGE_TEMPLATES[idx];
-}
-
-function generateFakeMessage(): ChatMessage {
-  const templateFn = getUniqueTemplate();
-  const avatar = SITE_AVATARS[Math.floor(Math.random() * SITE_AVATARS.length)];
-  const playerId = generateFakePlayerId();
-  const maskedId = maskPlayerId(playerId);
-  const game = GAME_POOL[Math.floor(Math.random() * GAME_POOL.length)];
-
-  // Valores realistas de ganho em Meticais
-  const amounts = [150, 200, 350, 500, 750, 1000, 1200, 1500, 2000, 2500, 3000, 4500, 5000, 7500, 10000, 15000, 20000];
-  const amount = amounts[Math.floor(Math.random() * amounts.length)];
-
-  const messageText = templateFn(maskedId, amount, game.name);
-
-  return {
-    id: `fake-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    user_id: `fake-${playerId}`,
-    username: maskedId,
-    message: messageText,
-    type: "fake_user",
-    avatar,
-    metadata: { game_id: game.id, game_name: game.name, amount },
-    created_at: new Date().toISOString(),
-  };
+  return results;
 }
 
 // ===== COMPONENTE PRINCIPAL =====
@@ -162,7 +174,13 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
   const [isSending, setIsSending] = useState(false);
   const [online, setOnline] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const isFetched = useRef(false);
+
+  // Auto-scroll function
+  const scrollToBottom = useCallback(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, []);
 
   // Sincronizar contagem de online com o servidor
   useEffect(() => {
@@ -171,36 +189,43 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
       try {
         const res = await fetch("/api/game/stats");
         const data = await res.json();
+        // Online real + factor pra parecer mais cheio
         if (data.online) setOnline(data.online);
       } catch (err) {}
     };
     fetchStats();
-    const interval = setInterval(fetchStats, 10000); // Atualiza a cada 10s
+    const interval = setInterval(fetchStats, 10000);
     return () => clearInterval(interval);
   }, [isOpen]);
 
-  const fetchHistory = useCallback(async () => {
-    try {
-      const res = await fetch("/api/chat/history?limit=50");
-      const data = await res.json();
-      if (data.messages) {
-        setMessages(data.messages);
-        setTimeout(scrollToBottom, 100);
-      }
-    } catch (err) {
-      console.error("Erro ao buscar histórico do chat:", err);
-    }
-  }, []);
-
+  // Motor Determinístico Contínuo
   useEffect(() => {
     if (!isOpen) return;
 
-    if (!isFetched.current) {
-      fetchHistory();
-      isFetched.current = true;
-    }
+    // Gerar 20 mensagens do passado recente + atuais
+    const initialDeterministic = getDeterministicChatMessages(20);
+    setMessages(initialDeterministic);
+    setTimeout(scrollToBottom, 200);
 
-    // Subscrever a novas mensagens reais do Supabase
+    const interval = setInterval(() => {
+      // Pega os últimos 20 segundos para ver se há mensagem nova, mistura com as mensagens locais
+      const newDetMessages = getDeterministicChatMessages(5);
+      
+      setMessages((prevMessages) => {
+        // Criar um Set de IDs para não duplicar
+        const existingIds = new Set(prevMessages.map(m => m.id));
+        const messagesToAdd = newDetMessages.filter(m => !existingIds.has(m.id));
+        
+        if (messagesToAdd.length > 0) {
+          setTimeout(scrollToBottom, 50);
+          // Manter histórico curto (limite de 100 mensagens)
+          return [...prevMessages, ...messagesToAdd].slice(-100);
+        }
+        return prevMessages;
+      });
+    }, 1000); // Check a cada 1 segundo
+
+    // Supabase subscription (para as tuas próprias mensagens reais que mandares pro chat)
     const channel = supabase
       .channel("public:chat_messages")
       .on(
@@ -208,53 +233,18 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
         { event: "INSERT", schema: "public", table: "chat_messages" },
         (payload) => {
           const newMsg = payload.new as ChatMessage;
-          setMessages([...useAppStore.getState().fakeChatMessages, newMsg]);
+          setMessages(prev => [...prev, newMsg].slice(-100));
           setTimeout(scrollToBottom, 100);
         }
       )
       .subscribe();
 
     return () => {
+      clearInterval(interval);
       supabase.removeChannel(channel);
     };
-  }, [isOpen, fetchHistory]);
+  }, [isOpen, setMessages, scrollToBottom]);
 
-  // Motor de mensagens fake — injeção inicial + contínua
-  useEffect(() => {
-    if (!isOpen) return;
-
-    // Só injeta as iniciais se o chat ainda estiver vazio
-    if (messages.length === 0) {
-      const initialMessages: ChatMessage[] = [];
-      const initialCount = Math.floor(Math.random() * 3) + 3;
-      for (let i = 0; i < initialCount; i++) {
-        const msg = generateFakeMessage();
-        const minutesAgo = (initialCount - i) * 2 + Math.floor(Math.random() * 3);
-        msg.created_at = new Date(Date.now() - minutesAgo * 60000).toISOString();
-        initialMessages.push(msg);
-      }
-      setMessages([...initialMessages]);
-      setTimeout(scrollToBottom, 200);
-    }
-
-    // Mensagens contínuas com intervalo variável (5 a 15 segundos)
-    let timeoutId: NodeJS.Timeout;
-
-    const scheduleNext = () => {
-      const delay = (Math.random() * 10 + 5) * 1000;
-      timeoutId = setTimeout(() => {
-        const newMsg = generateFakeMessage();
-        // Zustand store access bypasses stale closures if we use the function form
-        setMessages([...useAppStore.getState().fakeChatMessages, newMsg].slice(-100));
-        setTimeout(scrollToBottom, 100);
-        scheduleNext();
-      }, delay);
-    };
-
-    scheduleNext();
-
-    return () => clearTimeout(timeoutId);
-  }, [isOpen, setMessages]); // Removido messages.length para o timer não ser resetado a cada nova mensagem
 
   // Anúncios de vitória do BOT MOZBET (mais espaçados)
   useEffect(() => {

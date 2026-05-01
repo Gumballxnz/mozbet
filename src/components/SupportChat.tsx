@@ -24,6 +24,30 @@ export function SupportChat() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
+
+  // Carregar histórico ao abrir o chat
+  useEffect(() => {
+    if (supportOpen && !historyLoaded) {
+      async function loadHistory() {
+        try {
+          const res = await fetch("/api/support/history");
+          const data = await res.json();
+          if (data.messages && data.messages.length > 0) {
+            setMessages(data.messages.map((m: any) => ({
+              role: m.role,
+              content: m.content
+            })));
+          }
+        } catch (error) {
+          console.error("Erro ao carregar histórico do suporte", error);
+        } finally {
+          setHistoryLoaded(true);
+        }
+      }
+      loadHistory();
+    }
+  }, [supportOpen, historyLoaded]);
 
   // Estado do botão flutuante: posição e visibilidade
   const [fabVisible, setFabVisible] = useState(true);

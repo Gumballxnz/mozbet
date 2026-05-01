@@ -17,7 +17,7 @@ export default async function AdminUsersPage() {
     const authUser = authData?.users.find((au) => au.id === u.id);
     return {
       ...u,
-      email: authUser?.email || null,
+      email: u.email || authUser?.email || null,
     };
   });
 

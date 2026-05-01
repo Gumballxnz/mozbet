@@ -4,13 +4,21 @@ import { useEffect, useState, useRef } from "react";
 import { BadgeCheck } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
-const GAME_INFO: Record<string, { name: string, icon: string }> = {
-  "aviator": { name: "Aviator", icon: "aviator" },
-  "mines": { name: "Mines", icon: "mines" },
-  "plinko": { name: "Plinko", icon: "plinko" },
-  "taxi-crash": { name: "Taxi Crash", icon: "taxi-crash" },
-  "lion-zama": { name: "Lion Zama", icon: "lion-zama" },
-  "mega-fruits": { name: "Mega Fruits", icon: "mega-fruits" }
+const GAME_INFO: Record<string, { name: string, iconUrl: string }> = {
+  "aviator": { name: "AVIATOR", iconUrl: "/api/img/banner-aviator" },
+  "taxi-crash": { name: "TAXI CRASH", iconUrl: "/api/img/banner-taxi" },
+  "earplane": { name: "EARPLANE", iconUrl: "/api/img/banner-earplane" },
+  "purple-crash": { name: "CRASH", iconUrl: "/api/img/banner-purple-crash" },
+  "subway-crash": { name: "SUBWAY CRASH", iconUrl: "/api/img/game-crash" },
+  "augustus-crash": { name: "AUGUSTUS CRASH", iconUrl: "/api/img/game-dragon" },
+  "chicken-highway": { name: "CHICKEN HIGHWAY", iconUrl: "/api/img/game-keno" },
+  "mines": { name: "MINES", iconUrl: "/api/img/banner-mines" },
+  "plinko": { name: "PLINKO777", iconUrl: "/api/img/banner-plinko" },
+  "bottle-mania": { name: "BOTTLE MANIA", iconUrl: "/api/img/banner-bottle-mania" },
+  "fishinator": { name: "FISHINATOR", iconUrl: "/api/img/game-trading" },
+  "football-x": { name: "FOOTBALL X", iconUrl: "/api/img/game-roulette" },
+  "lion-zama": { name: "LION ZAMA", iconUrl: "/api/img/banner-lion-zama" },
+  "mega-fruits": { name: "MEGA FRUITS", iconUrl: "/api/img/banner-mega-fruits" },
 };
 
 // IDs Partilhados com o Chat
@@ -75,7 +83,7 @@ function generateDeterministicBets(count: number, excludeAviator: boolean = fals
 function generateCrashFakes(gameId: string, realCrashPoint: number) {
   const results = [];
   const count = Math.floor(Math.random() * 3) + 1; // 1 a 3 fakes
-  const game = GAME_INFO[gameId] || { name: gameId, icon: gameId };
+  const game = GAME_INFO[gameId] || { name: gameId, iconUrl: `/api/img/banner-${gameId}` };
   
   for (let i = 0; i < count; i++) {
     const fakeId = SHARED_FAKE_IDS[Math.floor(Math.random() * SHARED_FAKE_IDS.length)];
@@ -139,10 +147,10 @@ export function LiveBetsTable() {
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'bets' }, (payload) => {
          const bet = payload.new;
          if (isMounted.current) {
-           const game = GAME_INFO[bet.game_id] || { name: bet.game_id, icon: bet.game_id };
+           const game = GAME_INFO[bet.game_id] || { name: bet.game_id, iconUrl: `/api/img/banner-${bet.game_id}` };
            const realBet = {
                game: game.name,
-               gameIcon: game.icon,
+               gameIcon: game.iconUrl,
                id: bet.user_id.split('-')[0].toUpperCase(), // ID real formatado e anonimizado
                time: new Date(bet.created_at).toLocaleTimeString('pt-PT', {hour12: false}),
                betAmount: bet.amount,
@@ -244,7 +252,7 @@ export function LiveBetsTable() {
                     <span className="font-bold text-white text-xs flex items-center gap-2">
                       <div className="w-5 h-5 rounded overflow-hidden bg-white/5 shrink-0">
                         <img 
-                          src={`/api/img/banner-${act.gameIcon}`} 
+                          src={act.gameIcon} 
                           alt={act.game}
                           className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
                           onError={(e) => {

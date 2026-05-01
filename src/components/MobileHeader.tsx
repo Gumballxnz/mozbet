@@ -21,97 +21,129 @@ export function MobileHeader() {
   const { t } = useTranslation();
   const { isLoggedIn, user, openLogin, openRegister, setChatOpen, setDepositOpen } = useAppStore();
 
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [hasUnread, setHasUnread] = useState(true);
+
   const defaultAvatar = useMemo(() => {
     if (!user) return AVATARS[0];
-    // Gerar um avatar pseudo-aleatório baseado no ID do user
     const charCode = user.id.charCodeAt(0) + user.id.charCodeAt(user.id.length - 1);
     return AVATARS[charCode % AVATARS.length];
   }, [user]);
 
   return (
-    <header className="glass sticky top-0 z-40 w-full px-4 py-3 flex items-center justify-between">
-      {/* Logo */}
-      <Link href="/" className="flex items-center gap-1 active:scale-95 transition-transform">
-        <span className="text-xl font-extrabold tracking-tight text-white">
-          MOZ<span className="text-primary glow-primary">BET</span>
-        </span>
-      </Link>
+    <>
+      <header className="glass sticky top-0 z-40 w-full px-4 py-3 flex items-center justify-between">
+        {/* Logo */}
+        <Link href="/" className="flex items-center gap-1 active:scale-95 transition-transform">
+          <span className="text-xl font-extrabold tracking-tight text-white">
+            MOZ<span className="text-primary glow-primary">BET</span>
+          </span>
+        </Link>
 
-      {/* Ações */}
-      <div className="flex items-center gap-2">
+        {/* Ações */}
+        <div className="flex items-center gap-2">
 
-        {isLoggedIn && user ? (
-          <>
-            {/* Saldo e Depósito (Logado) */}
-            <div className="flex items-center bg-surface-elevated border border-border rounded-full p-1 pr-3 shadow-inner">
-              <Button
-                size="sm"
-                className="h-7 rounded-full text-xs px-3 shadow-[0_0_10px_rgba(0,255,127,0.2)]"
-                onClick={() => setDepositOpen(true)}
-              >
-                <Wallet className="w-3 h-3 mr-1" />
-                {t("deposit")}
-              </Button>
-              <span className="ml-3 font-mono-data text-sm font-bold glow-primary text-primary">
-                {formatMZN(user.balance)}
-              </span>
-            </div>
+          {isLoggedIn && user ? (
+            <>
+              {/* Saldo e Depósito (Logado) */}
+              <div className="flex items-center bg-surface-elevated border border-border rounded-full p-1 pr-3 shadow-inner">
+                <Button
+                  size="sm"
+                  className="h-7 rounded-full text-xs px-3 shadow-[0_0_10px_rgba(0,255,127,0.2)]"
+                  onClick={() => setDepositOpen(true)}
+                >
+                  <Wallet className="w-3 h-3 mr-1" />
+                  {t("deposit")}
+                </Button>
+                <span className="ml-3 font-mono-data text-sm font-bold glow-primary text-primary">
+                  {formatMZN(user.balance)}
+                </span>
+              </div>
 
-            {/* Menu Usuário */}
-            <div className="flex items-center gap-1.5 ml-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="w-9 h-9 rounded-full bg-transparent hover:bg-white/5 relative"
-                title="Notificações"
-              >
-                <Bell className="w-5 h-5 text-muted-foreground" />
-                <span className="absolute top-1.5 right-2 w-2 h-2 rounded-full bg-red-500 animate-pulse border border-background"></span>
-              </Button>
-              
-              <Link href="/perfil">
+              {/* Menu Usuário */}
+              <div className="flex items-center gap-1.5 ml-1">
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="w-9 h-9 rounded-full bg-surface p-0 overflow-hidden border-2 border-primary/50 shadow-[0_0_10px_rgba(0,255,127,0.2)]"
-                  title="Perfil"
+                  onClick={() => {
+                    setShowNotifications(!showNotifications);
+                    setHasUnread(false);
+                  }}
+                  className="w-9 h-9 rounded-full bg-transparent hover:bg-white/5 relative"
+                  title="Notificações"
                 >
-                  <img src={user.avatar || defaultAvatar} alt="Avatar" className="w-full h-full object-cover" />
+                  <Bell className="w-5 h-5 text-muted-foreground" />
+                  {hasUnread && (
+                    <span className="absolute top-1.5 right-2 w-2 h-2 rounded-full bg-red-500 animate-pulse border border-background"></span>
+                  )}
                 </Button>
-              </Link>
-              
+                
+                <Link href="/perfil">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="w-9 h-9 rounded-full bg-surface p-0 overflow-hidden border-2 border-primary/50 shadow-[0_0_10px_rgba(0,255,127,0.2)]"
+                    title="Perfil"
+                  >
+                    <img src={user.avatar || defaultAvatar} alt="Avatar" className="w-full h-full object-cover" />
+                  </Button>
+                </Link>
+                
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="w-9 h-9 rounded-full bg-transparent hover:bg-white/5"
+                  title="Chat Global"
+                  onClick={() => setChatOpen(true)}
+                >
+                  <MessageCircle className="w-5 h-5 text-muted-foreground" />
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Botões (Deslogado) */}
               <Button
-                variant="ghost"
-                size="icon"
-                className="w-9 h-9 rounded-full bg-transparent hover:bg-white/5"
-                title="Chat Global"
-                onClick={() => setChatOpen(true)}
+                variant="outline"
+                size="sm"
+                className="text-xs h-9"
+                onClick={() => openLogin()}
               >
-                <MessageCircle className="w-5 h-5 text-muted-foreground" />
+                {t("enter")}
               </Button>
+              <Button
+                size="sm"
+                className="text-xs h-9 shadow-[0_0_15px_rgba(0,255,127,0.3)]"
+                onClick={() => openRegister()}
+              >
+                {t("register")}
+              </Button>
+            </>
+          )}
+        </div>
+      </header>
+
+      {/* Dropdown de Notificações */}
+      {showNotifications && isLoggedIn && (
+        <div className="fixed top-[60px] right-4 w-[300px] z-50 bg-surface-elevated border border-white/10 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-4">
+          <div className="p-3 border-b border-white/5 bg-black/40">
+            <h3 className="font-bold text-sm text-white flex justify-between items-center">
+              Notificações
+              <button onClick={() => setShowNotifications(false)} className="text-muted-foreground hover:text-white">✕</button>
+            </h3>
+          </div>
+          <div className="max-h-[300px] overflow-y-auto">
+            <div className="p-4 hover:bg-white/5 transition-colors cursor-pointer border-l-2 border-primary">
+              <h4 className="font-bold text-sm text-white mb-1">Boas-vindas à MozBet! 🎉</h4>
+              <p className="text-xs text-muted-foreground leading-snug">
+                Recebeste um bónus inicial de 10.00 MT. Explora os nossos jogos de casino e multiplica o teu saldo. Boa sorte!
+              </p>
+              <span className="text-[10px] text-gray-500 mt-2 block">Hoje, 09:00</span>
             </div>
-          </>
-        ) : (
-          <>
-            {/* Botões (Deslogado) */}
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-xs h-9"
-              onClick={() => openLogin()}
-            >
-              {t("enter")}
-            </Button>
-            <Button
-              size="sm"
-              className="text-xs h-9 shadow-[0_0_15px_rgba(0,255,127,0.3)]"
-              onClick={() => openRegister()}
-            >
-              {t("register")}
-            </Button>
-          </>
-        )}
-      </div>
-    </header>
+            {/* Mais notificações vazias para mockup */}
+          </div>
+        </div>
+      )}
+    </>
   );
 }

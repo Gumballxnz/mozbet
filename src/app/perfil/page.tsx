@@ -21,8 +21,12 @@ export default function PerfilPage() {
   const { user, logout } = useAppStore();
   const router = useRouter();
   
+  const fallbackAvatar = user?.id 
+    ? AVATARS[(user.id.charCodeAt(0) + user.id.charCodeAt(user.id.length - 1)) % AVATARS.length] 
+    : AVATARS[0];
+    
   const [email, setEmail] = useState(user?.email || "");
-  const [selectedAvatar, setSelectedAvatar] = useState(user?.avatar || AVATARS[0]);
+  const [selectedAvatar, setSelectedAvatar] = useState(user?.avatar || fallbackAvatar);
   const [isSaving, setIsSaving] = useState(false);
   const [commercialOptIn, setCommercialOptIn] = useState(true);
   
@@ -32,6 +36,12 @@ export default function PerfilPage() {
   // Estados para OTP
   const [showOtpInput, setShowOtpInput] = useState(false);
   const [emailOtp, setEmailOtp] = useState("");
+  
+  // Estado de Palavra-passe
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [passwordMethod, setPasswordMethod] = useState<"sms" | "email">("email");
+  const [passwordOtp, setPasswordOtp] = useState("");
+  const [passwordStep, setPasswordStep] = useState<"choose" | "verify" | "done">("choose");
 
   if (!user) {
     if (typeof window !== "undefined") router.push("/");
@@ -45,7 +55,7 @@ export default function PerfilPage() {
   // Verifica se houve alguma alteração real nos dados do utilizador
   const hasChanges = 
     email !== (user.email || "") || 
-    selectedAvatar !== (user.avatar || AVATARS[0]) || 
+    selectedAvatar !== (user.avatar || fallbackAvatar) || 
     commercialOptIn !== true;
 
   const handleSave = async () => {
@@ -102,7 +112,29 @@ export default function PerfilPage() {
   };
 
   const handleChangePassword = () => {
-    toast.info("Por questões de segurança, enviámos um código para o seu telemóvel para alterar a senha.");
+    setShowPasswordModal(true);
+    setPasswordStep("choose");
+  };
+
+  const requestPasswordReset = async () => {
+    // Simulando o pedido de OTP para senha
+    setIsSaving(true);
+    setTimeout(() => {
+      toast.success(`Enviámos um código para o teu ${passwordMethod === "email" ? "E-mail" : "Telemóvel"}.`);
+      setIsSaving(false);
+      setPasswordStep("verify");
+    }, 1500);
+  };
+  
+  const verifyPasswordReset = () => {
+    if (passwordOtp.length < 4) {
+      toast.error("Introduz o código de verificação válido.");
+      return;
+    }
+    toast.success("Nova senha configurada com sucesso!");
+    setShowPasswordModal(false);
+    setPasswordStep("choose");
+    setPasswordOtp("");
   };
 
   const handleLogout = async () => {
@@ -311,6 +343,67 @@ export default function PerfilPage() {
         <LogOut className="w-4 h-4 mr-2" />
         Sair da Conta
       </Button>
+      
+      {/* MODAL ALTERAR PALAVRA-PASSE */}
+      {showPasswordModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-surface-elevated border border-white/10 rounded-2xl p-6 w-full max-w-sm space-y-4">
+            <h3 className="font-bold text-lg text-white">Alterar Palavra-passe</h3>
+            
+            {passwordStep === "choose" && (
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">Onde queres receber o código de verificação para alterar a tua senha?</p>
+                <div className="space-y-2">
+                  <button
+                    onClick={() => setPasswordMethod("email")}
+                    disabled={!user.email}
+                    className={`w-full flex flex-col p-3 rounded-xl border ${passwordMethod === "email" ? "bg-primary/10 border-primary" : "bg-white/5 border-transparent"} ${!user.email && "opacity-50"}`}
+                  >
+                    <span className="font-bold text-white text-sm flex items-center gap-2">
+                      <Mail className="w-4 h-4" /> E-mail {user.email && <span className="bg-emerald-500/20 text-emerald-400 text-[9px] px-1.5 py-0.5 rounded-full">Recomendado</span>}
+                    </span>
+                    <span className="text-xs text-muted-foreground text-left mt-1">
+                      {user.email ? user.email : "Nenhum e-mail associado"}
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => setPasswordMethod("sms")}
+                    className={`w-full flex flex-col p-3 rounded-xl border ${passwordMethod === "sms" ? "bg-primary/10 border-primary" : "bg-white/5 border-transparent"}`}
+                  >
+                    <span className="font-bold text-white text-sm flex items-center gap-2">
+                      <Phone className="w-4 h-4" /> SMS
+                    </span>
+                    <span className="text-xs text-muted-foreground text-left mt-1">
+                      Custo adicional pode ser aplicado
+                    </span>
+                  </button>
+                </div>
+                <div className="flex gap-2 pt-2">
+                  <Button variant="outline" className="flex-1 border-white/10" onClick={() => setShowPasswordModal(false)}>Cancelar</Button>
+                  <Button className="flex-1 bg-primary text-black font-bold" disabled={isSaving} onClick={requestPasswordReset}>Enviar Código</Button>
+                </div>
+              </div>
+            )}
+
+            {passwordStep === "verify" && (
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">Introduz o código que recebeste no teu {passwordMethod === "email" ? "e-mail" : "telemóvel"}.</p>
+                <Input 
+                  placeholder="000000"
+                  value={passwordOtp}
+                  onChange={(e) => setPasswordOtp(e.target.value.replace(/\D/g, ""))}
+                  className="bg-black/50 border-primary/30 text-white text-center tracking-[0.5em] font-bold text-lg"
+                  maxLength={6}
+                />
+                <div className="flex gap-2 pt-2">
+                  <Button variant="outline" className="flex-1 border-white/10" onClick={() => setPasswordStep("choose")}>Voltar</Button>
+                  <Button className="flex-1 bg-primary text-black font-bold" onClick={verifyPasswordReset}>Verificar</Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

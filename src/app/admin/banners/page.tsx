@@ -66,7 +66,7 @@ export default function AdminBannersPage() {
           description: "A sorte do tigre chegou a Moçambique. Ganha o super bónus!", 
           badge: "POPULAR", 
           action_text: "Tentar a Sorte", 
-          image_url: "https://res.cloudinary.com/dm3glrwax/image/upload/c_limit,f_auto,q_auto,w_800/v1/mozbet/mozbet/banner-tiger.jpg", 
+          image_url: "https://res.cloudinary.com/dm3glrwax/image/upload/c_limit,f_auto,q_auto,w_800/v1/mozbet/mozbet/banner-tiger", 
           link_url: "/tiger", 
           sort_order: 4, 
           is_active: true 
@@ -78,7 +78,7 @@ export default function AdminBannersPage() {
           description: "Junta-te ao clube de jogadores VIP e recebe dinheiro de volta todas as semanas.", 
           badge: "EXCLUSIVO", 
           action_text: "Ver Regras", 
-          image_url: "https://res.cloudinary.com/dm3glrwax/image/upload/c_limit,f_auto,q_auto,w_800/v1/mozbet/mozbet/banner-vip.jpg", 
+          image_url: "https://res.cloudinary.com/dm3glrwax/image/upload/c_limit,f_auto,q_auto,w_800/v1/mozbet/mozbet/banner-vip", 
           link_url: "/vip", 
           sort_order: 5, 
           is_active: true 

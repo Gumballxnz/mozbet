@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
@@ -22,11 +22,33 @@ export function GamePlayer({
 }) {
   const router = useRouter();
   const { t } = useTranslation();
-  const { user, isLoggedIn, setRegisterOpen, setDepositOpen } = useAppStore();
+  const { user, isLoggedIn, updateBalance, setRegisterOpen, setDepositOpen } = useAppStore();
   
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [isIframeLoaded, setIsIframeLoaded] = useState(false);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  // Escutar mensagens vindas do motor isolado (Iframe Sandbox)
+  useEffect(() => {
+    const handleMessage = (e: MessageEvent) => {
+      if (e.data.type === 'UPDATE_BALANCE' && mode === 'real') {
+        updateBalance(e.data.balance);
+      } else if (e.data.type === 'ENGINE_READY' && mode === 'real' && user) {
+        // Enviar o saldo atual para o Iframe assim que ele estiver pronto
+        iframeRef.current?.contentWindow?.postMessage(
+          { type: 'SYNC_BALANCE', balance: user.balance },
+          '*'
+        );
+      } else if (e.data.type === 'CLOSE_GAME') {
+        if (document.fullscreenElement) document.exitFullscreen();
+        router.back();
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [mode, updateBalance, user, router]);
 
   // Proteção de Rota Client-Side
   useEffect(() => {
@@ -129,6 +151,7 @@ export function GamePlayer({
 
       {/* Iframe Real do Jogo */}
       <iframe
+        ref={iframeRef}
         src={iframeUrl}
         className={`w-full flex-1 border-none transition-opacity duration-500 ${isIframeLoaded ? "opacity-100" : "opacity-0"}`}
         allow="autoplay; fullscreen"

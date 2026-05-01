@@ -53,7 +53,7 @@ function generateDeterministicBets(count: number) {
       payout,
       isNew: i === 0 // Marcar o mais recente para animação
     });
-  }
+}
   
   return results;
 }
@@ -61,14 +61,20 @@ function generateDeterministicBets(count: number) {
 export function LiveBetsTable() {
   const [activities, setActivities] = useState<any[]>([]);
 
-  // Atualizar a cada 1 segundo (Sincronização Perfeita)
+  // Atualizar a cada 3.5 segundos para não fritar a CPU (Otimização Mobile)
   useEffect(() => {
     // Execução inicial
     setActivities(generateDeterministicBets(8));
     
     const interval = setInterval(() => {
-      setActivities(generateDeterministicBets(8));
-    }, 1000);
+      setActivities(prev => {
+        const novo = generateDeterministicBets(1)[0];
+        novo.isNew = true;
+        // Marcar os antigos como não novos e remover o último para manter o tamanho 8
+        const restos = prev.slice(0, 7).map(a => ({...a, isNew: false}));
+        return [novo, ...restos];
+      });
+    }, 3500);
     
     return () => clearInterval(interval);
   }, []);

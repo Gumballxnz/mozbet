@@ -18,11 +18,12 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { chatOpen, setChatOpen } = useAppStore();
   const isAdmin = pathname?.startsWith("/admin");
+  const isEngine = pathname?.startsWith("/engine");
 
-  if (isAdmin) {
+  if (isAdmin || isEngine) {
     return (
       <>
-        <main className="min-h-screen bg-background">
+        <main className="min-h-screen bg-black">
           {children}
         </main>
         <Toaster theme="dark" position="top-center" richColors />

@@ -41,8 +41,9 @@ export function LiveStatsTicker() {
     fetchStats();
     heartbeat();
 
-    const statsInterval = setInterval(fetchStats, 10000);
-    const hbInterval = setInterval(heartbeat, 30000);
+    // Aumentado os intervalos massivamente para não sobrecarregar o dispositivo (Otimização Mobile)
+    const statsInterval = setInterval(fetchStats, 30000); // 30s
+    const hbInterval = setInterval(heartbeat, 60000); // 60s
 
     return () => {
       clearInterval(statsInterval);
@@ -52,11 +53,13 @@ export function LiveStatsTicker() {
 
   if (!stats) return null;
 
-  // Combinar depósitos e retiradas num único array para o ticker
-  const allEvents = [
-    ...stats.deposits.map(d => ({ ...d, type: "deposit" as const, game: undefined })),
-    ...stats.withdrawals.map(w => ({ ...w, type: "withdrawal" as const }))
-  ].sort(() => Math.random() - 0.5); // Baralhar
+  // Memoizar para evitar repaints gigantes e limiter para máx 15 itens
+  const allEvents = Array.from({ length: 1 }).map(() => {
+    return [
+      ...stats.deposits.map(d => ({ ...d, type: "deposit" as const, game: undefined })),
+      ...stats.withdrawals.map(w => ({ ...w, type: "withdrawal" as const }))
+    ].sort(() => Math.random() - 0.5).slice(0, 15);
+  })[0];
 
   return (
     <div className="fixed top-16 left-0 right-0 z-[120] pointer-events-none">

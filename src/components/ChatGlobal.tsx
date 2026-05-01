@@ -291,6 +291,24 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
     if (!input.trim() || isSending) return;
 
     const messageText = input.trim();
+    const user = useAppStore.getState().user;
+    const maskedPhone = user?.phone ? `${user.phone.substring(0, 2)}***${user.phone.slice(-1)}` : "User";
+    
+    // OPTIMISTIC UI: Adicionar a mensagem IMEDIATAMENTE na tela
+    const optimisticMsg: ChatMessage = {
+      id: `real-${Date.now()}`,
+      user_id: user?.id || "unknown",
+      username: maskedPhone,
+      message: messageText,
+      type: "message",
+      avatar: user?.avatar || SITE_AVATARS[0],
+      created_at: new Date().toISOString(),
+    };
+    
+    const currentMsgs = useAppStore.getState().fakeChatMessages;
+    setMessages([...currentMsgs, optimisticMsg].slice(-100));
+    setTimeout(scrollToBottom, 50);
+    
     setInput("");
     setIsSending(true);
 
@@ -303,8 +321,12 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
+      // Mensagem já está visível — a API confirmou o save no BD
     } catch (err: any) {
       toast.error(err.message || "Erro ao enviar");
+      // Remover a mensagem optimistic se falhou
+      const msgs = useAppStore.getState().fakeChatMessages;
+      setMessages(msgs.filter(m => m.id !== optimisticMsg.id));
       setInput(messageText);
     } finally {
       setIsSending(false);

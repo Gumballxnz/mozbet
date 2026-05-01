@@ -22,20 +22,13 @@ export default function PerfilPage() {
   const router = useRouter();
   
   const [email, setEmail] = useState(user?.email || "");
-  const [selectedAvatar, setSelectedAvatar] = useState(AVATARS[0]);
+  const [selectedAvatar, setSelectedAvatar] = useState(user?.avatar || AVATARS[0]);
   const [isSaving, setIsSaving] = useState(false);
   const [commercialOptIn, setCommercialOptIn] = useState(true);
   
   // Estados para OTP
   const [showOtpInput, setShowOtpInput] = useState(false);
   const [emailOtp, setEmailOtp] = useState("");
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const savedAvatar = localStorage.getItem("mozbet_avatar");
-      if (savedAvatar) setSelectedAvatar(savedAvatar);
-    }
-  }, []);
 
   if (!user) {
     if (typeof window !== "undefined") router.push("/");
@@ -87,11 +80,7 @@ export default function PerfilPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Falha ao atualizar");
 
-      if (typeof window !== "undefined") {
-         localStorage.setItem("mozbet_avatar", selectedAvatar);
-         // Disparar evento para o MobileHeader atualizar o avatar imediatamente
-         window.dispatchEvent(new Event("storage"));
-      }
+      // Avatar guardado no servidor — funciona em todos os dispositivos
       toast.success("Perfil e preferências guardados com sucesso!");
       setTimeout(() => window.location.reload(), 1000);
     } catch (err: any) {

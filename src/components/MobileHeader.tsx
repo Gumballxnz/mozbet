@@ -1,51 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { useAppStore } from "@/lib/store";
 import { useTranslation } from "@/hooks/useTranslation";
 import { Button } from "@/components/ui/button";
-import { User, Wallet, LogOut, Menu, MessageCircle } from "lucide-react";
+import { User, Wallet, LogOut, MessageCircle } from "lucide-react";
 import { formatMZN } from "@/lib/utils";
 import Link from "next/link";
 
 export function MobileHeader() {
-  const { t, locale, setLocale } = useTranslation();
-  const { isLoggedIn, user, openLogin, openRegister, setChatOpen, setDepositOpen, logout } = useAppStore();
-  
-  const [avatar, setAvatar] = useState<string | null>(null);
-
-  // Carregar avatar do localStorage e escutar mudanças
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      setAvatar(localStorage.getItem("mozbet_avatar"));
-      
-      // Escutar mudanças do localStorage (quando o perfil guarda um novo avatar)
-      const handleStorage = () => {
-        setAvatar(localStorage.getItem("mozbet_avatar"));
-      };
-      window.addEventListener("storage", handleStorage);
-      
-      // Também verifica ao focar na aba (caso o user mude avatar noutra aba)
-      const handleFocus = () => {
-        setAvatar(localStorage.getItem("mozbet_avatar"));
-      };
-      window.addEventListener("focus", handleFocus);
-      
-      return () => {
-        window.removeEventListener("storage", handleStorage);
-        window.removeEventListener("focus", handleFocus);
-      };
-    }
-  }, []);
-
-  const handleLogout = async () => {
-    try {
-      await fetch("/api/auth/logout", { method: "POST" });
-      logout();
-    } catch (error) {
-      console.error(error);
-    }
-  };
+  const { t } = useTranslation();
+  const { isLoggedIn, user, openLogin, openRegister, setChatOpen, setDepositOpen } = useAppStore();
 
   return (
     <header className="glass sticky top-0 z-40 w-full px-4 py-3 flex items-center justify-between">
@@ -85,8 +49,8 @@ export function MobileHeader() {
                   className="w-9 h-9 rounded-full bg-surface p-0 overflow-hidden border border-white/5"
                   title="Perfil"
                 >
-                  {avatar ? (
-                    <img src={avatar} alt="Avatar" className="w-full h-full object-cover" />
+                  {user.avatar ? (
+                    <img src={user.avatar} alt="Avatar" className="w-full h-full object-cover" />
                   ) : (
                     <User className="w-4 h-4 text-muted-foreground" />
                   )}

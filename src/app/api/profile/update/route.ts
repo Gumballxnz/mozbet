@@ -54,6 +54,7 @@ export async function POST(req: Request) {
     const updateData: any = {};
     if (email !== undefined) updateData.email = email;
     if (commercialOptIn !== undefined) updateData.commercial_opt_in = commercialOptIn;
+    if (avatar) updateData.avatar_url = avatar; // Avatar guardado no servidor, não no localStorage
 
     if (Object.keys(updateData).length > 0) {
       const { error } = await supabaseAdmin

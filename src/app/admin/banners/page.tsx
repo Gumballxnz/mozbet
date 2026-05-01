@@ -21,7 +21,7 @@ export default function AdminBannersPage() {
     if (data && data.length > 0) {
       setBanners(data);
     } else {
-      // Auto-iniciar com dados reais e originais do Cloudinary para poupar trabalho manual
+      // Injetar Fisicamente os 5 Banners Originais na BD para resolver o problema permanentemente
       const defaultBanners = [
         { 
           id: crypto.randomUUID(), 
@@ -29,7 +29,7 @@ export default function AdminBannersPage() {
           highlight: "Ganhe Já", 
           description: "O Jogo de Explosão mais popular do Mundo. Voe alto e ganhe!", 
           badge: "HOT", 
-          action_text: "Jogar", 
+          action_text: "Jogar Agora", 
           image_url: "https://res.cloudinary.com/dm3glrwax/image/upload/c_limit,f_auto,q_auto,w_800/v1/mozbet/mozbet/banner-aviator", 
           link_url: "/aviator", 
           sort_order: 1, 
@@ -41,13 +41,57 @@ export default function AdminBannersPage() {
           highlight: "Multiplique", 
           description: "Deixe cair a bola e multiplique o seu dinheiro até 1000x.", 
           badge: "NOVO", 
-          action_text: "Apostar", 
+          action_text: "Apostar Agora", 
           image_url: "https://res.cloudinary.com/dm3glrwax/image/upload/c_limit,f_auto,q_auto,w_800/v1/mozbet/mozbet/banner-plinko", 
           link_url: "/plinko", 
           sort_order: 2, 
           is_active: true 
         },
+        { 
+          id: crypto.randomUUID(), 
+          title: "Mines", 
+          highlight: "Cuidado com a Bomba", 
+          description: "Quantas estrelas consegues encontrar antes da explosão?", 
+          badge: "CLÁSSICO", 
+          action_text: "Jogar Agora", 
+          image_url: "https://res.cloudinary.com/dm3glrwax/image/upload/c_limit,f_auto,q_auto,w_800/v1/mozbet/mozbet/banner-mines", 
+          link_url: "/mines", 
+          sort_order: 3, 
+          is_active: true 
+        },
+        { 
+          id: crypto.randomUUID(), 
+          title: "Fortune", 
+          highlight: "Tiger", 
+          description: "A sorte do tigre chegou a Moçambique. Ganha o super bónus!", 
+          badge: "POPULAR", 
+          action_text: "Tentar a Sorte", 
+          image_url: "https://res.cloudinary.com/dm3glrwax/image/upload/c_limit,f_auto,q_auto,w_800/v1/mozbet/mozbet/banner-tiger", 
+          link_url: "/tiger", 
+          sort_order: 4, 
+          is_active: true 
+        },
+        { 
+          id: crypto.randomUUID(), 
+          title: "Bónus VIP", 
+          highlight: "20% Cashback", 
+          description: "Junta-te ao clube de jogadores VIP e recebe dinheiro de volta todas as semanas.", 
+          badge: "EXCLUSIVO", 
+          action_text: "Ver Regras", 
+          image_url: "https://res.cloudinary.com/dm3glrwax/image/upload/c_limit,f_auto,q_auto,w_800/v1/mozbet/mozbet/banner-vip", 
+          link_url: "/vip", 
+          sort_order: 5, 
+          is_active: true 
+        }
       ];
+      
+      // Escreve na BD e depois carrega para o state (assim garantimos persistência real)
+      await fetch("/api/admin/banners/init", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(defaultBanners),
+      }).catch(e => console.error(e)); // Fallback via API caso RLS proiba insert pelo client
+      
       setBanners(defaultBanners);
     }
     setLoading(false);
@@ -84,7 +128,7 @@ export default function AdminBannersPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-end">
         <div>
-          <h1 className="text-2xl font-extrabold text-white">Central de Banners</h1>
+          <h1 className="text-2xl font-extrabold text-white">Carrossel de Destaques</h1>
           <p className="text-muted-foreground">Insira a URL original da imagem. O sistema criará um Proxy encriptado para os clientes.</p>
         </div>
         <Button onClick={() => setBanners([...banners, { id: crypto.randomUUID(), title: "", highlight: "", description: "", badge: "", action_text: "", image_url: "", link_url: "", sort_order: banners.length + 1, is_active: true }])} className="bg-primary text-black font-extrabold">

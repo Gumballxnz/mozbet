@@ -1,10 +1,7 @@
-// API: Gestão de Banners do Carrossel (Admin)
-// PUT /api/admin/banners — { id, image_url, badge, title, highlight, description, action_text, action_link, is_active }
-
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin, verifyToken } from "@/lib/auth-server";
 
-export async function PUT(req: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
     // 1. Verificar autenticação
     const token = req.cookies.get("mozbet_session")?.value;
@@ -12,7 +9,7 @@ export async function PUT(req: NextRequest) {
 
     const payload = await verifyToken<{ id: string; role: string }>(token);
     
-    // Verificar se o utilizador é um admin no Supabase
+    // Verificar se o utilizador é um admin
     const { data: user } = await supabaseAdmin
       .from("users")
       .select("role")
@@ -23,29 +20,25 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: "Acesso restrito a administradores" }, { status: 403 });
     }
 
-    const { id, ...updates } = await req.json();
+    const banners = await req.json();
 
-    if (!id) {
-      return NextResponse.json({ error: "ID do banner é obrigatório" }, { status: 400 });
+    if (!Array.isArray(banners) || banners.length === 0) {
+      return NextResponse.json({ error: "Lista de banners inválida" }, { status: 400 });
     }
 
-    // 2. Atualizar ou Criar o banner
+    // 2. Inserir em massa
     const { error } = await supabaseAdmin
       .from("banners")
-      .upsert({
-        id,
-        ...updates,
-        updated_at: new Date().toISOString(),
-      });
+      .insert(banners);
 
     if (error) {
-      console.error("Erro BD:", error);
-      return NextResponse.json({ error: "Erro ao atualizar banner" }, { status: 500 });
+      console.error("Erro BD Init:", error);
+      return NextResponse.json({ error: "Erro ao inicializar banners" }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Erro na atualização do banner:", error);
+    console.error("Erro na inicialização:", error);
     return NextResponse.json({ error: "Erro interno" }, { status: 500 });
   }
 }

@@ -97,25 +97,19 @@ export function GamePlayer({
         </Button>
 
         <div className="flex items-center gap-2 pointer-events-auto">
-          {mode === "demo" ? (
-            <div className="px-3 py-1.5 bg-accent/80 text-white text-xs font-bold rounded-full backdrop-blur-md shadow-lg border border-white/20 animate-pulse">
-              {t("demoMode")}
-            </div>
-          ) : (
-            <div className="flex items-center bg-black/60 backdrop-blur-md border border-white/10 rounded-full p-1 pr-3 shadow-lg">
-              <Button
-                size="sm"
-                className="h-7 rounded-full text-xs px-3 bg-primary text-black hover:bg-primary/90"
-                onClick={() => setDepositOpen(true)}
-              >
-                <Wallet className="w-3 h-3 mr-1" />
-                {t("deposit")}
-              </Button>
-              <span className="ml-3 font-mono-data text-sm font-bold glow-primary text-primary">
-                {formatMZN(user?.balance || 0)}
-              </span>
-            </div>
-          )}
+          <div className="flex items-center bg-black/60 backdrop-blur-md border border-white/10 rounded-full p-1 pr-3 shadow-lg">
+            <Button
+              size="sm"
+              className="h-7 rounded-full text-xs px-3 bg-primary text-black hover:bg-primary/90"
+              onClick={() => setDepositOpen(true)}
+            >
+              <Wallet className="w-3 h-3 mr-1" />
+              {t("deposit")}
+            </Button>
+            <span className="ml-3 font-mono-data text-sm font-bold glow-primary text-primary">
+              {formatMZN(user?.balance || 0)}
+            </span>
+          </div>
 
           <Button 
             variant="ghost" 

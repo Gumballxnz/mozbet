@@ -1,7 +1,6 @@
 "use client";
 
 import { use, useEffect, useState, Suspense, lazy } from "react";
-import { useSearchParams } from "next/navigation";
 
 // Lazy loading para garantir que o cliente só descarrega O jogo específico.
 const AviatorGame = lazy(() => import("@/components/games/AviatorGame"));
@@ -24,21 +23,17 @@ export default function GameEnginePage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const searchParams = useSearchParams();
-  const isDemo = searchParams.get("mode") === "demo";
   const resolvedParams = use(params);
   const gameId = resolvedParams.id;
 
-  // Estado Local (no Iframe) que será mantido sincronizado com o PAI
-  const [balance, setBalance] = useState(isDemo ? 10000 : 0);
+  // Estado Local (no Iframe) sincronizado com o PAI
+  const [balance, setBalance] = useState(0);
 
   useEffect(() => {
-    if (!isDemo) {
-      // 1. Dizer ao site Pai que acordamos
-      window.parent.postMessage({ type: 'ENGINE_READY' }, '*');
-    }
+    // Dizer ao site Pai que acordamos
+    window.parent.postMessage({ type: 'ENGINE_READY' }, '*');
 
-    // 2. Ouvir mensagens do site Pai
+    // Ouvir mensagens do site Pai
     const handleMessage = (e: MessageEvent) => {
       if (e.data.type === 'SYNC_BALANCE') {
         setBalance(e.data.balance);
@@ -47,27 +42,19 @@ export default function GameEnginePage({
     
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, [isDemo]);
+  }, []);
 
   // Callbacks para os jogos
   const onUpdateBalance = (newBal: number) => {
-    if (isDemo) {
-      setBalance(newBal);
-    } else {
-      setBalance(newBal); // Optimistic UI
-      // Avisar o PAI para ele fazer update global e sincronizar BD
-      window.parent.postMessage({ type: 'UPDATE_BALANCE', balance: newBal }, '*');
-    }
+    setBalance(newBal); // Optimistic UI
+    // Avisar o PAI para ele fazer update global e sincronizar BD
+    window.parent.postMessage({ type: 'UPDATE_BALANCE', balance: newBal }, '*');
   };
 
   const onBet = (amount: number) => {
     const newBal = balance - amount;
-    if (isDemo) {
-      setBalance(newBal);
-    } else {
-      setBalance(newBal);
-      window.parent.postMessage({ type: 'UPDATE_BALANCE', balance: newBal }, '*');
-    }
+    setBalance(newBal);
+    window.parent.postMessage({ type: 'UPDATE_BALANCE', balance: newBal }, '*');
   };
 
   const onBack = () => {
@@ -101,12 +88,6 @@ export default function GameEnginePage({
         {gameId === "mega-fruits" && <MegaFruitsGame {...gameProps} />}
         {gameId === "lion-zama" && <LionZamaGame {...gameProps} />}
       </Suspense>
-      
-      {isDemo && (
-        <div className="absolute top-2 right-2 pointer-events-none bg-primary/20 text-primary text-[10px] font-black px-2 py-0.5 rounded shadow-lg z-50 animate-pulse border border-primary/50">
-          MODO DEMO
-        </div>
-      )}
     </div>
   );
 }

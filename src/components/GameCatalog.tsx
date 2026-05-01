@@ -45,10 +45,11 @@ export function GameCatalog() {
 
   const handleGameClick = (gameId: string) => {
     if (!isLoggedIn) {
-      router.push(`/jogar/${gameId}?mode=demo`);
-    } else {
-      router.push(`/jogar/${gameId}?mode=real`);
+      // Sem modo demo — obrigar registo/login para jogar
+      useAppStore.getState().openRegister();
+      return;
     }
+    router.push(`/jogar/${gameId}?mode=real`);
   };
 
   const filteredGames = games.filter(g => {

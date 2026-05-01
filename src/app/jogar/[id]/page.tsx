@@ -1,8 +1,8 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
 import { useAppStore } from "@/lib/store";
-import { use } from "react";
+import { use, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { GamePlayer } from "@/components/GamePlayer";
 
 // Mapa de nomes para exibir no Header
@@ -28,15 +28,26 @@ export default function PlayGamePage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const searchParams = useSearchParams();
-  const mode = searchParams.get("mode") || "demo";
   const { isLoggedIn } = useAppStore();
-  
-  // Forçar demo se não estiver logado
-  const isDemo = mode === "demo" || !isLoggedIn;
-
+  const router = useRouter();
   const resolvedParams = use(params);
   const gameId = resolvedParams.id;
+
+  // Proteção: Se não estiver logado, redirecionar para Home + popup registo
+  useEffect(() => {
+    if (!isLoggedIn) {
+      useAppStore.getState().openRegister();
+      router.push("/");
+    }
+  }, [isLoggedIn, router]);
+
+  if (!isLoggedIn) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   if (!gameId || !GAME_NAMES[gameId]) {
     return (
@@ -46,8 +57,8 @@ export default function PlayGamePage({
     );
   }
 
-  // A mágica: Usar SEMPRE o nosso motor isolado!
-  const engineUrl = `/engine/${gameId}?mode=${isDemo ? "demo" : "real"}`;
+  // Modo real SEMPRE — sem demo
+  const engineUrl = `/engine/${gameId}?mode=real`;
 
   return (
     <div className="fixed inset-0 z-50 bg-black">
@@ -55,7 +66,7 @@ export default function PlayGamePage({
         gameId={gameId}
         gameName={GAME_NAMES[gameId]}
         iframeUrl={engineUrl}
-        mode={isDemo ? "demo" : "real"}
+        mode="real"
       />
     </div>
   );

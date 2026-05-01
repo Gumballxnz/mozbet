@@ -211,18 +211,16 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
       // Pega os últimos 20 segundos para ver se há mensagem nova, mistura com as mensagens locais
       const newDetMessages = getDeterministicChatMessages(5);
       
-      setMessages((prevMessages) => {
-        // Criar um Set de IDs para não duplicar
-        const existingIds = new Set(prevMessages.map(m => m.id));
-        const messagesToAdd = newDetMessages.filter(m => !existingIds.has(m.id));
-        
-        if (messagesToAdd.length > 0) {
-          setTimeout(scrollToBottom, 50);
-          // Manter histórico curto (limite de 100 mensagens)
-          return [...prevMessages, ...messagesToAdd].slice(-100);
-        }
-        return prevMessages;
-      });
+      const currentMessages = useAppStore.getState().fakeChatMessages;
+      // Criar um Set de IDs para não duplicar
+      const existingIds = new Set(currentMessages.map((m: any) => m.id));
+      const messagesToAdd = newDetMessages.filter(m => !existingIds.has(m.id));
+      
+      if (messagesToAdd.length > 0) {
+        setTimeout(scrollToBottom, 50);
+        // Manter histórico curto (limite de 100 mensagens)
+        setMessages([...currentMessages, ...messagesToAdd].slice(-100));
+      }
     }, 1000); // Check a cada 1 segundo
 
     // Supabase subscription (para as tuas próprias mensagens reais que mandares pro chat)
@@ -233,7 +231,8 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
         { event: "INSERT", schema: "public", table: "chat_messages" },
         (payload) => {
           const newMsg = payload.new as ChatMessage;
-          setMessages(prev => [...prev, newMsg].slice(-100));
+          const currentMsgs = useAppStore.getState().fakeChatMessages;
+          setMessages([...currentMsgs, newMsg].slice(-100));
           setTimeout(scrollToBottom, 100);
         }
       )

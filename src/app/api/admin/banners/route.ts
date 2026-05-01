@@ -15,11 +15,11 @@ export async function PUT(req: NextRequest) {
     // Verificar se o utilizador é um admin no Supabase
     const { data: user } = await supabaseAdmin
       .from("users")
-      .select("role")
+      .select("is_admin")
       .eq("id", payload?.id)
       .single();
 
-    if (user?.role !== "admin") {
+    if (!user?.is_admin) {
       return NextResponse.json({ error: "Acesso restrito a administradores" }, { status: 403 });
     }
 

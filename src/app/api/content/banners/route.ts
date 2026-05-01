@@ -13,7 +13,14 @@ export async function GET() {
       return NextResponse.json({ error: "Erro ao buscar banners" }, { status: 500 });
     }
 
-    return NextResponse.json({ banners: data || [] });
+    return NextResponse.json(
+      { banners: data || [] },
+      {
+        headers: {
+          "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+        }
+      }
+    );
   } catch (error) {
     return NextResponse.json({ error: "Erro interno" }, { status: 500 });
   }

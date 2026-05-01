@@ -3,15 +3,19 @@
 import { usePathname, useRouter } from "next/navigation";
 import { MobileHeader } from "@/components/MobileHeader";
 import { MobileNavigation } from "@/components/MobileNavigation";
-import { RegisterModal } from "@/components/RegisterModal";
-import { DepositModal } from "@/components/DepositModal";
-import { SupportChat } from "@/components/SupportChat";
-import ChatGlobal from "@/components/ChatGlobal";
 import { Footer } from "@/components/Footer";
 import { DesktopSidebar } from "@/components/DesktopSidebar";
-import { MobileSidebar } from "@/components/MobileSidebar";
 import { useAppStore } from "@/lib/store";
 import { Toaster } from "sonner";
+import dynamic from "next/dynamic";
+
+// Lazy Loading: Estes componentes pesados só são descarregados quando necessários
+// Reduz o bundle inicial em ~80KB+ de JavaScript (Performance Mobile Crítica)
+const RegisterModal = dynamic(() => import("@/components/RegisterModal").then(m => m.RegisterModal), { ssr: false });
+const DepositModal = dynamic(() => import("@/components/DepositModal").then(m => m.DepositModal), { ssr: false });
+const SupportChat = dynamic(() => import("@/components/SupportChat").then(m => m.SupportChat), { ssr: false });
+const ChatGlobal = dynamic(() => import("@/components/ChatGlobal"), { ssr: false });
+const MobileSidebar = dynamic(() => import("@/components/MobileSidebar").then(m => m.MobileSidebar), { ssr: false });
 
 export function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();

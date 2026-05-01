@@ -13,7 +13,15 @@ export async function GET() {
       return NextResponse.json({ error: "Erro ao buscar jogos" }, { status: 500 });
     }
 
-    return NextResponse.json({ games: data || [] });
+    return NextResponse.json(
+      { games: data || [] },
+      {
+        headers: {
+          // Cache de 5 minutos no browser e CDN da Vercel
+          "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+        }
+      }
+    );
   } catch (error) {
     return NextResponse.json({ error: "Erro interno" }, { status: 500 });
   }

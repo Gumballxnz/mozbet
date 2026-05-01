@@ -4,7 +4,7 @@ import { supabaseAdmin } from "@/lib/auth-server";
 // Endpoint for sending emails (Individual or Global) via Resend
 export async function POST(req: Request) {
   try {
-    const { target, subject, body } = await req.json();
+    const { target, targetEmail, subject, body } = await req.json();
 
     if (!target || !subject || !body) {
       return NextResponse.json({ error: "Missing required fields." }, { status: 400 });
@@ -16,23 +16,15 @@ export async function POST(req: Request) {
     }
 
     if (target === "GLOBAL") {
-      // In a real advanced system, this would queue to a background worker (like Inngest or Upstash)
-      // to batch 2000 per day. For this architecture, we will simulate the successful queuing response.
-      
-      // Ideally we would fetch users with emails:
-      // const { data: users } = await supabaseAdmin.from("users").select("email").not("email", "is", null);
-      
+      // In a real advanced system, this would queue to a background worker
       return NextResponse.json({ 
         success: true, 
         message: "Campanha global agendada. O sistema iniciará o envio de 2.000 emails/dia para toda a base ativa." 
       });
     } else {
       // Individual Email
-      // First get the user email
-      const { data: user } = await supabaseAdmin.from("users").select("email").eq("id", target).single();
-      
-      if (!user || !user.email) {
-        return NextResponse.json({ error: "Utilizador não tem email registado." }, { status: 404 });
+      if (!targetEmail) {
+        return NextResponse.json({ error: "Utilizador não tem email de destino válido." }, { status: 404 });
       }
 
       const res = await fetch("https://api.resend.com/emails", {
@@ -43,7 +35,7 @@ export async function POST(req: Request) {
         },
         body: JSON.stringify({
           from: "MozBet CRM <no-reply@mozbet.com>", // You must configure this domain in Resend
-          to: [user.email],
+          to: [targetEmail],
           subject: subject,
           html: `<div style="font-family: sans-serif; padding: 20px;">
                   <h2>MozBet Suporte</h2>

@@ -36,6 +36,7 @@ export function AdminUsersTable({ initialUsers }: { initialUsers: UserData[] }) 
   // Estados dos formulários de comunicação
   const [msgTitle, setMsgTitle] = useState("");
   const [msgBody, setMsgBody] = useState("");
+  const [msgTargetEmail, setMsgTargetEmail] = useState("");
   
   // Realtime Supabase
   useEffect(() => {
@@ -123,11 +124,12 @@ export function AdminUsersTable({ initialUsers }: { initialUsers: UserData[] }) 
   // Envio de Email
   const executeSendEmail = async () => {
     if (!msgTitle || !msgBody) return toast.error("Preencha assunto e corpo");
+    if (commTarget !== 'GLOBAL' && !msgTargetEmail) return toast.error("Insira o email de destino do utilizador.");
 
     toast.loading(commTarget === 'GLOBAL' ? "A agendar disparo global de emails (via Resend)..." : "A enviar email individual...", { id: "email" });
     
     try {
-      const payload = { target: commTarget, subject: msgTitle, body: msgBody };
+      const payload = { target: commTarget, targetEmail: msgTargetEmail, subject: msgTitle, body: msgBody };
       const response = await fetch('/api/admin/email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -141,6 +143,7 @@ export function AdminUsersTable({ initialUsers }: { initialUsers: UserData[] }) 
       setEmailModalOpen(false);
       setMsgTitle("");
       setMsgBody("");
+      setMsgTargetEmail("");
       if (commTarget === "GLOBAL") setGlobalModalOpen(false);
     } catch (error) {
       toast.error("Falha no sistema de e-mails. Verifique se o RESEND_API_KEY está no .env", { id: "email" });
@@ -151,8 +154,16 @@ export function AdminUsersTable({ initialUsers }: { initialUsers: UserData[] }) 
     setCommTarget(target);
     setMsgTitle("");
     setMsgBody("");
+    setMsgTargetEmail("");
+    
     if (type === 'site') setMessageModalOpen(true);
-    if (type === 'email') setEmailModalOpen(true);
+    if (type === 'email') {
+      const userObj = users.find(u => u.id === target);
+      if (userObj && userObj.email) {
+        setMsgTargetEmail(userObj.email);
+      }
+      setEmailModalOpen(true);
+    }
   };
 
   // Helper para ofuscar numero (+258 84 *** ** 12)
@@ -310,12 +321,11 @@ export function AdminUsersTable({ initialUsers }: { initialUsers: UserData[] }) 
                   </Button>
                   <Button 
                     variant="outline" 
-                    disabled={!selectedUser.email}
-                    className="border-[#2A2F40] bg-[#1A1D27] hover:bg-sky-500/20 hover:text-sky-400 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center py-6 gap-3"
+                    className="border-[#2A2F40] bg-[#1A1D27] hover:bg-sky-500/20 hover:text-sky-400 flex items-center justify-center py-6 gap-3"
                     onClick={() => openCommDialog('email', selectedUser.id)}
                   >
                     <Mail className="w-5 h-5 text-sky-400" />
-                    <span className="text-sm font-bold">{selectedUser.email ? 'Disparar Email' : 'Email Indisponível'}</span>
+                    <span className="text-sm font-bold">Enviar E-mail</span>
                   </Button>
                 </div>
 
@@ -452,6 +462,17 @@ export function AdminUsersTable({ initialUsers }: { initialUsers: UserData[] }) 
             <DialogDescription className="hidden">Formulário de disparo de email para o utilizador</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
+            {commTarget !== 'GLOBAL' && (
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-400">E-mail de Destino</label>
+                <Input 
+                  value={msgTargetEmail} 
+                  onChange={(e) => setMsgTargetEmail(e.target.value)} 
+                  placeholder="Ex: cliente@email.com" 
+                  className="bg-black border-[#2A2F40]"
+                />
+              </div>
+            )}
             <div className="space-y-2">
               <label className="text-xs font-bold text-gray-400">Assunto do E-mail</label>
               <Input 

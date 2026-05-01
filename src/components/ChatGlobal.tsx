@@ -208,7 +208,7 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
     setTimeout(scrollToBottom, 200);
 
     const interval = setInterval(() => {
-      // Pega os últimos 20 segundos para ver se há mensagem nova, mistura com as mensagens locais
+      // Pega os últimos 15 segundos para ver se há mensagem nova
       const newDetMessages = getDeterministicChatMessages(5);
       
       const currentMessages = useAppStore.getState().fakeChatMessages;
@@ -217,11 +217,15 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
       const messagesToAdd = newDetMessages.filter(m => !existingIds.has(m.id));
       
       if (messagesToAdd.length > 0) {
+        // PRESERVAR mensagens reais (tipo !== 'fake_user' e !== 'win_announcement')
+        // Juntar tudo, ordenar por data e manter limite
+        const merged = [...currentMessages, ...messagesToAdd]
+          .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+          .slice(-100);
+        setMessages(merged);
         setTimeout(scrollToBottom, 50);
-        // Manter histórico curto (limite de 100 mensagens)
-        setMessages([...currentMessages, ...messagesToAdd].slice(-100));
       }
-    }, 1000); // Check a cada 1 segundo
+    }, 5000); // Check a cada 5 segundos (Otimização Mobile)
 
     // Supabase subscription (para as tuas próprias mensagens reais que mandares pro chat)
     const channel = supabase
@@ -349,7 +353,7 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
           )}
 
           {messages.map((m) => {
-            const timeStr = new Date(m.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+            const timeStr = new Date(m.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
             
             // 1. ANÚNCIO DE VITÓRIA (WIN_ANNOUNCEMENT) — Card do BOT
             if (m.type === "win_announcement") {

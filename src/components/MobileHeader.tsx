@@ -14,9 +14,27 @@ export function MobileHeader() {
   
   const [avatar, setAvatar] = useState<string | null>(null);
 
+  // Carregar avatar do localStorage e escutar mudanças
   useEffect(() => {
     if (typeof window !== "undefined") {
       setAvatar(localStorage.getItem("mozbet_avatar"));
+      
+      // Escutar mudanças do localStorage (quando o perfil guarda um novo avatar)
+      const handleStorage = () => {
+        setAvatar(localStorage.getItem("mozbet_avatar"));
+      };
+      window.addEventListener("storage", handleStorage);
+      
+      // Também verifica ao focar na aba (caso o user mude avatar noutra aba)
+      const handleFocus = () => {
+        setAvatar(localStorage.getItem("mozbet_avatar"));
+      };
+      window.addEventListener("focus", handleFocus);
+      
+      return () => {
+        window.removeEventListener("storage", handleStorage);
+        window.removeEventListener("focus", handleFocus);
+      };
     }
   }, []);
 

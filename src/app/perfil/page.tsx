@@ -89,6 +89,8 @@ export default function PerfilPage() {
 
       if (typeof window !== "undefined") {
          localStorage.setItem("mozbet_avatar", selectedAvatar);
+         // Disparar evento para o MobileHeader atualizar o avatar imediatamente
+         window.dispatchEvent(new Event("storage"));
       }
       toast.success("Perfil e preferências guardados com sucesso!");
       setTimeout(() => window.location.reload(), 1000);

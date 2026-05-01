@@ -255,7 +255,7 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
     const interval = setInterval(() => {
       const g = GAME_POOL[Math.floor(Math.random() * GAME_POOL.length)];
       const winAmount = Math.floor(Math.random() * 40000) + 500;
-      const playerId = generateFakePlayerId();
+      const playerId = generateFakeUsername();
       const maskedId = maskPlayerId(playerId);
 
       const newBotMsg: ChatMessage = {

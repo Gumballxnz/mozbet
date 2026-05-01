@@ -238,7 +238,7 @@ export function LiveBetsTable() {
               {displayData.map((act, i) => (
                 <tr 
                   key={`${act.time}-${act.id}-${i}`} 
-                  className={`group transition-all duration-500 ease-in-out ${act.isNew && activeTab === "all" ? 'bg-white/5' : 'hover:bg-white/[0.02]'} ${act.isReal ? 'border-l-2 border-primary/50' : ''}`}
+                  className={`group transition-all duration-500 ease-in-out ${act.isNew && activeTab === "all" ? 'bg-white/5' : 'hover:bg-white/[0.02]'}`}
                 >
                   <td className="px-4 py-3">
                     <span className="font-bold text-white text-xs flex items-center gap-2">
@@ -263,7 +263,7 @@ export function LiveBetsTable() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1.5">
-                      <BadgeCheck size={14} className={act.isLoss ? "text-muted-foreground" : (act.isReal ? "text-emerald-400" : "text-primary")} />
+                      <BadgeCheck size={14} className={act.isLoss ? "text-muted-foreground" : "text-primary"} />
                       <span className="text-xs font-bold text-gray-300">
                         {act.id}
                       </span>

@@ -336,9 +336,11 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex justify-end bg-black/40 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-[100] flex justify-end" onClick={onClose}>
+      {/* Overlay semi-transparente apenas na metade esquerda */}
+      <div className="absolute inset-0 bg-black/30" />
       <div
-        className="surface-card w-full md:max-w-md h-full flex flex-col animate-slide-right relative"
+        className="surface-card w-[65%] sm:w-[55%] md:max-w-md h-full flex flex-col animate-slide-right relative z-10 shadow-2xl border-l border-white/5"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

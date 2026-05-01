@@ -18,6 +18,8 @@ interface UserData {
   created_at: string;
   is_active: boolean;
   is_admin: boolean;
+  total_deposits?: number;
+  total_withdrawn?: number;
 }
 
 export function AdminUsersTable({ initialUsers }: { initialUsers: UserData[] }) {

@@ -25,6 +25,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
   };
 
+  const [isNavigatingTo, setIsNavigatingTo] = useState<string | null>(null);
+
+  // Reset do loading assim que o pathname muda (ou seja, quando a página nova carregou)
+  useEffect(() => {
+    setIsNavigatingTo(null);
+  }, [pathname]);
+
   const navItems = [
     { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
     { name: "Utilizadores", href: "/admin/users", icon: Users },
@@ -56,17 +63,26 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href;
+            const isLoading = isNavigatingTo === item.href;
+            
             return (
               <Link
                 key={item.href}
                 href={item.href}
+                onClick={() => {
+                  if (pathname !== item.href) setIsNavigatingTo(item.href);
+                }}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
                   isActive 
                     ? "bg-primary text-black font-bold" 
                     : "text-muted-foreground hover:text-white hover:bg-white/5"
                 }`}
               >
-                <Icon className="w-5 h-5" />
+                {isLoading ? (
+                  <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Icon className="w-5 h-5" />
+                )}
                 {item.name}
               </Link>
             );

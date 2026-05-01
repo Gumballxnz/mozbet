@@ -22,7 +22,57 @@ export function MobileHeader() {
   const { isLoggedIn, user, openLogin, openRegister, setChatOpen, setDepositOpen } = useAppStore();
 
   const [showNotifications, setShowNotifications] = useState(false);
-  const [hasUnread, setHasUnread] = useState(true);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [hasUnread, setHasUnread] = useState(false);
+
+  // Carregar e ouvir notificações
+  useEffect(() => {
+    if (!user) return;
+
+    // 1. Fetch Inicial
+    const fetchNotifs = async () => {
+      const { data } = await supabase
+        .from('notifications')
+        .select('*')
+        .or(`user_id.eq.${user.id},user_id.is.null`)
+        .order('created_at', { ascending: false })
+        .limit(10);
+      
+      if (data) {
+        setNotifications(data);
+        if (data.some(n => !n.is_read)) setHasUnread(true);
+      }
+    };
+    fetchNotifs();
+
+    // 2. Ouvir Realtime
+    const channel = supabase.channel(`notifs_${user.id}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' }, payload => {
+        // Se a notificação for para mim ou Global (null)
+        if (payload.new.user_id === user.id || payload.new.user_id === null) {
+          setNotifications(prev => [payload.new, ...prev]);
+          setHasUnread(true);
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+
+  const markAsRead = async () => {
+    setHasUnread(false);
+    if (!user) return;
+    
+    // Opcional: Atualizar DB para is_read = true dos que pertencem a ele
+    const unreadIds = notifications.filter(n => !n.is_read && n.user_id === user.id).map(n => n.id);
+    if (unreadIds.length > 0) {
+      supabase.from('notifications').update({ is_read: true }).in('id', unreadIds).then();
+    }
+    
+    setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+  };
 
   const defaultAvatar = useMemo(() => {
     if (!user) return AVATARS[0];
@@ -66,8 +116,9 @@ export function MobileHeader() {
                   variant="ghost"
                   size="icon"
                   onClick={() => {
-                    setShowNotifications(!showNotifications);
-                    setHasUnread(false);
+                    const willShow = !showNotifications;
+                    setShowNotifications(willShow);
+                    if (willShow) markAsRead();
                   }}
                   className="w-9 h-9 rounded-full bg-transparent hover:bg-white/5 relative"
                   title="Notificações"
@@ -133,14 +184,23 @@ export function MobileHeader() {
             </h3>
           </div>
           <div className="max-h-[300px] overflow-y-auto">
-            <div className="p-4 hover:bg-white/5 transition-colors cursor-pointer border-l-2 border-primary">
-              <h4 className="font-bold text-sm text-white mb-1">Boas-vindas à MozBet! 🎉</h4>
-              <p className="text-xs text-muted-foreground leading-snug">
-                Recebeste um bónus inicial de 10.00 MT. Explora os nossos jogos de casino e multiplica o teu saldo. Boa sorte!
-              </p>
-              <span className="text-[10px] text-gray-500 mt-2 block">Hoje, 09:00</span>
-            </div>
-            {/* Mais notificações vazias para mockup */}
+            {notifications.length === 0 ? (
+              <div className="p-6 text-center text-muted-foreground text-xs">
+                Sem notificações no momento.
+              </div>
+            ) : (
+              notifications.map((notif) => (
+                <div key={notif.id} className={`p-4 hover:bg-white/5 transition-colors cursor-pointer border-l-2 ${notif.is_read ? 'border-transparent' : 'border-primary'}`}>
+                  <h4 className="font-bold text-sm text-white mb-1">{notif.title}</h4>
+                  <p className="text-xs text-muted-foreground leading-snug">
+                    {notif.message}
+                  </p>
+                  <span className="text-[10px] text-gray-500 mt-2 block">
+                    {new Date(notif.created_at).toLocaleDateString('pt-MZ')} às {new Date(notif.created_at).toLocaleTimeString('pt-MZ', {hour: '2-digit', minute:'2-digit'})}
+                  </span>
+                </div>
+              ))
+            )}
           </div>
         </div>
       )}

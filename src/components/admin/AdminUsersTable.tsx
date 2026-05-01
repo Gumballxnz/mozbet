@@ -3,11 +3,12 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { formatMZN } from "@/lib/utils";
-import { Search, ShieldAlert, UserCheck, Settings, Mail, Ban, PauseCircle, HandCoins, Trash2, Megaphone, Send } from "lucide-react";
+import { Search, ShieldAlert, UserCheck, Settings, Mail, Ban, PauseCircle, HandCoins, Trash2, Megaphone, Send, AtSign } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { Textarea } from "@/components/ui/textarea";
 
 interface UserData {
   id: string;
@@ -26,7 +27,16 @@ export function AdminUsersTable({ initialUsers }: { initialUsers: UserData[] }) 
   const [users, setUsers] = useState<UserData[]>(initialUsers);
   const [search, setSearch] = useState("");
   const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
+  
+  // Modais de envio de comunicação
   const [globalModalOpen, setGlobalModalOpen] = useState(false);
+  const [messageModalOpen, setMessageModalOpen] = useState(false);
+  const [emailModalOpen, setEmailModalOpen] = useState(false);
+  const [commTarget, setCommTarget] = useState<string | "GLOBAL">("");
+  
+  // Estados dos formulários de comunicação
+  const [msgTitle, setMsgTitle] = useState("");
+  const [msgBody, setMsgBody] = useState("");
   
   // Realtime Supabase
   useEffect(() => {
@@ -50,7 +60,7 @@ export function AdminUsersTable({ initialUsers }: { initialUsers: UserData[] }) 
     };
   }, [selectedUser]);
 
-  const filteredUsers = users.filter(u => u.phone.includes(search) || (u.email && u.email.includes(search)));
+  const filteredUsers = users.filter(u => u.phone.includes(search) || (u.id.includes(search)) || (u.email && u.email.includes(search)));
 
   const handleAction = async (action: 'ban' | 'suspend' | 'activate' | 'delete', userId: string) => {
     try {
@@ -86,36 +96,39 @@ export function AdminUsersTable({ initialUsers }: { initialUsers: UserData[] }) 
     }
   };
 
-  const handleSendSiteMessage = async (userId: string | "GLOBAL") => {
-    const msg = prompt(`Escreva a mensagem (Notificação no site) para ${userId === 'GLOBAL' ? 'TODOS OS UTILIZADORES' : 'este utilizador'}:`);
-    if (!msg) return;
+  // Envio Realtime para a BD - Notificação de Site
+  const executeSendSiteMessage = async () => {
+    if (!msgTitle || !msgBody) return toast.error("Preencha título e mensagem");
     
-    toast.loading("A processar e enviar mensagem...", { id: "msg" });
+    toast.loading("A processar a inserção realtime...", { id: "msg" });
     try {
-      if (userId === "GLOBAL") {
-        // Enviar para todos os ativos no site através de broadcast ou criar inserção massiva na db (notifications)
-        const { error } = await supabase.from('notifications').insert({ user_id: 'global', message: msg, type: 'alert' });
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from('notifications').insert({ user_id: userId, message: msg, type: 'alert' });
-        if (error) throw error;
-      }
-      toast.success(`Mensagem entregue com sucesso! O ponto vermelho aparecerá instantaneamente.`, { id: "msg" });
+      const targetId = commTarget === "GLOBAL" ? null : commTarget;
+      const { error } = await supabase.from('notifications').insert({ 
+        user_id: targetId, 
+        title: msgTitle,
+        message: msgBody 
+      });
+      
+      if (error) throw error;
+      
+      toast.success(`Mensagem inserida! A bolinha vermelha vai acender instantaneamente.`, { id: "msg" });
+      setMessageModalOpen(false);
+      setMsgTitle("");
+      setMsgBody("");
+      if (commTarget === "GLOBAL") setGlobalModalOpen(false);
     } catch (e) {
       toast.error("Erro a enviar. Tem a tabela 'notifications' criada no Supabase SQL?", { id: "msg" });
     }
   };
 
-  const handleSendEmail = async (userId: string | "GLOBAL") => {
-    const subject = prompt("Assunto do E-mail:");
-    if (!subject) return;
-    const body = prompt("Conteúdo do E-mail:");
-    if (!body) return;
+  // Envio de Email
+  const executeSendEmail = async () => {
+    if (!msgTitle || !msgBody) return toast.error("Preencha assunto e corpo");
 
-    toast.loading(userId === 'GLOBAL' ? "A agendar disparo global de emails (via Resend)..." : "A enviar email individual...", { id: "email" });
+    toast.loading(commTarget === 'GLOBAL' ? "A agendar disparo global de emails (via Resend)..." : "A enviar email individual...", { id: "email" });
     
     try {
-      const payload = { target: userId, subject, body };
+      const payload = { target: commTarget, subject: msgTitle, body: msgBody };
       const response = await fetch('/api/admin/email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -125,11 +138,30 @@ export function AdminUsersTable({ initialUsers }: { initialUsers: UserData[] }) 
       if (!response.ok) throw new Error("Falha no disparo.");
       
       const data = await response.json();
-      toast.success(userId === "GLOBAL" ? `${data.message}` : `E-mail entregue com sucesso!`, { id: "email" });
-      setGlobalModalOpen(false);
+      toast.success(commTarget === "GLOBAL" ? `${data.message}` : `E-mail entregue com sucesso!`, { id: "email" });
+      setEmailModalOpen(false);
+      setMsgTitle("");
+      setMsgBody("");
+      if (commTarget === "GLOBAL") setGlobalModalOpen(false);
     } catch (error) {
       toast.error("Falha no sistema de e-mails. Verifique se o RESEND_API_KEY está no .env", { id: "email" });
     }
+  };
+
+  const openCommDialog = (type: 'site' | 'email', target: string) => {
+    setCommTarget(target);
+    setMsgTitle("");
+    setMsgBody("");
+    if (type === 'site') setMessageModalOpen(true);
+    if (type === 'email') setEmailModalOpen(true);
+  };
+
+  // Helper para ofuscar numero (+258 84 *** ** 12)
+  const maskPhone = (phone: string) => {
+    if (!phone) return "";
+    const clean = phone.replace(/\D/g, "");
+    if (clean.length < 9) return phone;
+    return `+258 ${clean.substring(0, 2)} *** ** ${clean.substring(clean.length - 2)}`;
   };
 
   return (
@@ -150,7 +182,7 @@ export function AdminUsersTable({ initialUsers }: { initialUsers: UserData[] }) 
           <div className="relative flex-1 sm:w-72">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input 
-              placeholder="Telefone ou e-mail..." 
+              placeholder="Pesquisar ID, telefone..." 
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9 bg-[#101116] border-[#2A2F40] h-10 text-white"
@@ -164,7 +196,7 @@ export function AdminUsersTable({ initialUsers }: { initialUsers: UserData[] }) 
           <table className="w-full text-sm text-left">
             <thead className="text-[10px] text-gray-500 uppercase bg-[#0B0C10] border-b border-[#2A2F40] font-black tracking-wider">
               <tr>
-                <th className="px-6 py-4">Telefone</th>
+                <th className="px-6 py-4">Jogador (ID Único)</th>
                 <th className="px-6 py-4">Saldo Real</th>
                 <th className="px-6 py-4">Status / Bloqueios</th>
                 <th className="px-6 py-4 text-right">Ações</th>
@@ -173,29 +205,32 @@ export function AdminUsersTable({ initialUsers }: { initialUsers: UserData[] }) 
             <tbody>
               {filteredUsers.map((user) => (
                 <tr key={user.id} className="border-b border-[#2A2F40]/50 hover:bg-[#1A1D27] transition-colors">
-                  <td className="px-6 py-4 font-mono-data font-medium text-white flex flex-col gap-1">
-                    <span className="flex items-center gap-2">
+                  <td className="px-6 py-4 flex flex-col gap-1">
+                    <span className="font-mono-data font-black text-white flex items-center gap-2 text-base">
                       {user.is_admin && <ShieldAlert className="w-4 h-4 text-primary" />}
-                      +258 {user.phone}
+                      #{user.id.substring(0, 8).toUpperCase()}
                     </span>
-                    {user.email && <span className="text-[10px] text-gray-500 font-sans">{user.email}</span>}
+                    <span className="text-xs text-gray-400 font-mono-data tracking-widest">{maskPhone(user.phone)}</span>
+                    {user.email && <span className="text-[10px] text-sky-400/70 flex items-center gap-1 mt-1"><AtSign size={10}/>{user.email}</span>}
                   </td>
-                  <td className="px-6 py-4 font-mono-data font-black text-primary text-lg">
+                  <td className="px-6 py-4 font-mono-data font-black text-primary text-lg align-middle">
                     {formatMZN(user.balance)}
                   </td>
-                  <td className="px-6 py-4 flex gap-2">
-                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                      user.is_active ? "bg-primary/20 text-primary border border-primary/30" : "bg-red-500/20 text-red-500 border border-red-500/30"
-                    }`}>
-                      {user.is_active ? "Ativo" : "Banido"}
-                    </span>
-                    {user.balance_retained && (
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-orange-500/20 text-orange-500 border border-orange-500/30">
-                        Saldo Retido
+                  <td className="px-6 py-4 align-middle">
+                    <div className="flex gap-2">
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                        user.is_active ? "bg-primary/20 text-primary border border-primary/30" : "bg-red-500/20 text-red-500 border border-red-500/30"
+                      }`}>
+                        {user.is_active ? "Ativo" : "Banido"}
                       </span>
-                    )}
+                      {user.balance_retained && (
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-orange-500/20 text-orange-500 border border-orange-500/30">
+                          Saldo Retido
+                        </span>
+                      )}
+                    </div>
                   </td>
-                  <td className="px-6 py-4 text-right">
+                  <td className="px-6 py-4 text-right align-middle">
                     <Button 
                       onClick={() => setSelectedUser(user)}
                       size="sm" 
@@ -226,21 +261,26 @@ export function AdminUsersTable({ initialUsers }: { initialUsers: UserData[] }) 
           <DialogHeader>
             <DialogTitle className="text-2xl font-black flex items-center gap-2">
               <UserCheck className="w-6 h-6 text-primary" />
-              Gestão Financeira: <span className="font-mono-data text-primary">+258 {selectedUser?.phone}</span>
+              Jogador: <span className="font-mono-data text-primary">#{selectedUser?.id.substring(0,8).toUpperCase()}</span>
             </DialogTitle>
           </DialogHeader>
 
           {selectedUser && (
-            <div className="space-y-6 pt-4">
+            <div className="space-y-6 pt-2">
               
-              {selectedUser.email && (
+              {selectedUser.email ? (
                  <div className="bg-sky-900/20 border border-sky-500/30 p-3 rounded-xl flex items-center gap-3">
                    <Mail className="w-5 h-5 text-sky-400" />
                    <span className="text-sm font-bold text-sky-100">{selectedUser.email}</span>
                  </div>
+              ) : (
+                <div className="bg-gray-900/40 border border-gray-800 p-3 rounded-xl flex items-center gap-3">
+                   <AtSign className="w-4 h-4 text-gray-500" />
+                   <span className="text-xs font-bold text-gray-500">Sem E-mail Registado na Ficha</span>
+                 </div>
               )}
 
-              {/* Stats Financeiras (Simulando depósitos/perdas via BD completa no backend, mostramos UI) */}
+              {/* Stats Financeiras */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className={`col-span-2 p-4 rounded-xl border ${selectedUser.balance_retained ? 'bg-orange-950/40 border-orange-500/50' : 'bg-[#0B0C10] border-[#2A2F40]'}`}>
                   <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider block mb-1">Saldo em Caixa</span>
@@ -259,24 +299,24 @@ export function AdminUsersTable({ initialUsers }: { initialUsers: UserData[] }) 
 
               {/* Acções Rápidas */}
               <div>
-                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Comunicações (Realtime)</h3>
+                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Comunicações Diretas (Realtime)</h3>
                 <div className="grid grid-cols-2 gap-3 mb-6">
                   <Button 
                     variant="outline" 
                     className="border-[#2A2F40] bg-[#1A1D27] hover:bg-primary/20 hover:text-primary flex items-center justify-center py-6 gap-3"
-                    onClick={() => handleSendSiteMessage(selectedUser.id)}
+                    onClick={() => openCommDialog('site', selectedUser.id)}
                   >
                     <Send className="w-5 h-5 text-primary" />
-                    <span className="text-sm font-bold">Alertar via Website (Notificação)</span>
+                    <span className="text-sm font-bold">Enviar Notificação BD</span>
                   </Button>
                   <Button 
                     variant="outline" 
                     disabled={!selectedUser.email}
                     className="border-[#2A2F40] bg-[#1A1D27] hover:bg-sky-500/20 hover:text-sky-400 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center py-6 gap-3"
-                    onClick={() => handleSendEmail(selectedUser.id)}
+                    onClick={() => openCommDialog('email', selectedUser.id)}
                   >
                     <Mail className="w-5 h-5 text-sky-400" />
-                    <span className="text-sm font-bold">{selectedUser.email ? 'Disparar Email' : 'Sem E-mail'}</span>
+                    <span className="text-sm font-bold">{selectedUser.email ? 'Disparar Email' : 'Email Indisponível'}</span>
                   </Button>
                 </div>
 
@@ -346,23 +386,93 @@ export function AdminUsersTable({ initialUsers }: { initialUsers: UserData[] }) 
               <Megaphone className="w-5 h-5" /> Emissão Global
             </DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-gray-400 mb-4">Envie mensagens para toda a base de dados. O envio de e-mails será agendado em tranches (2000 por dia) via Resend automaticamente.</p>
+          <p className="text-sm text-gray-400 mb-4">Envie mensagens para toda a base de dados em simultâneo.</p>
           
           <div className="flex flex-col gap-3">
              <Button 
-               onClick={() => { handleSendSiteMessage('GLOBAL'); setGlobalModalOpen(false); }}
+               onClick={() => openCommDialog('site', 'GLOBAL')}
                className="bg-primary/20 hover:bg-primary hover:text-black text-primary border border-primary/50 py-6"
              >
-               <Send className="w-5 h-5 mr-3" /> Disparar Ponto Vermelho (Notificação no Site)
+               <Send className="w-5 h-5 mr-3" /> Disparar Ponto Vermelho Realtime
              </Button>
              
              <Button 
-               onClick={() => handleSendEmail('GLOBAL')}
+               onClick={() => openCommDialog('email', 'GLOBAL')}
                className="bg-sky-500/20 hover:bg-sky-500 hover:text-black text-sky-400 border border-sky-500/50 py-6"
              >
                <Mail className="w-5 h-5 mr-3" /> Agendar Disparo de E-mails a Todos
              </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* MODAL MENSAGEM SITE (Substitui o prompt nativo) */}
+      <Dialog open={messageModalOpen} onOpenChange={setMessageModalOpen}>
+        <DialogContent className="sm:max-w-[425px] bg-[#101116] border border-primary text-white">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold flex items-center gap-2 text-primary">
+              <Send className="w-5 h-5" /> Notificação Realtime
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-gray-400">Título da Mensagem</label>
+              <Input 
+                value={msgTitle} 
+                onChange={(e) => setMsgTitle(e.target.value)} 
+                placeholder="Ex: Bónus Disponível 🎉" 
+                className="bg-black border-[#2A2F40]"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-gray-400">Conteúdo (Aparece no Dropdown do Cliente)</label>
+              <Textarea 
+                value={msgBody} 
+                onChange={(e) => setMsgBody(e.target.value)} 
+                placeholder="Escreva a mensagem aqui..." 
+                className="bg-black border-[#2A2F40] min-h-[100px]"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setMessageModalOpen(false)} className="bg-transparent border-[#2A2F40]">Cancelar</Button>
+            <Button onClick={executeSendSiteMessage} className="bg-primary text-black font-bold">Enviar Notificação</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* MODAL EMAIL (Substitui o prompt nativo) */}
+      <Dialog open={emailModalOpen} onOpenChange={setEmailModalOpen}>
+        <DialogContent className="sm:max-w-[425px] bg-[#101116] border border-sky-500 text-white">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold flex items-center gap-2 text-sky-400">
+              <Mail className="w-5 h-5" /> Disparo de E-mail
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-gray-400">Assunto do E-mail</label>
+              <Input 
+                value={msgTitle} 
+                onChange={(e) => setMsgTitle(e.target.value)} 
+                placeholder="Ex: Foste o vencedor do torneio MozBet!" 
+                className="bg-black border-[#2A2F40]"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-gray-400">Conteúdo do E-mail</label>
+              <Textarea 
+                value={msgBody} 
+                onChange={(e) => setMsgBody(e.target.value)} 
+                placeholder="Mensagem HTML ou texto limpo..." 
+                className="bg-black border-[#2A2F40] min-h-[150px]"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEmailModalOpen(false)} className="bg-transparent border-[#2A2F40]">Cancelar</Button>
+            <Button onClick={executeSendEmail} className="bg-sky-500 text-black font-bold">Lançar E-mail</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

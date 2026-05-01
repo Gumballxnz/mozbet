@@ -51,15 +51,15 @@ const GAME_POOL = [
   { id: "mega-fruits", name: "Mega Fruits" },
 ];
 
-// Gerar ID de jogador fake no formato real do site (primeiros chars de UUID uppercase)
-function generateFakePlayerId(): string {
-  const chars = "ABCDEF0123456789";
-  let id = "";
-  for (let i = 0; i < 8; i++) {
-    id += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return id;
-}
+// IDs Partilhados com a Tabela de Apostas para consistência
+const SHARED_FAKE_IDS = [
+  "A8B2C4F1", "F9D3E2A0", "B7C1D9F4", "E4A2B5C1", "D1F8E3A2",
+  "C5B4A1F9", "8F2D1A3B", "3C9E4B1F", "2A5B8C1D", "1E7F3D2A"
+];
+
+const generateFakeUsername = () => {
+  return SHARED_FAKE_IDS[Math.floor(Math.random() * SHARED_FAKE_IDS.length)];
+};
 
 // Mostrar ID parcialmente (ex: "A3F2***" — primeiros 4 + ***)
 function maskPlayerId(id: string): string {

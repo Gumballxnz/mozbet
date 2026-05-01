@@ -1,21 +1,32 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { BadgeCheck } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 
-// Motor Determinístico: Garante que todos os utilizadores vejam os mesmos resultados
-function generateDeterministicBets(count: number) {
+const GAME_INFO: Record<string, { name: string, icon: string }> = {
+  "aviator": { name: "Aviator", icon: "aviator" },
+  "mines": { name: "Mines", icon: "mines" },
+  "plinko": { name: "Plinko", icon: "plinko" },
+  "taxi-crash": { name: "Taxi Crash", icon: "taxi-crash" },
+  "lion-zama": { name: "Lion Zama", icon: "lion-zama" },
+  "mega-fruits": { name: "Mega Fruits", icon: "mega-fruits" }
+};
+
+// IDs Partilhados com o Chat
+const SHARED_FAKE_IDS = [
+  "A8B2C4F1", "F9D3E2A0", "B7C1D9F4", "E4A2B5C1", "D1F8E3A2",
+  "C5B4A1F9", "8F2D1A3B", "3C9E4B1F", "2A5B8C1D", "1E7F3D2A"
+];
+
+function generateDeterministicBets(count: number, excludeAviator: boolean = false) {
   const now = Date.now();
   const currentSecond = Math.floor(now / 1000);
-  const games = [
-    { name: "Aviator", icon: "aviator" },
-    { name: "Mines", icon: "mines" },
-    { name: "Plinko", icon: "plinko" },
-    { name: "Taxi Crash", icon: "taxi-crash" },
-    { name: "Lion Zama", icon: "lion-zama" },
-    { name: "Mega Fruits", icon: "mega-fruits" }
-  ];
-  const chars = "ABCDEF0123456789";
+  let gameKeys = Object.keys(GAME_INFO);
+  if (excludeAviator) {
+    gameKeys = gameKeys.filter(k => k !== "aviator");
+  }
+  
   const results = [];
   
   for (let i = 0; i < count; i++) {
@@ -24,31 +35,24 @@ function generateDeterministicBets(count: number) {
     const pseudoRandom2 = (Math.abs(Math.cos(seed * 8888)) * 10000) % 1;
     const pseudoRandom3 = (Math.abs(Math.sin(seed * 7777)) * 10000) % 1;
     
-    // ID Falso (sempre ID estilo user, não telefone)
-    let fakeId = "";
-    for (let j = 0; j < 8; j++) {
-      fakeId += chars[Math.floor(((pseudoRandom * 100) + j) % chars.length)];
-    }
+    const fakeId = SHARED_FAKE_IDS[Math.floor(pseudoRandom * SHARED_FAKE_IDS.length)];
 
     const baseBets = [10, 20, 50, 100, 200, 500, 1000, 2000, 5000];
     const betAmount = baseBets[Math.floor(pseudoRandom * baseBets.length)];
     
-    // 25% de probabilidade de PERDA (para o site não parecer falso de que toda gente ganha)
+    // 25% de probabilidade de perda natural
     const isLoss = pseudoRandom2 < 0.25;
     
-    // O multiplicador gerado reflete o momento em que a ronda terminou ou a aposta parou.
-    // Mesmo em perdas, o multiplicador não é 0.00x (ex: ele pode não ter sacado a tempo num 20.00x)
     const multiplier = Number((1.01 + pseudoRandom2 * 19).toFixed(2));
     let payout = 0;
-    
     if (!isLoss) {
-      // Se não for perda, o pagamento é Aposta * Multiplicador
       payout = Number((betAmount * multiplier).toFixed(2));
     }
 
     const timeObj = new Date(seed * 1000);
     const timeStr = timeObj.toLocaleTimeString('pt-PT', { hour12: false });
-    const game = games[Math.floor(pseudoRandom3 * games.length)];
+    const gameKey = gameKeys[Math.floor(pseudoRandom3 * gameKeys.length)];
+    const game = GAME_INFO[gameKey];
 
     results.push({
       game: game.name,
@@ -59,30 +63,117 @@ function generateDeterministicBets(count: number) {
       multiplier,
       payout,
       isLoss,
-      isNew: i === 0
+      isNew: i === 0,
+      isReal: false
     });
   }
   
   return results;
 }
 
+// Quando o Aviator (ou outro jogo) crasha no servidor real, geramos apostas relacionadas com ele
+function generateCrashFakes(gameId: string, realCrashPoint: number) {
+  const results = [];
+  const count = Math.floor(Math.random() * 3) + 1; // 1 a 3 fakes
+  const game = GAME_INFO[gameId] || { name: gameId, icon: gameId };
+  
+  for (let i = 0; i < count; i++) {
+    const fakeId = SHARED_FAKE_IDS[Math.floor(Math.random() * SHARED_FAKE_IDS.length)];
+    const baseBets = [10, 50, 100, 200, 500];
+    const betAmount = baseBets[Math.floor(Math.random() * baseBets.length)];
+    
+    // Alguém que sacou antes do crash, ou alguém que não sacou (perdeu)
+    const isLoss = Math.random() < 0.3; // 30% perdem
+    
+    let multiplier = 0;
+    let payout = 0;
+    
+    if (isLoss) {
+      multiplier = realCrashPoint; // Ele crachou neste exato momento e o user perdeu
+      payout = 0;
+    } else {
+      // O utilizador sacou num momento anterior ao crash
+      multiplier = Number((Math.random() * (realCrashPoint - 1.01) + 1.01).toFixed(2));
+      payout = Number((betAmount * multiplier).toFixed(2));
+    }
+
+    results.push({
+      game: game.name,
+      gameIcon: game.icon,
+      id: fakeId,
+      time: new Date().toLocaleTimeString('pt-PT', { hour12: false }),
+      betAmount,
+      multiplier,
+      payout,
+      isLoss,
+      isNew: true,
+      isReal: false
+    });
+  }
+  return results;
+}
+
 export function LiveBetsTable() {
   const [activities, setActivities] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<"all" | "high_rollers" | "biggest_wins">("all");
+  const isMounted = useRef(true);
 
   useEffect(() => {
-    setActivities(generateDeterministicBets(15));
+    isMounted.current = true;
     
+    // Início Misto (Determinístico sem Aviator para não poluir antes do realtime chegar)
+    setActivities(generateDeterministicBets(15, true));
+    
+    // 1. Ouvir o servidor Supabase para Apostas Reais e Crash de Rondas
+    const channel = supabase.channel('live-bets-sync')
+      // Ouvir rondas que terminaram (para gerar fakes consistentes para o Aviator)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'game_rounds' }, (payload) => {
+         const round = payload.new;
+         if (round.status === 'crashed' && isMounted.current) {
+            const crashMult = round.crash_point || 1.00;
+            const newFakes = generateCrashFakes(round.game_id, crashMult);
+            setActivities(prev => [...newFakes, ...prev].slice(0, 15));
+         }
+      })
+      // Ouvir apostas reais de utilizadores de verdade na plataforma
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'bets' }, (payload) => {
+         const bet = payload.new;
+         if (isMounted.current) {
+           const game = GAME_INFO[bet.game_id] || { name: bet.game_id, icon: bet.game_id };
+           const realBet = {
+               game: game.name,
+               gameIcon: game.icon,
+               id: bet.user_id.split('-')[0].toUpperCase(), // ID real formatado e anonimizado
+               time: new Date(bet.created_at).toLocaleTimeString('pt-PT', {hour12: false}),
+               betAmount: bet.amount,
+               multiplier: bet.multiplier || (bet.payout > 0 ? (bet.payout/bet.amount) : 1.00),
+               payout: bet.payout || 0,
+               isLoss: (bet.payout || 0) === 0,
+               isNew: true,
+               isReal: true // Flag de destaque (opcional para estilo)
+           };
+           setActivities(prev => [realBet, ...prev].slice(0, 15));
+         }
+      })
+      .subscribe();
+    
+    // 2. Fallback Determinístico (Preenche de forma cadenciada jogos "Offline" como Mines, Plinko)
     const interval = setInterval(() => {
-      setActivities(prev => {
-        const novo = generateDeterministicBets(1)[0];
-        novo.isNew = true;
-        const restos = prev.slice(0, 14).map(a => ({...a, isNew: false}));
-        return [novo, ...restos];
-      });
-    }, 3500);
+      if (isMounted.current) {
+        setActivities(prev => {
+          const novo = generateDeterministicBets(1, true)[0]; // Não gera Aviator aqui, deixa pro DB
+          novo.isNew = true;
+          const restos = prev.slice(0, 14).map(a => ({...a, isNew: false}));
+          return [novo, ...restos];
+        });
+      }
+    }, 4500);
     
-    return () => clearInterval(interval);
+    return () => {
+      isMounted.current = false;
+      supabase.removeChannel(channel);
+      clearInterval(interval);
+    };
   }, []);
 
   if (activities.length === 0) return null;
@@ -90,14 +181,11 @@ export function LiveBetsTable() {
   // Filtragem e Ordenação com base na Tab ativa
   const getDisplayData = () => {
     if (activeTab === "high_rollers") {
-      // Maiores Apostadores (ordena por valor da aposta)
       return [...activities].sort((a, b) => b.betAmount - a.betAmount).slice(0, 8);
     }
     if (activeTab === "biggest_wins") {
-      // Maiores Premiados (ordena por pagamento)
       return [...activities].sort((a, b) => b.payout - a.payout).slice(0, 8);
     }
-    // Todas as Apostas (ordem cronológica normal)
     return activities.slice(0, 8);
   };
 
@@ -150,7 +238,7 @@ export function LiveBetsTable() {
               {displayData.map((act, i) => (
                 <tr 
                   key={`${act.time}-${act.id}-${i}`} 
-                  className={`group transition-all duration-500 ease-in-out ${act.isNew && activeTab === "all" ? 'bg-white/5' : 'hover:bg-white/[0.02]'}`}
+                  className={`group transition-all duration-500 ease-in-out ${act.isNew && activeTab === "all" ? 'bg-white/5' : 'hover:bg-white/[0.02]'} ${act.isReal ? 'border-l-2 border-primary/50' : ''}`}
                 >
                   <td className="px-4 py-3">
                     <span className="font-bold text-white text-xs flex items-center gap-2">
@@ -160,7 +248,6 @@ export function LiveBetsTable() {
                           alt={act.game}
                           className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
                           onError={(e) => {
-                            // Fallback caso não encontre a imagem
                             e.currentTarget.style.display = 'none';
                             e.currentTarget.parentElement!.innerHTML = '<div class="w-full h-full bg-primary/20 rounded"></div>';
                           }}
@@ -176,7 +263,7 @@ export function LiveBetsTable() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1.5">
-                      <BadgeCheck size={14} className={act.isLoss ? "text-muted-foreground" : "text-primary"} />
+                      <BadgeCheck size={14} className={act.isLoss ? "text-muted-foreground" : (act.isReal ? "text-emerald-400" : "text-primary")} />
                       <span className="text-xs font-bold text-gray-300">
                         {act.id}
                       </span>

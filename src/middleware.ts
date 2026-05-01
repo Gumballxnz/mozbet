@@ -51,8 +51,9 @@ export async function middleware(request: NextRequest) {
       const secret = process.env.JWT_SECRET || "default-dev-secret-key-do-not-use-in-production-123456789";
       const { payload } = await jwtVerify(token, new TextEncoder().encode(secret));
       
-      // Se a rota for admin, verificar a role "admin" no Payload JWT
-      if (isAdminRoute && payload.role !== "admin") {
+      // Se a rota for admin, verificar se é admin no Payload JWT
+      // O token usa o campo "isAdmin" (não "role")
+      if (isAdminRoute && !payload.isAdmin) {
         return NextResponse.redirect(new URL("/", request.url));
       }
       

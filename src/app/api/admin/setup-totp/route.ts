@@ -33,9 +33,9 @@ export async function POST(req: Request) {
 
     if (user?.totp_enabled) {
       return NextResponse.json({ 
-        error: "TOTP já está configurado. Use o código do Authenticator para entrar.",
+        message: "TOTP já está configurado. Use o código do Authenticator para entrar.",
         alreadyEnabled: true,
-      }, { status: 400 });
+      }, { status: 200 });
     }
 
     // Gerar novo segredo TOTP

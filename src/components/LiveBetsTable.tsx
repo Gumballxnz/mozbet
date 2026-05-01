@@ -3,23 +3,11 @@
 import { useEffect, useState, useRef } from "react";
 import { BadgeCheck } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { GAMES } from "@/lib/games";
 
-const GAME_INFO: Record<string, { name: string, iconUrl: string }> = {
-  "aviator": { name: "AVIATOR", iconUrl: "/api/img/banner-aviator" },
-  "taxi-crash": { name: "TAXI CRASH", iconUrl: "/api/img/banner-taxi" },
-  "earplane": { name: "EARPLANE", iconUrl: "/api/img/banner-earplane" },
-  "purple-crash": { name: "CRASH", iconUrl: "/api/img/banner-purple-crash" },
-  "subway-crash": { name: "SUBWAY CRASH", iconUrl: "/api/img/game-crash" },
-  "augustus-crash": { name: "AUGUSTUS CRASH", iconUrl: "/api/img/game-dragon" },
-  "chicken-highway": { name: "CHICKEN HIGHWAY", iconUrl: "/api/img/game-keno" },
-  "mines": { name: "MINES", iconUrl: "/api/img/banner-mines" },
-  "plinko": { name: "PLINKO777", iconUrl: "/api/img/banner-plinko" },
-  "bottle-mania": { name: "BOTTLE MANIA", iconUrl: "/api/img/banner-bottle-mania" },
-  "fishinator": { name: "FISHINATOR", iconUrl: "/api/img/game-trading" },
-  "football-x": { name: "FOOTBALL X", iconUrl: "/api/img/game-roulette" },
-  "lion-zama": { name: "LION ZAMA", iconUrl: "/api/img/banner-lion-zama" },
-  "mega-fruits": { name: "MEGA FRUITS", iconUrl: "/api/img/banner-mega-fruits" },
-};
+// Separa os jogos quentes dos normais
+const HOT_GAMES = GAMES.filter(g => g.hot);
+const NORMAL_GAMES = GAMES.filter(g => !g.hot);
 
 // IDs Partilhados com o Chat
 const SHARED_FAKE_IDS = [
@@ -30,9 +18,13 @@ const SHARED_FAKE_IDS = [
 function generateDeterministicBets(count: number, excludeAviator: boolean = false) {
   const now = Date.now();
   const currentSecond = Math.floor(now / 1000);
-  let gameKeys = Object.keys(GAME_INFO);
+  
+  let availableHot = HOT_GAMES;
+  let availableNormal = NORMAL_GAMES;
+
   if (excludeAviator) {
-    gameKeys = gameKeys.filter(k => k !== "aviator");
+    availableHot = availableHot.filter(g => g.id !== "aviator");
+    availableNormal = availableNormal.filter(g => g.id !== "aviator");
   }
   
   const results = [];
@@ -42,6 +34,7 @@ function generateDeterministicBets(count: number, excludeAviator: boolean = fals
     const pseudoRandom = (Math.abs(Math.sin(seed * 9999)) * 10000) % 1;
     const pseudoRandom2 = (Math.abs(Math.cos(seed * 8888)) * 10000) % 1;
     const pseudoRandom3 = (Math.abs(Math.sin(seed * 7777)) * 10000) % 1;
+    const pseudoRandom4 = (Math.abs(Math.cos(seed * 5555)) * 10000) % 1;
     
     const fakeId = SHARED_FAKE_IDS[Math.floor(pseudoRandom * SHARED_FAKE_IDS.length)];
 
@@ -59,12 +52,20 @@ function generateDeterministicBets(count: number, excludeAviator: boolean = fals
 
     const timeObj = new Date(seed * 1000);
     const timeStr = timeObj.toLocaleTimeString('pt-PT', { hour12: false });
-    const gameKey = gameKeys[Math.floor(pseudoRandom3 * gameKeys.length)];
-    const game = GAME_INFO[gameKey];
+    
+    // 60% chance de selecionar um jogo HOT, 40% NORMAL
+    let selectedGame;
+    if (pseudoRandom4 < 0.60 && availableHot.length > 0) {
+       selectedGame = availableHot[Math.floor(pseudoRandom3 * availableHot.length)];
+    } else if (availableNormal.length > 0) {
+       selectedGame = availableNormal[Math.floor(pseudoRandom3 * availableNormal.length)];
+    } else {
+       selectedGame = availableHot[0]; // Fallback absoluto
+    }
 
     results.push({
-      game: game.name,
-      gameIcon: game.icon,
+      game: selectedGame.name,
+      gameIcon: selectedGame.banner,
       id: fakeId,
       time: timeStr,
       betAmount,
@@ -83,7 +84,7 @@ function generateDeterministicBets(count: number, excludeAviator: boolean = fals
 function generateCrashFakes(gameId: string, realCrashPoint: number) {
   const results = [];
   const count = Math.floor(Math.random() * 3) + 1; // 1 a 3 fakes
-  const game = GAME_INFO[gameId] || { name: gameId, iconUrl: `/api/img/banner-${gameId}` };
+  const game = GAMES.find(g => g.id === gameId) || { name: gameId, banner: `/api/img/banner-${gameId}` };
   
   for (let i = 0; i < count; i++) {
     const fakeId = SHARED_FAKE_IDS[Math.floor(Math.random() * SHARED_FAKE_IDS.length)];
@@ -107,7 +108,7 @@ function generateCrashFakes(gameId: string, realCrashPoint: number) {
 
     results.push({
       game: game.name,
-      gameIcon: game.icon,
+      gameIcon: game.banner,
       id: fakeId,
       time: new Date().toLocaleTimeString('pt-PT', { hour12: false }),
       betAmount,
@@ -147,10 +148,10 @@ export function LiveBetsTable() {
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'bets' }, (payload) => {
          const bet = payload.new;
          if (isMounted.current) {
-           const game = GAME_INFO[bet.game_id] || { name: bet.game_id, iconUrl: `/api/img/banner-${bet.game_id}` };
+           const game = GAMES.find(g => g.id === bet.game_id) || { name: bet.game_id, banner: `/api/img/banner-${bet.game_id}` };
            const realBet = {
                game: game.name,
-               gameIcon: game.iconUrl,
+               gameIcon: game.banner,
                id: bet.user_id.split('-')[0].toUpperCase(), // ID real formatado e anonimizado
                time: new Date(bet.created_at).toLocaleTimeString('pt-PT', {hour12: false}),
                betAmount: bet.amount,
@@ -158,7 +159,7 @@ export function LiveBetsTable() {
                payout: bet.payout || 0,
                isLoss: (bet.payout || 0) === 0,
                isNew: true,
-               isReal: true // Flag de destaque (opcional para estilo)
+               isReal: true // Flag mantida apenas no modelo de dados
            };
            setActivities(prev => [realBet, ...prev].slice(0, 15));
          }

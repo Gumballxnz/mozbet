@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { formatMZN } from "@/lib/utils";
-import { Search, ShieldAlert, UserCheck, Settings, Mail, Ban, PauseCircle, HandCoins, Trash2, Megaphone, Send, AtSign } from "lucide-react";
+import { Search, ShieldAlert, UserCheck, Settings, Mail, Ban, PauseCircle, HandCoins, Trash2, Megaphone, Send, AtSign, MessageCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -178,6 +178,15 @@ export function AdminUsersTable({ initialUsers }: { initialUsers: UserData[] }) 
     return `+258 ${clean.substring(0, 2)} *** ** ${clean.substring(clean.length - 2)}`;
   };
 
+  const maskEmail = (email: string) => {
+    if (!email) return "";
+    const parts = email.split("@");
+    if (parts.length !== 2) return email;
+    const [name, domain] = parts;
+    if (name.length <= 3) return email;
+    return `${name.substring(0, 3)}***@${domain}`;
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -225,7 +234,7 @@ export function AdminUsersTable({ initialUsers }: { initialUsers: UserData[] }) 
                       #{user.id.substring(0, 8).toUpperCase()}
                     </span>
                     <span className="text-xs text-gray-400 font-mono-data tracking-widest">{maskPhone(user.phone)}</span>
-                    {user.email && <span className="text-[10px] text-sky-400/70 flex items-center gap-1 mt-1"><AtSign size={10}/>{user.email}</span>}
+                    {user.email && <span className="text-[10px] text-sky-400/70 flex items-center gap-1 mt-1"><AtSign size={10}/>{maskEmail(user.email)}</span>}
                   </td>
                   <td className="px-6 py-4 font-mono-data font-black text-primary text-lg align-middle">
                     {formatMZN(user.balance)}
@@ -286,7 +295,7 @@ export function AdminUsersTable({ initialUsers }: { initialUsers: UserData[] }) 
               {selectedUser.email ? (
                  <div className="bg-sky-900/20 border border-sky-500/30 p-3 rounded-xl flex items-center gap-3">
                    <Mail className="w-5 h-5 text-sky-400" />
-                   <span className="text-sm font-bold text-sky-100">{selectedUser.email}</span>
+                   <span className="text-sm font-bold text-sky-100">{maskEmail(selectedUser.email)}</span>
                  </div>
               ) : (
                 <div className="bg-gray-900/40 border border-gray-800 p-3 rounded-xl flex items-center gap-3">
@@ -315,7 +324,7 @@ export function AdminUsersTable({ initialUsers }: { initialUsers: UserData[] }) 
               {/* Acções Rápidas */}
               <div>
                 <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Comunicações Diretas (Realtime)</h3>
-                <div className="grid grid-cols-2 gap-3 mb-6">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mb-6">
                   <Button 
                     variant="outline" 
                     className="border-[#2A2F40] bg-[#1A1D27] hover:bg-primary/20 hover:text-primary flex items-center justify-center py-6 gap-3"
@@ -332,6 +341,14 @@ export function AdminUsersTable({ initialUsers }: { initialUsers: UserData[] }) 
                   >
                     <Mail className="w-5 h-5 text-sky-400" />
                     <span className="text-sm font-bold">{selectedUser.email ? 'Enviar E-mail' : 'Sem E-mail Registado'}</span>
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="border-[#2A2F40] bg-[#1A1D27] hover:bg-green-500/20 hover:text-green-500 flex items-center justify-center py-6 gap-3 md:col-span-2 lg:col-span-1"
+                    onClick={() => window.open(`https://wa.me/258${selectedUser.phone.replace(/\D/g, '')}`, '_blank')}
+                  >
+                    <MessageCircle className="w-5 h-5 text-green-500" />
+                    <span className="text-sm font-bold">Mensagem WhatsApp</span>
                   </Button>
                 </div>
 

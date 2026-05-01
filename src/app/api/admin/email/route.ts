@@ -34,7 +34,7 @@ export async function POST(req: Request) {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          from: "MozBet CRM <no-reply@mozbet.com>", // You must configure this domain in Resend
+          from: "MozBet Suporte <onboarding@resend.dev>", // Obrigatório no plano gratuito do Resend
           to: [targetEmail],
           subject: subject,
           html: `<div style="font-family: sans-serif; padding: 20px;">

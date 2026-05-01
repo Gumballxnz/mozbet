@@ -277,11 +277,7 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
     return () => clearInterval(interval);
   }, [isOpen, setMessages]);
 
-  const scrollToBottom = () => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-    }
-  };
+
 
   const handleSend = async () => {
     if (!isLoggedIn) {

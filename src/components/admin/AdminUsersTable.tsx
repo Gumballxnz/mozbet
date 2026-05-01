@@ -277,6 +277,7 @@ export function AdminUsersTable({ initialUsers }: { initialUsers: UserData[] }) 
               <UserCheck className="w-6 h-6 text-primary" />
               Jogador: <span className="font-mono-data text-primary">#{selectedUser?.id.substring(0,8).toUpperCase()}</span>
             </DialogTitle>
+            <DialogDescription className="hidden">Painel de gestão do jogador</DialogDescription>
           </DialogHeader>
 
           {selectedUser && (

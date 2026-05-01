@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { User, Wallet, LogOut, MessageCircle, Bell } from "lucide-react";
 import { formatMZN } from "@/lib/utils";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
 
 const AVATARS = [
   "https://api.dicebear.com/7.x/adventurer/svg?seed=Felix&backgroundColor=f59e0b",

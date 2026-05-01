@@ -61,13 +61,15 @@ export default function PlayGamePage({
   const engineUrl = `/engine/${gameId}?mode=real`;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black">
-      <GamePlayer 
-        gameId={gameId}
-        gameName={GAME_NAMES[gameId]}
-        iframeUrl={engineUrl}
-        mode="real"
-      />
+    <div className="w-full max-w-[1400px] mx-auto pt-2 pb-8 px-0 sm:px-4">
+      <div className="w-full h-[650px] md:h-[750px] lg:h-[800px] rounded-none sm:rounded-2xl overflow-hidden shadow-2xl bg-black border sm:border-white/10">
+        <GamePlayer 
+          gameId={gameId}
+          gameName={GAME_NAMES[gameId]}
+          iframeUrl={engineUrl}
+          mode="real"
+        />
+      </div>
     </div>
   );
 }

@@ -134,7 +134,6 @@ export default function AdminBannersPage() {
             </div>
           ))}
         </div>
-      )}
     </div>
   );
 }

@@ -143,7 +143,6 @@ export default function AdminGamesPage() {
             </div>
           ))}
         </div>
-      )}
     </div>
   );
 }

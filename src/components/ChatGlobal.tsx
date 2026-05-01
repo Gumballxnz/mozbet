@@ -208,7 +208,7 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
         { event: "INSERT", schema: "public", table: "chat_messages" },
         (payload) => {
           const newMsg = payload.new as ChatMessage;
-          setMessages((prev) => [...prev, newMsg]);
+          setMessages([...useAppStore.getState().fakeChatMessages, newMsg]);
           setTimeout(scrollToBottom, 100);
         }
       )
@@ -254,7 +254,7 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
     scheduleNext();
 
     return () => clearTimeout(timeoutId);
-  }, [isOpen, messages.length, setMessages]);
+  }, [isOpen, setMessages]); // Removido messages.length para o timer não ser resetado a cada nova mensagem
 
   // Anúncios de vitória do BOT MOZBET (mais espaçados)
   useEffect(() => {

@@ -8,8 +8,15 @@ import { NextRequest, NextResponse } from "next/server";
 // Mapeamento de IDs para URLs do Cloudinary (server-side only)
 const CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || "dm3glrwax";
 
+// Aliases para nomes que diferem no Cloudinary
+const ASSET_ALIASES: Record<string, string> = {
+  "banner-tiger": "game-tiger",
+  "banner-vip": "banner-promo",
+};
+
 function buildCloudinaryUrl(assetName: string): string {
-  return `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/c_limit,f_auto,q_auto,w_800/v1/mozbet/mozbet/${assetName}`;
+  const resolved = ASSET_ALIASES[assetName] || assetName;
+  return `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/c_limit,f_auto,q_auto,w_800/v1/mozbet/mozbet/${resolved}`;
 }
 
 // Cache em memória para evitar re-fetch constante (5 minutos)

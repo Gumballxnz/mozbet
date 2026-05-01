@@ -7,12 +7,14 @@ Regras estritas que você deve seguir:
 3. JAMAIS invente promoções, regras ou crie dados falsos. 
 4. Sobre Depósitos: Aceitamos M-Pesa e E-Mola através da e2Payments. O depósito mínimo é de 10 MT e o máximo 25.000 MT. O número usado no registo tem de ser o mesmo usado no depósito.
 5. Sobre Bônus: Oferecemos 500% no primeiro depósito até 25.000 MT. O saldo vai para a carteira de bônus e tem requisitos de aposta (wagering).
-6. Sobre Jogos: Temos Crash Games (Aviator, etc), Casino (Mines, Plinko) e Slots.
+6. Sobre Jogos: Temos Crash Games (Aviator, Taxi Crash, Earplane), Casino (Mines, Plinko, Roleta) e Slots.
 7. Não responda a perguntas de programação, política ou coisas fora do escopo de uma casa de apostas.
-8. Mantenha as respostas curtas e diretas.`;
+8. Mantenha as respostas curtas e diretas (máximo 2-3 frases).
+9. Se o usuário disser "ola", "olá", "oi", "hi", "hello" ou qualquer saudação, responda com uma saudação calorosa e pergunte como pode ajudar.`;
 
-// Respostas automáticas para quando a IA estiver offline
+// Respostas automáticas inteligentes (fallback quando a IA falha)
 const AUTO_REPLIES: Record<string, string> = {
+  saudacao: "Olá! 👋 Bem-vindo ao suporte da MOZBET. Como posso ajudar-te hoje?",
   deposito: "Para depositar, clique no botão 'Depositar' no topo da página. Aceitamos M-Pesa e E-Mola. O mínimo é 10 MT e o máximo 25.000 MT.",
   bonus: "Oferecemos 500% de bónus no seu primeiro depósito, até 25.000 MT! Basta fazer o seu primeiro depósito.",
   saque: "A função de saque estará disponível em breve. Fique atento às novidades!",
@@ -21,15 +23,87 @@ const AUTO_REPLIES: Record<string, string> = {
   conta: "Para gerir a sua conta, clique no ícone de perfil. Lá pode ver o seu saldo, histórico e dados pessoais.",
 };
 
-function getAutoReply(message: string): string | null {
-  const msg = message.toLowerCase();
-  if (msg.includes("deposit") || msg.includes("pagar") || msg.includes("mpesa") || msg.includes("m-pesa")) return AUTO_REPLIES.deposito;
+function getAutoReply(message: string): string {
+  const msg = message.toLowerCase().trim();
+  
+  // Saudações
+  if (/^(ol[aá]|oi|hi|hello|hey|bom dia|boa tarde|boa noite|e a[ií]|salve|tudo bem)/.test(msg)) return AUTO_REPLIES.saudacao;
+  
+  // Categorias
+  if (msg.includes("deposit") || msg.includes("pagar") || msg.includes("mpesa") || msg.includes("m-pesa") || msg.includes("e-mola") || msg.includes("emola")) return AUTO_REPLIES.deposito;
   if (msg.includes("bonus") || msg.includes("bónus") || msg.includes("promoç")) return AUTO_REPLIES.bonus;
-  if (msg.includes("saque") || msg.includes("levantar") || msg.includes("retirar")) return AUTO_REPLIES.saque;
-  if (msg.includes("jogo") || msg.includes("slot") || msg.includes("crash") || msg.includes("aviator") || msg.includes("mines")) return AUTO_REPLIES.jogo;
+  if (msg.includes("saque") || msg.includes("levantar") || msg.includes("retirar") || msg.includes("withdraw")) return AUTO_REPLIES.saque;
+  if (msg.includes("jogo") || msg.includes("slot") || msg.includes("crash") || msg.includes("aviator") || msg.includes("mines") || msg.includes("plinko")) return AUTO_REPLIES.jogo;
   if (msg.includes("ajuda") || msg.includes("help") || msg.includes("como")) return AUTO_REPLIES.ajuda;
-  if (msg.includes("conta") || msg.includes("perfil") || msg.includes("saldo")) return AUTO_REPLIES.conta;
-  return null;
+  if (msg.includes("conta") || msg.includes("perfil") || msg.includes("saldo") || msg.includes("senha") || msg.includes("password")) return AUTO_REPLIES.conta;
+  
+  // Fallback genérico
+  return "Olá! 👋 Sou o assistente da MOZBET. Posso ajudar com depósitos, bónus, jogos e questões da sua conta. Em que posso ajudar?";
+}
+
+// Modelos Gemini ordenados por prioridade (do mais rápido ao mais estável)
+const GEMINI_MODELS = [
+  "gemini-2.0-flash-lite",
+  "gemini-2.0-flash",
+  "gemini-1.5-flash",
+];
+
+async function callGemini(apiKey: string, contents: any[], modelIndex = 0): Promise<string | null> {
+  if (modelIndex >= GEMINI_MODELS.length) return null;
+  
+  const model = GEMINI_MODELS[modelIndex];
+  
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000); // 8 segundos de timeout
+    
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents,
+          generationConfig: {
+            temperature: 0.3,
+            maxOutputTokens: 256,
+          },
+        }),
+        signal: controller.signal,
+      }
+    );
+    
+    clearTimeout(timeout);
+    
+    // Se deu 429 (rate limit) ou 503 (serviço indisponível), tenta o próximo modelo
+    if (response.status === 429 || response.status === 503) {
+      console.warn(`[Suporte IA] Modelo ${model} retornou ${response.status}, tentando próximo...`);
+      return callGemini(apiKey, contents, modelIndex + 1);
+    }
+    
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      console.error(`[Suporte IA] Erro ${response.status} no modelo ${model}:`, errData);
+      return callGemini(apiKey, contents, modelIndex + 1);
+    }
+    
+    const data = await response.json();
+    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    
+    if (!reply) {
+      console.warn(`[Suporte IA] Modelo ${model} não retornou conteúdo, tentando próximo...`);
+      return callGemini(apiKey, contents, modelIndex + 1);
+    }
+    
+    return reply;
+  } catch (err: any) {
+    if (err.name === "AbortError") {
+      console.warn(`[Suporte IA] Timeout no modelo ${model}, tentando próximo...`);
+    } else {
+      console.error(`[Suporte IA] Erro no modelo ${model}:`, err.message);
+    }
+    return callGemini(apiKey, contents, modelIndex + 1);
+  }
 }
 
 export async function POST(req: Request) {
@@ -44,60 +118,34 @@ export async function POST(req: Request) {
 
     // Se não tem chave, usar respostas automáticas
     if (!apiKey || apiKey === "sua-chave-api-do-google-gemini-aqui") {
-      const autoReply = getAutoReply(message) || "Olá! O nosso suporte por IA está temporariamente offline. Para ajuda imediata, envie um WhatsApp para +258 84 068 3435.";
-      return NextResponse.json({ response: autoReply });
+      return NextResponse.json({ response: getAutoReply(message) });
     }
 
     // Formatar histórico para a API REST do Gemini
-    const formattedHistory = (history || []).map((msg: { role: string, content: string }) => ({
+    const formattedHistory = (history || []).slice(-6).map((msg: { role: string, content: string }) => ({
       role: msg.role === "user" ? "user" : "model",
       parts: [{ text: msg.content }],
     }));
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          contents: [
-            { role: "user", parts: [{ text: SYSTEM_PROMPT }] },
-            { role: "model", parts: [{ text: "Entendido. Serei o assistente de suporte da MOZBET." }] },
-            ...formattedHistory,
-            { role: "user", parts: [{ text: message }] }
-          ],
-          generationConfig: {
-            temperature: 0.2,
-          }
-        }),
-      }
-    );
+    const contents = [
+      { role: "user", parts: [{ text: SYSTEM_PROMPT }] },
+      { role: "model", parts: [{ text: "Entendido. Sou o assistente de suporte da MOZBET. Estou pronto para ajudar!" }] },
+      ...formattedHistory,
+      { role: "user", parts: [{ text: message }] },
+    ];
 
-    const data = await response.json();
+    // Tentar obter resposta da IA com retry automático entre modelos
+    const reply = await callGemini(apiKey, contents);
 
-    if (!response.ok) {
-      console.error("Erro da API Gemini:", data);
-      // Fallback para respostas automáticas se a IA falhar
-      const autoReply = getAutoReply(message) || "Desculpe, o nosso assistente está a processar muitos pedidos. Tente novamente em alguns segundos.";
-      return NextResponse.json({ response: autoReply });
+    if (reply) {
+      return NextResponse.json({ response: reply });
     }
 
-    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
-
-    if (!reply) {
-      const autoReply = getAutoReply(message) || "Desculpe, não consegui processar a sua pergunta. Pode reformular?";
-      return NextResponse.json({ response: autoReply });
-    }
-
-    return NextResponse.json({ response: reply });
+    // Se todos os modelos falharam, usar resposta automática inteligente
+    return NextResponse.json({ response: getAutoReply(message) });
 
   } catch (error) {
-    console.error("Erro no Gemini Chat:", error);
-    return NextResponse.json({ 
-      response: "O nosso suporte automático está temporariamente indisponível. Para ajuda, contacte-nos pelo WhatsApp: +258 84 068 3435." 
-    });
+    console.error("[Suporte IA] Erro geral:", error);
+    return NextResponse.json({ response: getAutoReply("ajuda") });
   }
 }
-

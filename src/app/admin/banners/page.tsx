@@ -87,30 +87,33 @@ export default function AdminBannersPage() {
           <h1 className="text-2xl font-extrabold text-white">Central de Banners</h1>
           <p className="text-muted-foreground">Insira a URL original da imagem. O sistema criará um Proxy encriptado para os clientes.</p>
         </div>
+        <Button onClick={() => setBanners([...banners, { id: crypto.randomUUID(), title: "", highlight: "", description: "", badge: "", action_text: "", image_url: "", link_url: "", sort_order: banners.length + 1, is_active: true }])} className="bg-primary text-black font-extrabold">
+          + Adicionar Banner
+        </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="flex flex-col gap-6">
           {banners.map((banner) => (
-            <div key={banner.id} className={`bg-surface p-6 rounded-2xl border ${banner.is_active ? 'border-white/10' : 'border-red-900/50 opacity-60'} flex flex-col xl:flex-row gap-6 shadow-xl relative transition-all`}>
+            <div key={banner.id} className={`bg-surface p-6 rounded-2xl border ${banner.is_active ? 'border-white/10' : 'border-red-900/50 opacity-60'} flex flex-col lg:flex-row gap-6 shadow-xl relative transition-all`}>
               
-              {/* Preview Vertical do Banner */}
-              <div className="w-full xl:w-[200px] shrink-0 bg-black rounded-xl overflow-hidden aspect-[9/16] relative">
+              {/* Preview Horizontal do Banner */}
+              <div className="w-full lg:w-[450px] shrink-0 bg-black rounded-xl overflow-hidden aspect-[21/9] relative border border-white/5">
                 {banner.image_url ? (
                   <>
                     <img src={banner.image_url} alt="Preview" className="absolute inset-0 w-full h-full object-cover opacity-60" />
-                    <div className="absolute inset-0 flex flex-col justify-end p-4">
-                      <span className="text-[10px] bg-primary/20 text-primary border border-primary px-2 rounded-full w-fit mb-1">{banner.badge || "BADGE"}</span>
-                      <h4 className="text-white font-black leading-tight text-lg">
-                        {banner.title || "TÍTULO"}<br/>
-                        <span className="text-primary">{banner.highlight || "DESTAQUE"}</span>
+                    <div className="absolute inset-0 flex flex-col justify-center p-6 bg-gradient-to-r from-black/80 to-transparent">
+                      <span className="text-[10px] bg-primary/20 text-primary border border-primary px-2 py-0.5 rounded-full w-fit mb-2 font-black tracking-widest">{banner.badge || "BADGE"}</span>
+                      <h4 className="text-white font-black leading-tight text-2xl drop-shadow-md">
+                        {banner.title || "TÍTULO"} <span className="text-primary">{banner.highlight || "DESTAQUE"}</span>
                       </h4>
-                      <div className="mt-2 bg-primary text-black text-[10px] font-bold px-3 py-1 rounded w-fit">
+                      <p className="text-xs text-gray-300 mt-1 max-w-[200px] drop-shadow">{banner.description}</p>
+                      <div className="mt-4 bg-primary text-black text-xs font-bold px-4 py-1.5 rounded-md w-fit shadow-md">
                         {banner.action_text || "AÇÃO"}
                       </div>
                     </div>
                   </>
                 ) : (
-                  <div className="absolute inset-0 flex items-center justify-center text-muted-foreground text-xs">Sem Imagem</div>
+                  <div className="absolute inset-0 flex items-center justify-center text-muted-foreground text-xs">Sem Imagem (URL Vazia)</div>
                 )}
               </div>
 
@@ -151,10 +154,10 @@ export default function AdminBannersPage() {
                 <div className="flex items-center justify-between pt-4 border-t border-white/10 mt-auto">
                   <div className="flex items-center gap-2">
                     <Switch checked={banner.is_active !== false} onCheckedChange={(c) => handleUpdate(banner.id, "is_active", c)} />
-                    <span className="text-sm font-bold text-white">Ativo</span>
+                    <span className="text-sm font-bold text-white">Ativo (Visível)</span>
                   </div>
                   <Button onClick={() => handleSave(banner)} className="bg-primary text-black font-extrabold hover:bg-primary/90">
-                    Guardar no Servidor
+                    Guardar Alterações
                   </Button>
                 </div>
               </div>

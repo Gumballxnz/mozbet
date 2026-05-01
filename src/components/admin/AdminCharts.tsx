@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Legend } from "recharts";
-import { format, subDays, startOfDay, parseISO, isAfter, subPeriods } from "date-fns";
+import { format, subDays, startOfDay, parseISO, isAfter } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/lib/supabase";
 import { TrendingUp, TrendingDown, Wallet, Users, ArrowUpRight, ArrowDownRight, Activity } from "lucide-react";

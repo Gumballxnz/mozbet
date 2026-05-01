@@ -67,32 +67,40 @@ export function AdminUsersTable({ initialUsers }: { initialUsers: UserData[] }) 
       if (action === 'delete') {
         const confirmed = confirm("Aviso: Apagar este utilizador removerá todos os seus dados e não tem volta. Continuar?");
         if (!confirmed) return;
-        await supabase.from("users").delete().eq("id", userId);
-        toast.success("Conta apagada.");
-        setSelectedUser(null);
-        return;
       }
 
-      const updates: any = {};
-      if (action === 'ban') updates.is_active = false;
-      if (action === 'suspend') updates.is_active = false;
-      if (action === 'activate') updates.is_active = true;
-
-      const { error } = await supabase.from("users").update(updates).eq("id", userId);
-      if (error) throw error;
-      toast.success("Estado da conta atualizado com sucesso.");
+      toast.loading("A executar...", { id: "admin-action" });
+      const res = await fetch("/api/admin/users/action", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, userId })
+      });
+      
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Erro ao executar ação");
+      
+      toast.success(action === 'delete' ? "Conta apagada." : "Estado da conta atualizado com sucesso.", { id: "admin-action" });
+      if (action === 'delete') setSelectedUser(null);
     } catch (err: any) {
-      toast.error(err.message || "Erro ao executar ação");
+      toast.error(err.message || "Erro ao executar ação", { id: "admin-action" });
     }
   };
 
   const handleRetainBalance = async (userId: string, currentStatus?: boolean) => {
     try {
-      const { error } = await supabase.from("users").update({ balance_retained: !currentStatus }).eq("id", userId);
-      if (error) throw error;
-      toast.success(!currentStatus ? "Saldo Bloqueado com sucesso. O cliente não pode jogar nem levantar." : "Saldo desbloqueado!");
+      toast.loading("A atualizar saldo...", { id: "admin-action" });
+      const res = await fetch("/api/admin/users/action", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: 'retain', userId, balanceRetainedStatus: currentStatus })
+      });
+      
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Erro ao reter saldo");
+      
+      toast.success(!currentStatus ? "Saldo Bloqueado com sucesso. O cliente não pode jogar nem levantar." : "Saldo desbloqueado!", { id: "admin-action" });
     } catch (err: any) {
-      toast.error("Erro ao reter saldo. (Verifique se executou o SQL de adição de coluna balance_retained)");
+      toast.error(err.message || "Erro ao reter saldo.", { id: "admin-action" });
     }
   };
 
@@ -345,7 +353,7 @@ export function AdminUsersTable({ initialUsers }: { initialUsers: UserData[] }) 
                   <Button 
                     variant="outline" 
                     className="border-[#2A2F40] bg-[#1A1D27] hover:bg-green-500/20 hover:text-green-500 flex items-center justify-center py-6 gap-3 md:col-span-2 lg:col-span-1"
-                    onClick={() => window.open(`https://wa.me/258${selectedUser.phone.replace(/\D/g, '')}`, '_blank')}
+                    onClick={() => window.open(`https://wa.me/258${selectedUser.phone.replace(/\D/g, '')}?text=${encodeURIComponent('Olá! Sou do suporte da MozBet.')}`, '_blank')}
                   >
                     <MessageCircle className="w-5 h-5 text-green-500" />
                     <span className="text-sm font-bold">Mensagem WhatsApp</span>

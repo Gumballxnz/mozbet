@@ -6,6 +6,7 @@ import { LayoutDashboard, Users, Wallet, LogOut, Settings } from "lucide-react";
 import { useAppStore } from "@/lib/store";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();

@@ -26,6 +26,9 @@ export default function PerfilPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [commercialOptIn, setCommercialOptIn] = useState(true);
   
+  // Se o utilizador já tem um email, bloqueamos o input até ele clicar em "Alterar"
+  const [isEmailEditing, setIsEmailEditing] = useState(!user?.email);
+  
   // Estados para OTP
   const [showOtpInput, setShowOtpInput] = useState(false);
   const [emailOtp, setEmailOtp] = useState("");
@@ -39,9 +42,17 @@ export default function PerfilPage() {
   const registerDate = user.createdAt ? new Date(user.createdAt).toLocaleDateString("pt-MZ") : new Date().toLocaleDateString("pt-MZ");
   const bonusBalance = 0; // Simulated bonus
 
+  // Verifica se houve alguma alteração real nos dados do utilizador
+  const hasChanges = 
+    email !== (user.email || "") || 
+    selectedAvatar !== (user.avatar || AVATARS[0]) || 
+    commercialOptIn !== true;
+
   const handleSave = async () => {
-    // 1. Se tem email e ainda não pediu OTP, pede o OTP primeiro
-    if (email && email.includes("@") && !showOtpInput) {
+    // 1. Só pedir OTP se o email estiver a ser alterado para um NOVO email (diferente do atual)
+    const isNewEmail = email && email.includes("@") && email !== user.email;
+    
+    if (isNewEmail && !showOtpInput) {
       setIsSaving(true);
       try {
         const res = await fetch("/api/profile/send-email-otp", {
@@ -63,8 +74,8 @@ export default function PerfilPage() {
       return;
     }
 
-    // 2. Se não tem email, ou já tem email e OTP, guarda o perfil
-    if (showOtpInput && !emailOtp) {
+    // 2. Se mudou o email e está a aguardar OTP, obriga a inserir
+    if (isNewEmail && showOtpInput && !emailOtp) {
       toast.error("Introduz o código de verificação enviado para o teu e-mail.");
       return;
     }
@@ -195,7 +206,7 @@ export default function PerfilPage() {
           <div className="space-y-2">
             <label className="text-sm font-medium text-white flex items-center gap-2">
               <Mail className="w-4 h-4" />
-              Adicionar Email
+              {user.email && !isEmailEditing ? "Email Registado" : "Adicionar Email"}
             </label>
             <div className="flex gap-2">
               <Input 
@@ -206,16 +217,27 @@ export default function PerfilPage() {
                   setShowOtpInput(false);
                   setEmailOtp("");
                 }}
-                disabled={showOtpInput}
-                className="bg-black/50 border-white/10 text-white flex-1"
+                disabled={!isEmailEditing || showOtpInput}
+                className="bg-black/50 border-white/10 text-white flex-1 disabled:opacity-70 disabled:cursor-not-allowed"
               />
-              {showOtpInput && (
+              {!isEmailEditing ? (
                 <Button 
                   variant="outline"
-                  onClick={() => setShowOtpInput(false)}
+                  onClick={() => setIsEmailEditing(true)}
                   className="bg-black/40 border-white/10 hover:bg-white/5"
                 >
                   Alterar
+                </Button>
+              ) : showOtpInput && (
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    setShowOtpInput(false);
+                    setEmailOtp("");
+                  }}
+                  className="bg-black/40 border-white/10 hover:bg-white/5"
+                >
+                  Cancelar
                 </Button>
               )}
             </div>
@@ -268,8 +290,8 @@ export default function PerfilPage() {
 
         <Button 
           onClick={handleSave} 
-          disabled={isSaving}
-          className="w-full bg-primary text-black hover:bg-primary/90 font-bold h-12"
+          disabled={isSaving || !hasChanges}
+          className="w-full bg-primary text-black hover:bg-primary/90 font-bold h-12 disabled:opacity-50"
         >
           {isSaving ? "A Salvar..." : (
             <>

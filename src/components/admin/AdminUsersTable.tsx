@@ -6,9 +6,8 @@ import { formatMZN } from "@/lib/utils";
 import { Search, ShieldAlert, UserCheck, Settings, Mail, Ban, PauseCircle, HandCoins, Trash2, Megaphone, Send, AtSign } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Textarea } from "@/components/ui/textarea";
 
 interface UserData {
   id: string;
@@ -426,18 +425,18 @@ export function AdminUsersTable({ initialUsers }: { initialUsers: UserData[] }) 
             </div>
             <div className="space-y-2">
               <label className="text-xs font-bold text-gray-400">Conteúdo (Aparece no Dropdown do Cliente)</label>
-              <Textarea 
+              <textarea 
                 value={msgBody} 
                 onChange={(e) => setMsgBody(e.target.value)} 
                 placeholder="Escreva a mensagem aqui..." 
-                className="bg-black border-[#2A2F40] min-h-[100px]"
+                className="flex w-full rounded-md border border-input px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary disabled:cursor-not-allowed disabled:opacity-50 bg-black border-[#2A2F40] min-h-[100px]"
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setMessageModalOpen(false)} className="bg-transparent border-[#2A2F40]">Cancelar</Button>
+          <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 mt-4">
+            <Button variant="outline" onClick={() => setMessageModalOpen(false)} className="bg-transparent border-[#2A2F40] mt-2 sm:mt-0">Cancelar</Button>
             <Button onClick={executeSendSiteMessage} className="bg-primary text-black font-bold">Enviar Notificação</Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
 
@@ -461,18 +460,18 @@ export function AdminUsersTable({ initialUsers }: { initialUsers: UserData[] }) 
             </div>
             <div className="space-y-2">
               <label className="text-xs font-bold text-gray-400">Conteúdo do E-mail</label>
-              <Textarea 
+              <textarea 
                 value={msgBody} 
                 onChange={(e) => setMsgBody(e.target.value)} 
                 placeholder="Mensagem HTML ou texto limpo..." 
-                className="bg-black border-[#2A2F40] min-h-[150px]"
+                className="flex w-full rounded-md border border-input px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-sky-500 disabled:cursor-not-allowed disabled:opacity-50 bg-black border-[#2A2F40] min-h-[150px]"
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEmailModalOpen(false)} className="bg-transparent border-[#2A2F40]">Cancelar</Button>
+          <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 mt-4">
+            <Button variant="outline" onClick={() => setEmailModalOpen(false)} className="bg-transparent border-[#2A2F40] mt-2 sm:mt-0">Cancelar</Button>
             <Button onClick={executeSendEmail} className="bg-sky-500 text-black font-bold">Lançar E-mail</Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

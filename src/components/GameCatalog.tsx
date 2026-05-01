@@ -43,6 +43,20 @@ export function GameCatalog() {
     loadGames();
   }, []);
 
+  // Realtime: quando o admin altera jogos, o catálogo actualiza ao vivo
+  useEffect(() => {
+    const channel = supabase.channel('public-games')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'games' }, async () => {
+        const { data } = await supabase.from('games').select('*').order('sort_order', { ascending: true });
+        if (data && data.length > 0) setGames(data);
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   const handleGameClick = (gameId: string) => {
     if (!isLoggedIn) {
       // Sem modo demo — obrigar registo/login para jogar

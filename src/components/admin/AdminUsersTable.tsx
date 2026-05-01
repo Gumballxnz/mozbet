@@ -103,21 +103,25 @@ export function AdminUsersTable({ initialUsers }: { initialUsers: UserData[] }) 
     toast.loading("A processar a inserção realtime...", { id: "msg" });
     try {
       const targetId = commTarget === "GLOBAL" ? null : commTarget;
-      const { error } = await supabase.from('notifications').insert({ 
-        user_id: targetId, 
-        title: msgTitle,
-        message: msgBody 
-      });
       
-      if (error) throw error;
+      const res = await fetch("/api/admin/notifications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: targetId, title: msgTitle, message: msgBody })
+      });
+
+      if (!res.ok) {
+         const errorData = await res.json();
+         throw new Error(errorData.error || "Erro a comunicar com o servidor");
+      }
       
       toast.success(`Mensagem inserida! A bolinha vermelha vai acender instantaneamente.`, { id: "msg" });
       setMessageModalOpen(false);
       setMsgTitle("");
       setMsgBody("");
       if (commTarget === "GLOBAL") setGlobalModalOpen(false);
-    } catch (e) {
-      toast.error("Erro a enviar. Tem a tabela 'notifications' criada no Supabase SQL?", { id: "msg" });
+    } catch (e: any) {
+      toast.error(`Erro a enviar: ${e.message}`, { id: "msg" });
     }
   };
 
@@ -321,11 +325,12 @@ export function AdminUsersTable({ initialUsers }: { initialUsers: UserData[] }) 
                   </Button>
                   <Button 
                     variant="outline" 
-                    className="border-[#2A2F40] bg-[#1A1D27] hover:bg-sky-500/20 hover:text-sky-400 flex items-center justify-center py-6 gap-3"
+                    disabled={!selectedUser.email}
+                    className="border-[#2A2F40] bg-[#1A1D27] hover:bg-sky-500/20 hover:text-sky-400 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center py-6 gap-3"
                     onClick={() => openCommDialog('email', selectedUser.id)}
                   >
                     <Mail className="w-5 h-5 text-sky-400" />
-                    <span className="text-sm font-bold">Enviar E-mail</span>
+                    <span className="text-sm font-bold">{selectedUser.email ? 'Enviar E-mail' : 'Sem E-mail Registado'}</span>
                   </Button>
                 </div>
 

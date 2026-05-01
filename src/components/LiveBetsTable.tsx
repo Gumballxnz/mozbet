@@ -36,12 +36,13 @@ function generateDeterministicBets(count: number) {
     // 25% de probabilidade de PERDA (para o site não parecer falso de que toda gente ganha)
     const isLoss = pseudoRandom2 < 0.25;
     
-    let multiplier = 0;
+    // O multiplicador gerado reflete o momento em que a ronda terminou ou a aposta parou.
+    // Mesmo em perdas, o multiplicador não é 0.00x (ex: ele pode não ter sacado a tempo num 20.00x)
+    const multiplier = Number((1.01 + pseudoRandom2 * 19).toFixed(2));
     let payout = 0;
     
     if (!isLoss) {
-      // Ganho: 1.01x a 20.00x
-      multiplier = Number((1.01 + pseudoRandom2 * 19).toFixed(2));
+      // Se não for perda, o pagamento é Aposta * Multiplicador
       payout = Number((betAmount * multiplier).toFixed(2));
     }
 
@@ -190,7 +191,7 @@ export function LiveBetsTable() {
                   <td className="px-4 py-3 text-center">
                     {act.isLoss ? (
                       <span className="inline-block px-2 py-0.5 rounded bg-white/5 text-gray-500 font-bold text-xs">
-                        0.00x
+                        x{act.multiplier.toFixed(2)}
                       </span>
                     ) : (
                       <span className="inline-block px-2 py-0.5 rounded bg-purple-500/20 text-purple-400 font-bold text-xs">

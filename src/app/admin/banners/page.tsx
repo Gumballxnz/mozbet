@@ -84,14 +84,7 @@ export default function AdminBannersPage() {
           is_active: true 
         }
       ];
-      
-      // Escreve na BD e depois carrega para o state (assim garantimos persistência real)
-      await fetch("/api/admin/banners/init", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(defaultBanners),
-      }).catch(e => console.error(e)); // Fallback via API caso RLS proiba insert pelo client
-      
+      // Apenas popular a UI visualmente para ele editar e gravar se quiser.
       setBanners(defaultBanners);
     }
     setLoading(false);

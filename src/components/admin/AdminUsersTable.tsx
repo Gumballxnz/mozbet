@@ -475,7 +475,8 @@ export function AdminUsersTable({ initialUsers }: { initialUsers: UserData[] }) 
                   value={msgTargetEmail} 
                   onChange={(e) => setMsgTargetEmail(e.target.value)} 
                   placeholder="Ex: cliente@email.com" 
-                  className="bg-black border-[#2A2F40]"
+                  className="bg-black border-[#2A2F40] opacity-70 cursor-not-allowed"
+                  disabled
                 />
               </div>
             )}

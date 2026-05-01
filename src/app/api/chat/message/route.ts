@@ -56,9 +56,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "A tua mensagem viola as regras da comunidade" }, { status: 400 });
     }
 
-    // 4. Mascarar o nome do utilizador
-    // Ex: "84***1234" vira "84***4"
-    const maskedName = `${payload.phone.substring(0, 2)}***${payload.phone.slice(-1)}`;
+    // 4. Mascarar o nome do utilizador: Mostrar os primeiros 8 caracteres do ID
+    const maskedName = payload.id.split("-")[0].toUpperCase();
 
     // 5. Guardar na BD (o Supabase Realtime vai transmitir para todos os clientes conectados)
     const { data, error } = await supabaseAdmin

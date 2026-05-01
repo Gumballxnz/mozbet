@@ -292,13 +292,13 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
 
     const messageText = input.trim();
     const user = useAppStore.getState().user;
-    const maskedPhone = user?.phone ? `${user.phone.substring(0, 2)}***${user.phone.slice(-1)}` : "User";
+    const maskedName = user?.id ? user.id.split("-")[0].toUpperCase() : "USER";
     
     // OPTIMISTIC UI: Adicionar a mensagem IMEDIATAMENTE na tela
     const optimisticMsg: ChatMessage = {
       id: `real-${Date.now()}`,
       user_id: user?.id || "unknown",
-      username: maskedPhone,
+      username: maskedName,
       message: messageText,
       type: "message",
       avatar: user?.avatar || SITE_AVATARS[0],

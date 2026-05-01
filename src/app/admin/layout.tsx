@@ -12,6 +12,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const router = useRouter();
   const { user, logout } = useAppStore();
 
+  // Na página de login, renderizar SEM sidebar
+  const isLoginPage = pathname === "/admin/login";
+
   const handleLogout = async () => {
     try {
       await fetch("/api/auth/logout", { method: "POST" });
@@ -29,6 +32,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { name: "Banners (Homepage)", href: "/admin/banners", icon: Settings },
     { name: "Catálogo de Jogos", href: "/admin/games", icon: Settings },
   ];
+
+  // Página de login: layout limpo, sem sidebar, sem dados do admin
+  if (isLoginPage) {
+    return (
+      <div className="min-h-screen bg-black">
+        {children}
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen bg-black">

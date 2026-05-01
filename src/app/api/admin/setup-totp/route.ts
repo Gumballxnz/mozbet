@@ -48,10 +48,11 @@ export async function POST(req: Request) {
       .eq("phone", phone);
 
     // Gerar QR Code como Data URL (imagem base64)
+    // Cores padrão: pontos pretos (#000000) sobre fundo branco (#FFFFFF)
     const qrCodeDataUrl = await QRCode.toDataURL(uri, {
       width: 256,
       margin: 2,
-      color: { dark: "#FFFFFF", light: "#00000000" },
+      color: { dark: "#000000", light: "#FFFFFF" },
     });
 
     return NextResponse.json({

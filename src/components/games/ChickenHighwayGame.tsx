@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect } from "react";
 import { X, Trophy, Users, Info, Settings, Play, Shield, Clock } from "lucide-react";
@@ -18,6 +18,7 @@ const ChickenHighwayGame = ({ onClose, balance, onBet }: ChickenHighwayGameProps
   const [multiplier, setMultiplier] = useState(1.0);
   const [isCrashed, setIsCrashed] = useState(false);
   const [history, setHistory] = useState([1.54, 2.1, 1.05, 12.4, 1.87]);
+  const [targetCrash, setTargetCrash] = useState(0);
 
   useEffect(() => {
     let interval: any;
@@ -25,37 +26,66 @@ const ChickenHighwayGame = ({ onClose, balance, onBet }: ChickenHighwayGameProps
       interval = setInterval(() => {
         setMultiplier((prev) => {
           const next = prev + 0.01 * (prev > 2 ? 2 : 1);
-          if (Math.random() < 0.01 * (prev / 2)) {
+          if (next >= targetCrash) {
             setIsCrashed(true);
             setIsPlaying(false);
-            toast.error(`A galinha foi atropelada! ${next.toFixed(2)}x`);
-            setHistory(prevH => [next, ...prevH.slice(0, 4)]);
+            toast.error(`A galinha foi atropelada! ${targetCrash.toFixed(2)}x`);
+            setHistory(prevH => [targetCrash, ...prevH.slice(0, 4)]);
+            return targetCrash;
           }
           return next;
         });
       }, 100);
     }
     return () => clearInterval(interval);
-  }, [isPlaying, isCrashed]);
+  }, [isPlaying, isCrashed, targetCrash]);
 
-  const handleStart = () => {
+  const handleStart = async () => {
     if (balance < betAmount) {
       toast.error("Saldo insuficiente");
       return;
     }
-    onBet(betAmount);
-    setIsPlaying(true);
-    setIsCrashed(false);
-    setMultiplier(1.0);
-    startBgMusic();
+
+    try {
+      const res = await fetch("/api/game/crash/play", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ betAmount, gameId: "chicken-highway" })
+      });
+      const data = await res.json();
+      if (data.success) {
+        onBet(data.newBalance); 
+        setTargetCrash(data.crashPoint);
+        setIsPlaying(true);
+        setIsCrashed(false);
+        setMultiplier(1.0);
+        startBgMusic();
+      } else {
+        toast.error(data.error);
+      }
+    } catch (e) {
+      toast.error("Erro ao iniciar jogo.");
+    }
   };
 
-  const handleCashout = () => {
+  const handleCashout = async () => {
     if (isPlaying && !isCrashed) {
-      const win = betAmount * multiplier;
-      toast.success(`Você ganhou ${win.toFixed(2)} MT!`);
-      setIsPlaying(false);
-      setHistory(prevH => [multiplier, ...prevH.slice(0, 4)]);
+      try {
+        const res = await fetch("/api/game/crash/cashout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ betAmount, multiplier, gameId: "chicken-highway" })
+        });
+        const data = await res.json();
+        if (data.success) {
+          toast.success(`Você ganhou ${(betAmount * multiplier).toFixed(2)} MT!`);
+          setIsPlaying(false);
+          setHistory(prevH => [multiplier, ...prevH.slice(0, 4)]);
+          onBet(data.newBalance);
+        }
+      } catch (e) {
+        toast.error("Erro na retirada.");
+      }
     }
   };
 

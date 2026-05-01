@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect } from "react";
 import { X, Waves, Info, MousePointer2, Settings, Trophy, Anchor } from "lucide-react";
@@ -21,29 +21,52 @@ const BottleManiaGame = ({ onClose, balance, onBet }: BottleManiaGameProps) => {
   const bottles = [0, 1, 2];
   const bets = [0.5, 1, 2, 5, 10];
 
-  const handleStart = () => {
+  const handleStart = async () => {
     if (balance < betAmount) {
       toast.error("Saldo insuficiente");
       return;
     }
-    onBet(betAmount);
+    
     setIsPlaying(true);
     setIsRevealing(true);
     startBgMusic();
 
-    setTimeout(() => {
-      const win = Math.random() > 0.5;
-      if (win) {
-        const mult = (Math.random() * 5 + 1).toFixed(2);
-        setMultiplier(Number(mult));
-        toast.success(`Ganhou! ${mult}x`);
-      } else {
-        setMultiplier(0);
-        toast.error("Vazio!");
+    try {
+      const res = await fetch("/api/game/slot/play", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ betAmount, gameId: "bottle-mania" })
+      });
+      const data = await res.json();
+      
+      if (!data.success) {
+        toast.error(data.error);
+        setIsRevealing(false);
+        setIsPlaying(false);
+        return;
       }
+
+      onBet(data.newBalance - (data.wins ? data.winAmount : 0)); // Atualizar saldo pós aposta (temporário)
+
+      setTimeout(() => {
+        if (data.wins) {
+          setMultiplier(data.multiplier);
+          toast.success(`Ganhou! ${data.multiplier}x`);
+          onBet(data.newBalance); // Atualiza com o prêmio final
+        } else {
+          setMultiplier(0);
+          toast.error("Vazio!");
+          onBet(data.newBalance);
+        }
+        setIsRevealing(false);
+        setIsPlaying(false);
+      }, 1500);
+
+    } catch (e) {
+      toast.error("Erro ao jogar.");
       setIsRevealing(false);
       setIsPlaying(false);
-    }, 1500);
+    }
   };
 
   return (

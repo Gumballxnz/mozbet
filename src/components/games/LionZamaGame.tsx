@@ -40,7 +40,7 @@ const LionZamaGame = ({ balance, onUpdateBalance, onBack }: LionZamaProps) => {
   const [lastWin, setLastWin] = useState(0);
   const autoIntervalRef = useRef<any>(null);
 
-  const handleSpin = useCallback(() => {
+  const handleSpin = useCallback(async () => {
     if (balance < betAmount) {
       toast.error("Saldo insuficiente");
       setIsAuto(false);
@@ -51,61 +51,82 @@ const LionZamaGame = ({ balance, onUpdateBalance, onBack }: LionZamaProps) => {
 
     setIsSpinning(true);
     setWinningLine(null);
-    onUpdateBalance(balance - betAmount);
-    startBgMusic([392, 440, 493, 587, 493, 440], 200, 0.05); // More intense music
+    startBgMusic([392, 440, 493, 587, 493, 440], 200, 0.05);
 
-    const spinDuration = 1200;
-    const startTime = Date.now();
-    
-    const animate = () => {
-      const now = Date.now();
-      const elapsed = now - startTime;
-      
-      if (elapsed < spinDuration) {
-        setReels(prev => prev.map(reel => 
-          reel.map(() => SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)])
-        ));
-        requestAnimationFrame(animate);
-      } else {
-        // High risk logic: harder to win but bigger rewards
-        const finalReels = Array(REELS_COUNT).fill(null).map(() => 
-          Array(ROWS_COUNT).fill(null).map(() => {
-             const randomIdx = risk === "high" 
-               ? Math.floor(Math.pow(Math.random(), 1.5) * SYMBOLS.length)
-               : Math.floor(Math.random() * SYMBOLS.length);
-             return SYMBOLS[randomIdx];
-          })
-        );
-        setReels(finalReels);
-        setIsSpinning(false);
-        checkWin(finalReels);
-      }
-    };
-
-    requestAnimationFrame(animate);
-  }, [balance, betAmount, isSpinning, onUpdateBalance, risk]);
-
-  const checkWin = (currentReels: any[][]) => {
-    let totalWin = 0;
-    let wonLine = null;
-
-    for (let row = 0; row < ROWS_COUNT; row++) {
-      const firstSymbol = currentReels[0][row];
-      if (currentReels[1][row].icon === firstSymbol.icon && currentReels[2][row].icon === firstSymbol.icon) {
-        totalWin += betAmount * firstSymbol.mult;
-        wonLine = row;
-      }
-    }
-
-    if (totalWin > 0) {
-      setLastWin(totalWin);
-      setWinningLine(wonLine);
-      onUpdateBalance(balance - betAmount + totalWin);
-      toast.success(`JACKPOT LION! +${totalWin.toFixed(2)} MT`, {
-        className: "bg-purple-600 text-white font-black border-2 border-fuchsia-400 shadow-[0_0_20px_rgba(168,85,247,0.5)]"
+    try {
+      const res = await fetch("/api/game/slot/play", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ betAmount, gameId: "lion-zama" })
       });
+      const data = await res.json();
+
+      if (!data.success) {
+        toast.error(data.error);
+        setIsSpinning(false);
+        setIsAuto(false);
+        return;
+      }
+
+      onUpdateBalance(data.newBalance - (data.wins ? data.winAmount : 0)); // temp balance drop
+
+      const spinDuration = 1200;
+      const startTime = Date.now();
+      
+      const animate = () => {
+        const now = Date.now();
+        const elapsed = now - startTime;
+        
+        if (elapsed < spinDuration) {
+          setReels(prev => prev.map(reel => 
+            reel.map(() => SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)])
+          ));
+          requestAnimationFrame(animate);
+        } else {
+          // Determine final reels based on backend result
+          let finalReels = Array(REELS_COUNT).fill(null).map(() => 
+            Array(ROWS_COUNT).fill(null).map(() => SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)])
+          );
+
+          if (data.wins) {
+            // Force a win on row 1
+            const winSymbol = SYMBOLS[Math.floor(Math.random() * 3)]; // Pick a low tier visual symbol
+            finalReels[0][1] = winSymbol;
+            finalReels[1][1] = winSymbol;
+            finalReels[2][1] = winSymbol;
+            setWinningLine(1);
+            setLastWin(data.winAmount);
+            onUpdateBalance(data.newBalance);
+            toast.success(`LION WIN! +${data.winAmount.toFixed(2)} MT`, {
+              className: "bg-purple-600 text-white font-black border-2 border-fuchsia-400 shadow-[0_0_20px_rgba(168,85,247,0.5)]"
+            });
+          } else {
+            // Ensure no accidental win
+            if (finalReels[0][0].icon === finalReels[1][0].icon && finalReels[1][0].icon === finalReels[2][0].icon) {
+                finalReels[2][0] = SYMBOLS[(SYMBOLS.indexOf(finalReels[2][0]) + 1) % SYMBOLS.length];
+            }
+            if (finalReels[0][1].icon === finalReels[1][1].icon && finalReels[1][1].icon === finalReels[2][1].icon) {
+                finalReels[2][1] = SYMBOLS[(SYMBOLS.indexOf(finalReels[2][1]) + 1) % SYMBOLS.length];
+            }
+            if (finalReels[0][2].icon === finalReels[1][2].icon && finalReels[1][2].icon === finalReels[2][2].icon) {
+                finalReels[2][2] = SYMBOLS[(SYMBOLS.indexOf(finalReels[2][2]) + 1) % SYMBOLS.length];
+            }
+            onUpdateBalance(data.newBalance);
+          }
+
+          setReels(finalReels);
+          setIsSpinning(false);
+        }
+      };
+
+      requestAnimationFrame(animate);
+
+    } catch (e) {
+      toast.error("Erro ao jogar.");
+      setIsSpinning(false);
+      setIsAuto(false);
     }
-  };
+  }, [balance, betAmount, isSpinning, onUpdateBalance]);
 
   useEffect(() => {
     if (isAuto && !isSpinning) {

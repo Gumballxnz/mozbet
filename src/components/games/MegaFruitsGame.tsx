@@ -37,7 +37,7 @@ const MegaFruitsGame = ({ balance, onUpdateBalance, onBack }: MegaFruitsProps) =
   const [lastWin, setLastWin] = useState(0);
   const autoIntervalRef = useRef<any>(null);
 
-  const handleSpin = useCallback(() => {
+  const handleSpin = useCallback(async () => {
     if (balance < betAmount) {
       toast.error("Saldo insuficiente");
       setIsAuto(false);
@@ -48,34 +48,82 @@ const MegaFruitsGame = ({ balance, onUpdateBalance, onBack }: MegaFruitsProps) =
 
     setIsSpinning(true);
     setWinningLine(null);
-    onUpdateBalance(balance - betAmount);
     startBgMusic();
 
-    // Simulated spinning animation
-    const spinDuration = 1000;
-    const startTime = Date.now();
-    
-    const animate = () => {
-      const now = Date.now();
-      const elapsed = now - startTime;
-      
-      if (elapsed < spinDuration) {
-        setReels(prev => prev.map(reel => 
-          reel.map(() => SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)].icon)
-        ));
-        requestAnimationFrame(animate);
-      } else {
-        // Final result
-        const finalReels = Array(REELS_COUNT).fill(null).map(() => 
-          Array(ROWS_COUNT).fill(null).map(() => SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)].icon)
-        );
-        setReels(finalReels);
-        setIsSpinning(false);
-        checkWin(finalReels);
-      }
-    };
+    try {
+      const res = await fetch("/api/game/slot/play", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ betAmount, gameId: "mega-fruits" })
+      });
+      const data = await res.json();
 
-    requestAnimationFrame(animate);
+      if (!data.success) {
+        toast.error(data.error);
+        setIsSpinning(false);
+        setIsAuto(false);
+        return;
+      }
+
+      onUpdateBalance(data.newBalance - (data.wins ? data.winAmount : 0)); // temp drop
+
+      // Simulated spinning animation
+      const spinDuration = 1000;
+      const startTime = Date.now();
+      
+      const animate = () => {
+        const now = Date.now();
+        const elapsed = now - startTime;
+        
+        if (elapsed < spinDuration) {
+          setReels(prev => prev.map(reel => 
+            reel.map(() => SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)].icon)
+          ));
+          requestAnimationFrame(animate);
+        } else {
+          // Final result from backend
+          let finalReels = Array(REELS_COUNT).fill(null).map(() => 
+            Array(ROWS_COUNT).fill(null).map(() => SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)].icon)
+          );
+
+          if (data.wins) {
+            const winSymbol = SYMBOLS[Math.floor(Math.random() * 3)].icon; // force a basic visual symbol
+            finalReels[0][1] = winSymbol;
+            finalReels[1][1] = winSymbol;
+            finalReels[2][1] = winSymbol;
+            setWinningLine(1);
+            setLastWin(data.winAmount);
+            onUpdateBalance(data.newBalance);
+            toast.success(`PARABÉNS! Você ganhou ${data.winAmount.toFixed(2)} MT!`, {
+              icon: "🎰",
+              className: "bg-yellow-500 text-black font-bold"
+            });
+          } else {
+            // Force loss
+            if (finalReels[0][0] === finalReels[1][0] && finalReels[1][0] === finalReels[2][0]) {
+              finalReels[2][0] = SYMBOLS[(SYMBOLS.findIndex(s => s.icon === finalReels[2][0]) + 1) % SYMBOLS.length].icon;
+            }
+            if (finalReels[0][1] === finalReels[1][1] && finalReels[1][1] === finalReels[2][1]) {
+              finalReels[2][1] = SYMBOLS[(SYMBOLS.findIndex(s => s.icon === finalReels[2][1]) + 1) % SYMBOLS.length].icon;
+            }
+            if (finalReels[0][2] === finalReels[1][2] && finalReels[1][2] === finalReels[2][2]) {
+              finalReels[2][2] = SYMBOLS[(SYMBOLS.findIndex(s => s.icon === finalReels[2][2]) + 1) % SYMBOLS.length].icon;
+            }
+            onUpdateBalance(data.newBalance);
+          }
+
+          setReels(finalReels);
+          setIsSpinning(false);
+        }
+      };
+
+      requestAnimationFrame(animate);
+
+    } catch (e) {
+      toast.error("Erro ao jogar.");
+      setIsSpinning(false);
+      setIsAuto(false);
+    }
   }, [balance, betAmount, isSpinning, onUpdateBalance]);
 
   const checkWin = (currentReels: string[][]) => {

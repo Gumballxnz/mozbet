@@ -44,3 +44,5 @@ next-env.d.ts
 *.md
 
 !README.md
+!MEMORIA_PROJETO.md
+

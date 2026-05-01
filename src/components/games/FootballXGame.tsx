@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect } from "react";
 import { X, Trophy, History, Play, Users, Goal, Timer } from "lucide-react";
@@ -17,6 +17,7 @@ const FootballXGame = ({ onClose, balance, onBet }: FootballXGameProps) => {
   const [multiplier, setMultiplier] = useState(1.0);
   const [isCrashed, setIsCrashed] = useState(false);
   const [history, setHistory] = useState([1.14, 2.54, 1.02, 3.12, 1.95]);
+  const [targetCrash, setTargetCrash] = useState(0);
 
   useEffect(() => {
     let interval: any;
@@ -24,37 +25,66 @@ const FootballXGame = ({ onClose, balance, onBet }: FootballXGameProps) => {
       interval = setInterval(() => {
         setMultiplier((prev) => {
           const next = prev + 0.02 * (prev > 1.5 ? 1.5 : 1);
-          if (Math.random() < 0.015 * (prev / 2)) {
+          if (next >= targetCrash) {
             setIsCrashed(true);
             setIsPlaying(false);
-            toast.error(`Perdeu a bola! ${next.toFixed(2)}x`);
-            setHistory(prevH => [next, ...prevH.slice(0, 5)]);
+            toast.error(`Perdeu a bola! ${targetCrash.toFixed(2)}x`);
+            setHistory(prevH => [targetCrash, ...prevH.slice(0, 5)]);
+            return targetCrash;
           }
           return next;
         });
       }, 100);
     }
     return () => clearInterval(interval);
-  }, [isPlaying, isCrashed]);
+  }, [isPlaying, isCrashed, targetCrash]);
 
-  const handleStart = () => {
+  const handleStart = async () => {
     if (balance < betAmount) {
       toast.error("Saldo insuficiente");
       return;
     }
-    onBet(betAmount);
-    setIsPlaying(true);
-    setIsCrashed(false);
-    setMultiplier(1.0);
-    startBgMusic();
+
+    try {
+      const res = await fetch("/api/game/crash/play", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ betAmount, gameId: "football-x" })
+      });
+      const data = await res.json();
+      if (data.success) {
+        onBet(data.newBalance); 
+        setTargetCrash(data.crashPoint);
+        setIsPlaying(true);
+        setIsCrashed(false);
+        setMultiplier(1.0);
+        startBgMusic();
+      } else {
+        toast.error(data.error);
+      }
+    } catch (e) {
+      toast.error("Erro ao iniciar jogo.");
+    }
   };
 
-  const handleCashout = () => {
+  const handleCashout = async () => {
     if (isPlaying && !isCrashed) {
-      const win = betAmount * multiplier;
-      toast.success(`GOL! Você ganhou ${win.toFixed(2)} MT!`);
-      setIsPlaying(false);
-      setHistory(prevH => [multiplier, ...prevH.slice(0, 5)]);
+      try {
+        const res = await fetch("/api/game/crash/cashout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ betAmount, multiplier, gameId: "football-x" })
+        });
+        const data = await res.json();
+        if (data.success) {
+          toast.success(`GOL! Você ganhou ${(betAmount * multiplier).toFixed(2)} MT!`);
+          setIsPlaying(false);
+          setHistory(prevH => [multiplier, ...prevH.slice(0, 5)]);
+          onBet(data.newBalance);
+        }
+      } catch (e) {
+        toast.error("Erro na retirada.");
+      }
     }
   };
 

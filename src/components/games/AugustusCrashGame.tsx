@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect } from "react";
 import { X, Trophy, Users, History, Info, Play, TrendingUp } from "lucide-react";
@@ -18,6 +18,7 @@ const AugustusCrashGame = ({ onClose, balance, onBet }: AugustusCrashGameProps) 
   const [isCrashed, setIsCrashed] = useState(false);
   const [history, setHistory] = useState([1.54, 2.1, 1.05, 12.4, 1.87]);
   const [playersOnline, setPlayersOnline] = useState(1243);
+  const [targetCrash, setTargetCrash] = useState(0);
 
   useEffect(() => {
     let interval: any;
@@ -25,19 +26,19 @@ const AugustusCrashGame = ({ onClose, balance, onBet }: AugustusCrashGameProps) 
       interval = setInterval(() => {
         setMultiplier((prev) => {
           const next = prev + 0.01 * (prev > 2 ? 1.5 : 1);
-          // 1% chance of crash every 100ms
-          if (Math.random() < 0.01 * (prev / 2.5)) {
+          if (next >= targetCrash) {
             setIsCrashed(true);
             setIsPlaying(false);
-            toast.error(`Crashou em ${next.toFixed(2)}x`);
-            setHistory(prevH => [next, ...prevH.slice(0, 5)]);
+            toast.error(`Crashou em ${targetCrash.toFixed(2)}x`);
+            setHistory(prevH => [targetCrash, ...prevH.slice(0, 5)]);
+            return targetCrash;
           }
           return next;
         });
       }, 100);
     }
     return () => clearInterval(interval);
-  }, [isPlaying, isCrashed]);
+  }, [isPlaying, isCrashed, targetCrash]);
 
   useEffect(() => {
     const pInterval = setInterval(() => {
@@ -46,24 +47,52 @@ const AugustusCrashGame = ({ onClose, balance, onBet }: AugustusCrashGameProps) 
     return () => clearInterval(pInterval);
   }, []);
 
-  const handleStart = () => {
+  const handleStart = async () => {
     if (balance < betAmount) {
       toast.error("Saldo insuficiente");
       return;
     }
-    onBet(betAmount);
-    setIsPlaying(true);
-    setIsCrashed(false);
-    setMultiplier(1.0);
-    startBgMusic();
+
+    try {
+      const res = await fetch("/api/game/crash/play", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ betAmount, gameId: "augustus-crash" })
+      });
+      const data = await res.json();
+      if (data.success) {
+        onBet(data.newBalance); 
+        setTargetCrash(data.crashPoint);
+        setIsPlaying(true);
+        setIsCrashed(false);
+        setMultiplier(1.0);
+        startBgMusic();
+      } else {
+        toast.error(data.error);
+      }
+    } catch (e) {
+      toast.error("Erro ao iniciar jogo.");
+    }
   };
 
-  const handleCashout = () => {
+  const handleCashout = async () => {
     if (isPlaying && !isCrashed) {
-      const win = betAmount * multiplier;
-      toast.success(`Você ganhou ${win.toFixed(2)} MT!`);
-      setIsPlaying(false);
-      setHistory(prevH => [multiplier, ...prevH.slice(0, 5)]);
+      try {
+        const res = await fetch("/api/game/crash/cashout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ betAmount, multiplier, gameId: "augustus-crash" })
+        });
+        const data = await res.json();
+        if (data.success) {
+          toast.success(`Você ganhou ${(betAmount * multiplier).toFixed(2)} MT!`);
+          setIsPlaying(false);
+          setHistory(prevH => [multiplier, ...prevH.slice(0, 5)]);
+          onBet(data.newBalance);
+        }
+      } catch (e) {
+        toast.error("Erro na retirada.");
+      }
     }
   };
 

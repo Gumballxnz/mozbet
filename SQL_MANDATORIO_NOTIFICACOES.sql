@@ -13,7 +13,7 @@ ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Utilizadores podem ler as suas notificações e as globais"
 ON public.notifications FOR SELECT
-USING ( auth.uid() = user_id OR user_id IS NULL );
+USING ( auth.uid()::text = user_id::text OR user_id IS NULL );
 
 CREATE POLICY "Apenas Service/Admins inserem"
 ON public.notifications FOR INSERT
@@ -21,7 +21,7 @@ WITH CHECK ( true ); -- (Inserido via backend seguro)
 
 CREATE POLICY "Apenas Utilizadores leem/atualizam o seu lido"
 ON public.notifications FOR UPDATE
-USING ( auth.uid() = user_id );
+USING ( auth.uid()::text = user_id::text );
 
 -- 3. Injeta a tabela no canal Websocket (Isto é a Magia do Ponto Vermelho!)
 alter publication supabase_realtime add table public.notifications;

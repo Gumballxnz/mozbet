@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
     // 2. Inserir em massa
     const { error } = await supabaseAdmin
       .from("banners")
-      .insert(banners);
+      .upsert(banners);
 
     if (error) {
       console.error("Erro BD Init:", error);

@@ -384,6 +384,7 @@ export function AdminUsersTable({ initialUsers }: { initialUsers: UserData[] }) 
             <DialogTitle className="text-xl font-black flex items-center gap-2 text-primary">
               <Megaphone className="w-5 h-5" /> Emissão Global
             </DialogTitle>
+            <DialogDescription className="hidden">Dispare comunicações para toda a plataforma</DialogDescription>
           </DialogHeader>
           <p className="text-sm text-gray-400 mb-4">Envie mensagens para toda a base de dados em simultâneo.</p>
           
@@ -412,6 +413,7 @@ export function AdminUsersTable({ initialUsers }: { initialUsers: UserData[] }) 
             <DialogTitle className="text-xl font-bold flex items-center gap-2 text-primary">
               <Send className="w-5 h-5" /> Notificação Realtime
             </DialogTitle>
+            <DialogDescription className="hidden">Formulário de notificação no site</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
@@ -447,6 +449,7 @@ export function AdminUsersTable({ initialUsers }: { initialUsers: UserData[] }) 
             <DialogTitle className="text-xl font-bold flex items-center gap-2 text-sky-400">
               <Mail className="w-5 h-5" /> Disparo de E-mail
             </DialogTitle>
+            <DialogDescription className="hidden">Formulário de disparo de email para o utilizador</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">

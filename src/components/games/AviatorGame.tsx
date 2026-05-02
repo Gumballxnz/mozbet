@@ -296,9 +296,6 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
       <div className="lg:hidden h-14 bg-[#1A1D27] flex items-center justify-between px-4 shrink-0 shadow-lg z-10 border-b border-white/5">
         <button onClick={onBack} className="text-gray-400 hover:text-white p-2 -ml-2"><ArrowLeft size={20} /></button>
         <img src="/api/img/banner-aviator" alt="Aviator" className="h-6 opacity-80 mix-blend-screen" />
-        <div className="bg-[#272B3A] px-3 py-1.5 rounded-full border border-white/5 shadow-inner">
-          <span className="text-[#28A745] font-black text-sm">{balance.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span> <span className="text-gray-500 text-xs font-bold">MZN</span>
-        </div>
       </div>
 
       {/* PAINEL ESQUERDO (Apostas Ronda - Desktop ou Tab) */}
@@ -346,11 +343,9 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
 
       {/* ÁREA CENTRAL E DIREITA */}
       <div className="flex-1 flex flex-col bg-[#101116]">
-        {/* HEADER DESKTOP APENAS */}
+        {/* HEADER DESKTOP APENAS (Sem Saldo Duplicado) */}
         <div className="hidden lg:flex h-14 bg-[#1A1D27] justify-end items-center px-6 border-b border-[#2A2F40]">
-           <div className="bg-[#101116] px-4 py-1.5 rounded-full border border-white/5 flex gap-2 items-center">
-             <span className="text-[#28A745] font-black">{balance.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</span> <span className="text-gray-500 text-xs font-bold">MZN</span>
-           </div>
+           {/* Removido o saldo duplicado conforme o pedido. O saldo global já está visível no topo da página. */}
         </div>
 
         {/* HISTÓRICO DE RONDAS */}

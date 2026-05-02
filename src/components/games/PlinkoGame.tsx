@@ -145,7 +145,7 @@ const PlinkoGame = ({ balance, onUpdateBalance, onBack }: Props) => {
           </div>
           <div className="bg-purple-900/60 rounded-xl p-2">
             <p className="text-[9px] text-white/60">Saldo</p>
-            <p className="text-lg font-extrabold">{balance.toFixed(2)} MT</p>
+            
           </div>
         </div>
 

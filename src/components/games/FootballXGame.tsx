@@ -165,7 +165,7 @@ const FootballXGame = ({ onClose, balance, onBet }: FootballXGameProps) => {
           <div className="flex items-center justify-between px-2">
             <div className="flex flex-col">
               <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Saldo</span>
-              <span className="text-sm font-black text-green-500">{balance.toFixed(2)} MT</span>
+              
             </div>
             <div className="flex flex-col items-end">
               <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Sua Aposta</span>

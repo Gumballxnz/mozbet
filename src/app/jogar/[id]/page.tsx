@@ -62,7 +62,7 @@ export default function PlayGamePage({
 
   return (
     <div className="w-full max-w-[1400px] mx-auto pt-2 pb-8 px-0 sm:px-4">
-      <div className="w-full h-[650px] md:h-[750px] lg:h-[800px] rounded-none sm:rounded-2xl overflow-hidden shadow-2xl bg-black border sm:border-white/10">
+      <div className="w-full h-[650px] md:h-[calc(100vh-140px)] lg:h-[calc(100vh-140px)] rounded-none sm:rounded-2xl overflow-hidden shadow-2xl bg-black border sm:border-white/10">
         <GamePlayer 
           gameId={gameId}
           gameName={GAME_NAMES[gameId]}

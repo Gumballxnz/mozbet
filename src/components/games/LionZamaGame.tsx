@@ -175,7 +175,7 @@ const LionZamaGame = ({ balance, onUpdateBalance, onBack }: LionZamaProps) => {
         <div className="flex items-center gap-4">
           <div className="bg-purple-900/40 backdrop-blur-lg px-4 py-2 rounded-2xl border border-fuchsia-500/30 flex items-center gap-2 shadow-[0_0_15px_rgba(168,85,247,0.2)]">
             <Coins className="text-fuchsia-400" size={16} />
-            <span className="text-sm font-black text-white tracking-tight">{balance.toFixed(2)} MT</span>
+            
           </div>
         </div>
       </div>

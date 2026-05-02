@@ -246,7 +246,7 @@ const PurpleCrashGame = ({ balance, onUpdateBalance, onBack }: Props) => {
         <button onClick={onBack}><ArrowLeft size={20} /></button>
         <span className="text-sm font-bold">âœˆï¸ Crash</span>
         <div className="ml-auto flex items-center gap-2">
-          <span className="px-3 py-1 rounded-full bg-[#0f3d3e] text-white font-bold text-xs">{balance.toFixed(2)} MZN</span>
+          
           <button className="p-1.5 bg-[#0f3d3e] rounded-full"><Maximize2 size={13} /></button>
           <button className="p-1.5 bg-[#0f3d3e] rounded-full"><Volume2 size={13} /></button>
           <button onClick={() => setMenuOpen(true)} className="p-1.5 bg-[#0f3d3e] rounded-full"><Menu size={13} /></button>

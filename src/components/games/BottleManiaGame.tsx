@@ -179,7 +179,7 @@ const BottleManiaGame = ({ onClose, balance, onBet }: BottleManiaGameProps) => {
       <div className="p-6 bg-black/40 backdrop-blur-md border-t border-white/5 flex justify-between items-center relative z-10">
         <div className="flex flex-col">
           <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Saldo Atual</span>
-          <span className="text-sm font-black text-cyan-400">{balance.toFixed(2)} MT</span>
+          
         </div>
         <div className="flex flex-col items-end">
           <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Aposta</span>

@@ -189,7 +189,7 @@ const ChickenHighwayGame = ({ onClose, balance, onBet }: ChickenHighwayGameProps
         <div className="flex justify-between items-center mb-4 px-2">
           <div className="flex items-center gap-2">
             <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Saldo</span>
-            <span className="text-sm font-black text-green-500">{balance.toFixed(2)} MT</span>
+            
           </div>
           <div className="flex items-center gap-2">
             <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Aposta</span>

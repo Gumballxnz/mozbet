@@ -128,7 +128,7 @@ const SubwayCrashGame = ({ onClose, balance, onBet }: SubwayCrashGameProps) => {
         <div className="flex items-center gap-4">
           <div className="bg-white/5 px-3 py-1.5 rounded-full border border-white/10 flex items-center gap-2">
             <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse" />
-            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{balance.toFixed(2)} MT</span>
+            
           </div>
           <button onClick={onClose} className="p-1 hover:bg-white/10 rounded-full transition-colors">
             <X size={24} />

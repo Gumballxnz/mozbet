@@ -214,7 +214,7 @@ const TaxiCrashGame = ({ balance, onUpdateBalance, onBack }: Props) => {
         <button onClick={onBack}><ArrowLeft size={20} /></button>
         <span className="text-xs font-bold">🚕 Taxi Crash</span>
         <div className="ml-auto flex items-center gap-2">
-          <span className="px-3 py-1 rounded-full bg-[#1e3a5f] text-[#ffcc00] font-bold text-xs">{balance.toFixed(2)} MZN</span>
+          
           <button className="p-1.5 bg-[#1e3a5f] rounded-full"><Maximize2 size={14} /></button>
           <button className="p-1.5 bg-[#1e3a5f] rounded-full"><Menu size={14} /></button>
         </div>

@@ -237,7 +237,7 @@ const EarplaneGame = ({ balance, onUpdateBalance, onBack }: Props) => {
         <button onClick={onBack}><ArrowLeft size={20} /></button>
         <span className="text-xl font-extrabold italic text-[#ff3b3b]">EARPLANE</span>
         <div className="ml-auto flex items-center gap-2">
-          <span className="text-[#ffd700] font-bold text-sm">{balance.toFixed(2)} MZN</span>
+          
           <button className="p-1.5 bg-[#1a1a1a] rounded-full"><MessageCircle size={14} /></button>
           <button className="p-1.5 bg-[#1a1a1a] rounded-full"><Menu size={14} /></button>
         </div>

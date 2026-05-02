@@ -183,7 +183,7 @@ const MegaFruitsGame = ({ balance, onUpdateBalance, onBack }: MegaFruitsProps) =
         <div className="flex items-center gap-4">
           <div className="bg-black/40 px-4 py-2 rounded-full border border-yellow-500/50 flex items-center gap-2">
             <Coins className="text-yellow-400" size={16} />
-            <span className="text-sm font-black text-yellow-400">{balance.toFixed(2)} MT</span>
+            
           </div>
         </div>
       </div>

@@ -174,6 +174,7 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [online, setOnline] = useState(0);
+  const [isConnected, setIsConnected] = useState(socket.connected);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll function
@@ -205,13 +206,21 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
     };
 
     const handleOnline = (count: number) => {
+      console.log("Recebido online_count:", count);
       setOnline(count);
     };
 
+    const onConnect = () => setIsConnected(true);
+    const onDisconnect = () => setIsConnected(false);
+
+    socket.on("connect", onConnect);
+    socket.on("disconnect", onDisconnect);
     socket.on("receive_message", handleMessage);
     socket.on("online_count", handleOnline);
 
     return () => {
+      socket.off("connect", onConnect);
+      socket.off("disconnect", onDisconnect);
       socket.off("receive_message", handleMessage);
       socket.off("online_count", handleOnline);
       leaveRoom("chat_global");
@@ -321,7 +330,9 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
             </div>
             <div>
               <h2 className="text-lg font-extrabold tracking-tight">Chat ao Vivo</h2>
-              <p className="text-[10px] text-primary font-bold">🟢 {online} online agora</p>
+              <p className={`text-[10px] font-bold ${isConnected ? "text-primary" : "text-red-500"}`}>
+                {isConnected ? "🟢" : "🔴"} {isConnected ? `${online} online agora` : "Desconectado da VPS"}
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-3">

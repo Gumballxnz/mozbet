@@ -2,7 +2,7 @@
 // O proxy /api/img/ continua funcional para o site público (GameCatalog.tsx)
 // Este ficheiro serve como fallback quando a BD está vazia
 
-const CDN = "https://res.cloudinary.com/dm3glrwax/image/upload/c_limit,f_auto,q_auto,w_800/v1/mozbet/mozbet";
+const ORACLE_BASE = "https://objectstorage.ca-montreal-1.oraclecloud.com/n/ax44xafhjvwf/b/mozbet-assets/o/banners/";
 
 export interface Game {
   id: string;
@@ -15,22 +15,22 @@ export interface Game {
 
 export const GAMES: Game[] = [
   // Crash Games
-  { id: "aviator", name: "AVIATOR", category: "crash", banner: `${CDN}/banner-aviator`, hot: true, pct: "97%" },
-  { id: "taxi-crash", name: "TAXI CRASH", category: "crash", banner: `${CDN}/banner-taxi`, hot: true, pct: "96%" },
-  { id: "earplane", name: "EARPLANE", category: "crash", banner: `${CDN}/banner-earplane`, hot: true, pct: "98%" },
-  { id: "purple-crash", name: "CRASH", category: "crash", banner: `${CDN}/banner-purple-crash`, hot: false, pct: "97%" },
-  { id: "subway-crash", name: "SUBWAY CRASH", category: "crash", banner: `${CDN}/game-crash`, hot: false, pct: "95%" },
-  { id: "augustus-crash", name: "AUGUSTUS CRASH", category: "crash", banner: `${CDN}/game-dragon`, hot: false, pct: "96%" },
-  { id: "chicken-highway", name: "CHICKEN HIGHWAY", category: "crash", banner: `${CDN}/game-keno`, hot: false, pct: "94%" },
+  { id: "aviator", name: "AVIATOR", category: "crash", banner: `${ORACLE_BASE}banner-aviator-1777748647754.webp`, hot: true, pct: "97%" },
+  { id: "taxi-crash", name: "TAXI CRASH", category: "crash", banner: `${ORACLE_BASE}banner-taxi-1777748647754.webp`, hot: true, pct: "96%" },
+  { id: "earplane", name: "EARPLANE", category: "crash", banner: `${ORACLE_BASE}banner-earplane-1777748647754.webp`, hot: true, pct: "98%" },
+  { id: "purple-crash", name: "CRASH", category: "crash", banner: `${ORACLE_BASE}banner-purple-crash-1777748647754.webp`, hot: false, pct: "97%" },
+  { id: "subway-crash", name: "SUBWAY CRASH", category: "crash", banner: `${ORACLE_BASE}banner-taxi-1777748647754.webp`, hot: false, pct: "95%" },
+  { id: "augustus-crash", name: "AUGUSTUS CRASH", category: "crash", banner: `${ORACLE_BASE}banner-dragon-1777748647754.webp`, hot: false, pct: "96%" },
+  { id: "chicken-highway", name: "CHICKEN HIGHWAY", category: "crash", banner: `${ORACLE_BASE}banner-keno-1777748647754.webp`, hot: false, pct: "94%" },
   
   // Casino & Minigames
-  { id: "mines", name: "MINES", category: "casino", banner: `${CDN}/banner-mines`, hot: true, pct: "98%" },
-  { id: "plinko", name: "PLINKO777", category: "casino", banner: `${CDN}/banner-plinko`, hot: true, pct: "99%" },
-  { id: "bottle-mania", name: "BOTTLE MANIA", category: "casino", banner: `${CDN}/banner-bottle-mania`, hot: false, pct: "99%" },
-  { id: "fishinator", name: "FISHINATOR", category: "casino", banner: `${CDN}/game-trading`, hot: false, pct: "96%" },
-  { id: "football-x", name: "FOOTBALL X", category: "casino", banner: `${CDN}/game-roulette`, hot: false, pct: "95%" },
-  { id: "lion-zama", name: "LION ZAMA", category: "casino", banner: `${CDN}/banner-lion-zama`, hot: true, pct: "99%" },
+  { id: "mines", name: "MINES", category: "casino", banner: `${ORACLE_BASE}mines-1777748649678.webp`, hot: true, pct: "98%" },
+  { id: "plinko", name: "PLINKO777", category: "casino", banner: `${ORACLE_BASE}plinko-1777748648733.webp`, hot: true, pct: "99%" },
+  { id: "bottle-mania", name: "BOTTLE MANIA", category: "casino", banner: `${ORACLE_BASE}banner-bottle-mania-1777748647754.webp`, hot: false, pct: "99%" },
+  { id: "fishinator", name: "FISHINATOR", category: "casino", banner: `${ORACLE_BASE}banner-trading-1777748647754.webp`, hot: false, pct: "96%" },
+  { id: "football-x", name: "FOOTBALL X", category: "casino", banner: `${ORACLE_BASE}banner-roulette-1777748647754.webp`, hot: false, pct: "95%" },
+  { id: "lion-zama", name: "LION ZAMA", category: "casino", banner: `${ORACLE_BASE}banner-lion-zama-1777748647754.webp`, hot: true, pct: "99%" },
   
   // Slots
-  { id: "mega-fruits", name: "MEGA FRUITS", category: "slots", banner: `${CDN}/banner-mega-fruits`, hot: true, pct: "98%" },
+  { id: "mega-fruits", name: "MEGA FRUITS", category: "slots", banner: `${ORACLE_BASE}banner-mega-fruits-1777748647754.webp`, hot: true, pct: "98%" },
 ];

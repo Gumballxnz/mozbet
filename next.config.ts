@@ -28,6 +28,16 @@ const nextConfig: NextConfig = {
     ];
   },
 
+  // Proxy WebSocket/Socket.io para a VPS para evitar erros de Mixed Content (HTTPS -> HTTP)
+  async rewrites() {
+    return [
+      {
+        source: "/socket.io/:path*",
+        destination: "http://155.248.224.133:3001/socket.io/:path*",
+      },
+    ];
+  },
+
   // Otimização de imagens
   images: {
     formats: ["image/webp", "image/avif"],

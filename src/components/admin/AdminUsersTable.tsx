@@ -18,11 +18,12 @@ interface UserData {
   created_at: string;
   is_active: boolean;
   is_admin: boolean;
+  role: 'user' | 'admin' | 'super_admin';
   total_deposits?: number;
   total_withdrawn?: number;
 }
 
-export function AdminUsersTable({ initialUsers }: { initialUsers: UserData[] }) {
+export function AdminUsersTable({ initialUsers, currentUserRole }: { initialUsers: UserData[], currentUserRole: string }) {
   const [users, setUsers] = useState<UserData[]>(initialUsers);
   const [search, setSearch] = useState("");
   const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
@@ -62,7 +63,7 @@ export function AdminUsersTable({ initialUsers }: { initialUsers: UserData[] }) 
 
   const filteredUsers = users.filter(u => u.phone.includes(search) || (u.id.includes(search)) || (u.email && u.email.includes(search)));
 
-  const handleAction = async (action: 'ban' | 'suspend' | 'activate' | 'delete', userId: string) => {
+  const handleAction = async (action: 'ban' | 'suspend' | 'activate' | 'delete' | 'promote' | 'demote', userId: string) => {
     try {
       if (action === 'delete') {
         const confirmed = confirm("Aviso: Apagar este utilizador removerá todos os seus dados e não tem volta. Continuar?");
@@ -243,6 +244,11 @@ export function AdminUsersTable({ initialUsers }: { initialUsers: UserData[] }) 
                     </span>
                     <span className="text-xs text-gray-400 font-mono-data tracking-widest">{maskPhone(user.phone)}</span>
                     {user.email && <span className="text-[10px] text-sky-400/70 flex items-center gap-1 mt-1"><AtSign size={10}/>{maskEmail(user.email)}</span>}
+                    <div className="mt-1">
+                      {user.role === 'super_admin' && <span className="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-purple-500/20 text-purple-400 border border-purple-500/30">Dono (Super Admin)</span>}
+                      {user.role === 'admin' && <span className="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-primary/20 text-primary border border-primary/30">Administrador</span>}
+                      {user.role === 'user' && <span className="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-gray-500/20 text-gray-400 border border-gray-500/30">Utilizador</span>}
+                    </div>
                   </td>
                   <td className="px-6 py-4 font-mono-data font-black text-primary text-lg align-middle">
                     {formatMZN(user.balance)}
@@ -361,11 +367,20 @@ export function AdminUsersTable({ initialUsers }: { initialUsers: UserData[] }) 
                 </div>
 
                 <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Auditoria e Segurança</h3>
+                
+                {/* Avisos de Hierarquia */}
+                {(selectedUser.role === 'super_admin' || (selectedUser.role === 'admin' && currentUserRole === 'admin')) && (
+                  <div className="bg-red-500/10 border border-red-500/30 p-3 rounded-xl mb-4">
+                    <p className="text-xs text-red-400 font-bold">⚠️ Acções bloqueadas por hierarquia. Sem permissão para modificar o estado deste membro.</p>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   
                   <Button 
                     variant="outline" 
-                    className={`flex flex-col h-auto py-4 gap-2 ${selectedUser.balance_retained ? 'border-orange-500 bg-orange-500/20 text-orange-400' : 'border-[#2A2F40] bg-[#1A1D27] hover:bg-orange-500/20 hover:text-orange-400 hover:border-orange-500/50'}`}
+                    disabled={selectedUser.role === 'super_admin' || (selectedUser.role === 'admin' && currentUserRole === 'admin')}
+                    className={`flex flex-col h-auto py-4 gap-2 disabled:opacity-30 disabled:cursor-not-allowed ${selectedUser.balance_retained ? 'border-orange-500 bg-orange-500/20 text-orange-400' : 'border-[#2A2F40] bg-[#1A1D27] hover:bg-orange-500/20 hover:text-orange-400 hover:border-orange-500/50'}`}
                     onClick={() => handleRetainBalance(selectedUser.id, selectedUser.balance_retained)}
                   >
                     <HandCoins className="w-5 h-5" />
@@ -377,7 +392,8 @@ export function AdminUsersTable({ initialUsers }: { initialUsers: UserData[] }) 
                   {selectedUser.is_active ? (
                     <Button 
                       variant="outline" 
-                      className="border-[#2A2F40] bg-[#1A1D27] hover:bg-yellow-500/20 hover:text-yellow-500 hover:border-yellow-500/50 flex flex-col h-auto py-4 gap-2"
+                      disabled={selectedUser.role === 'super_admin' || (selectedUser.role === 'admin' && currentUserRole === 'admin')}
+                      className="border-[#2A2F40] bg-[#1A1D27] hover:bg-yellow-500/20 hover:text-yellow-500 hover:border-yellow-500/50 flex flex-col h-auto py-4 gap-2 disabled:opacity-30 disabled:cursor-not-allowed"
                       onClick={() => handleAction('suspend', selectedUser.id)}
                     >
                       <PauseCircle className="w-5 h-5" />
@@ -386,7 +402,8 @@ export function AdminUsersTable({ initialUsers }: { initialUsers: UserData[] }) 
                   ) : (
                     <Button 
                       variant="outline" 
-                      className="border-[#2A2F40] bg-[#1A1D27] hover:bg-primary/20 hover:text-primary hover:border-primary/50 flex flex-col h-auto py-4 gap-2"
+                      disabled={selectedUser.role === 'super_admin' || (selectedUser.role === 'admin' && currentUserRole === 'admin')}
+                      className="border-[#2A2F40] bg-[#1A1D27] hover:bg-primary/20 hover:text-primary hover:border-primary/50 flex flex-col h-auto py-4 gap-2 disabled:opacity-30 disabled:cursor-not-allowed"
                       onClick={() => handleAction('activate', selectedUser.id)}
                     >
                       <UserCheck className="w-5 h-5" />
@@ -396,7 +413,8 @@ export function AdminUsersTable({ initialUsers }: { initialUsers: UserData[] }) 
 
                   <Button 
                     variant="outline" 
-                    className="border-[#2A2F40] bg-[#1A1D27] hover:bg-red-900/40 hover:text-red-500 hover:border-red-600 flex flex-col h-auto py-4 gap-2"
+                    disabled={selectedUser.role === 'super_admin' || (selectedUser.role === 'admin' && currentUserRole === 'admin')}
+                    className="border-[#2A2F40] bg-[#1A1D27] hover:bg-red-900/40 hover:text-red-500 hover:border-red-600 flex flex-col h-auto py-4 gap-2 disabled:opacity-30 disabled:cursor-not-allowed"
                     onClick={() => handleAction('ban', selectedUser.id)}
                   >
                     <Ban className="w-5 h-5" />
@@ -405,13 +423,38 @@ export function AdminUsersTable({ initialUsers }: { initialUsers: UserData[] }) 
 
                   <Button 
                     variant="outline" 
-                    className="border-red-900/30 bg-red-950/20 text-red-500 hover:bg-red-600 hover:text-white flex flex-col h-auto py-4 gap-2"
+                    disabled={selectedUser.role === 'super_admin' || (selectedUser.role === 'admin' && currentUserRole === 'admin')}
+                    className="border-red-900/30 bg-red-950/20 text-red-500 hover:bg-red-600 hover:text-white flex flex-col h-auto py-4 gap-2 disabled:opacity-30 disabled:cursor-not-allowed"
                     onClick={() => handleAction('delete', selectedUser.id)}
                   >
                     <Trash2 className="w-5 h-5" />
                     <span className="text-[10px] font-bold">Apagar Ficha</span>
                   </Button>
                 </div>
+
+                {/* Gestão de Equipa (Apenas Super Admin) */}
+                {currentUserRole === 'super_admin' && (
+                  <div className="mt-8 pt-6 border-t border-[#2A2F40]">
+                    <h3 className="text-xs font-bold text-purple-400 uppercase tracking-wider mb-3">Gestão de Equipa (Dono)</h3>
+                    {selectedUser.role === 'user' && (
+                       <Button 
+                         className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold"
+                         onClick={() => handleAction('promote', selectedUser.id)}
+                       >
+                         <ShieldAlert className="w-4 h-4 mr-2" /> Promover a Administrador
+                       </Button>
+                    )}
+                    {selectedUser.role === 'admin' && (
+                       <Button 
+                         variant="destructive"
+                         className="w-full font-bold bg-red-600 hover:bg-red-700"
+                         onClick={() => handleAction('demote', selectedUser.id)}
+                       >
+                         <UserCheck className="w-4 h-4 mr-2" /> Despromover para Utilizador Normal
+                       </Button>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           )}

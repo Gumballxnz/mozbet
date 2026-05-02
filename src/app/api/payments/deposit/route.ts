@@ -83,7 +83,19 @@ export async function POST(req: Request) {
       // MODO SIMULAÇÃO (Enquanto esperamos chaves)
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // Simular uma falha ocasional para testar (com base num numero de telefone especifico ou não, mas vamos deixar aprovar sempre no mock)
+      // SIMULAÇÃO DE FALHA: Se o utilizador depositar exatamente 2 MT, simula uma falha no M-pesa
+      if (numAmount === 2) {
+        await supabaseAdmin.from("transactions").update({ status: "FAILED" }).eq("id", transaction.id);
+        
+        await supabaseAdmin.from('notifications').insert({
+          user_id: decoded.id,
+          title: "Depósito Falhou",
+          message: `Falha no depósito de ${numAmount.toFixed(2)} MZN: Saldo insuficiente no M-pesa ou PIN incorreto. Tente novamente.`,
+          type: "deposit_failed"
+        });
+        
+        return NextResponse.json({ error: "Falha simulada no M-pesa (Depósito de 2MT)." }, { status: 400 });
+      }
       
       // Marca como completo
       await supabaseAdmin.from("transactions").update({ status: "COMPLETED" }).eq("id", transaction.id);

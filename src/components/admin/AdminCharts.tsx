@@ -69,7 +69,7 @@ export function AdminCharts({ depositsRaw: initialDeposits, usersRaw: initialUse
         const key = format(d, "yyyy-MM-dd");
         dataMap.set(key, {
           date: key,
-          displayDate: filter === "7d" ? format(d, "EEEE", { locale: ptBR }) : format(d, "dd MMM", { locale: ptBR }),
+          displayDate: filter === "7d" ? format(d, "EEE", { locale: ptBR }).toUpperCase() : format(d, "dd MMM", { locale: ptBR }),
           depositos: 0,
           levantamentos: 0,
           usuarios: 0

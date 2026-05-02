@@ -243,49 +243,93 @@ export function AdminCharts({ depositsRaw: initialDeposits, usersRaw: initialUse
         </div>
       </div>
 
-      {/* GRÁFICO PRINCIPAL (Área Dupla) */}
-      <div className="bg-[#101116] border border-[#2A2F40] rounded-2xl p-4 sm:p-6 shadow-xl">
-        <div className="flex flex-wrap gap-6 mb-8 border-b border-[#2A2F40] pb-6">
-          <div>
-             <span className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1">Volume Depósitos</span>
-             <span className="text-2xl font-black text-primary">{formatMZN(periodDeposits)}</span>
-          </div>
-          <div>
-             <span className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1">Volume Saídas</span>
-             <span className="text-2xl font-black text-red-500">{formatMZN(periodWithdrawals)}</span>
-          </div>
-          <div>
-             <span className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1">Lucro no Período (GGR)</span>
-             <span className={`text-2xl font-black ${periodGGR >= 0 ? 'text-sky-400' : 'text-red-500'}`}>{formatMZN(periodGGR)}</span>
-          </div>
-        </div>
+      {/* GRÁFICOS (Financeiro + Crescimento de Base) */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         
-        <div className="h-[350px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-              <defs>
-                <linearGradient id="colorDepositos" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#28A745" stopOpacity={0.5}/>
-                  <stop offset="95%" stopColor="#28A745" stopOpacity={0}/>
-                </linearGradient>
-                <linearGradient id="colorLevantamentos" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#EF4444" stopOpacity={0.5}/>
-                  <stop offset="95%" stopColor="#EF4444" stopOpacity={0}/>
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#2A2F40" vertical={false} />
-              <XAxis dataKey="displayDate" stroke="#6B7280" fontSize={11} tickLine={false} axisLine={false} />
-              <YAxis stroke="#6B7280" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(val) => `MZN ${val >= 1000 ? (val/1000).toFixed(1)+'k' : val}`} />
-              <Tooltip 
-                contentStyle={{ backgroundColor: '#1A1D27', borderColor: '#2A2F40', borderRadius: '12px', color: '#fff', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)' }} 
-                itemStyle={{ fontWeight: 'bold' }} 
-              />
-              <Legend verticalAlign="top" height={36} iconType="circle" />
-              <Area type="monotone" dataKey="depositos" name="Entradas (Depósitos)" stroke="#28A745" strokeWidth={3} fillOpacity={1} fill="url(#colorDepositos)" />
-              <Area type="monotone" dataKey="levantamentos" name="Saídas (Levantamentos)" stroke="#EF4444" strokeWidth={3} fillOpacity={1} fill="url(#colorLevantamentos)" />
-            </AreaChart>
-          </ResponsiveContainer>
+        {/* GRÁFICO FINANCEIRO (Área Dupla) */}
+        <div className="bg-[#101116] border border-[#2A2F40] rounded-2xl p-4 sm:p-6 shadow-xl flex flex-col">
+          <div className="flex flex-wrap gap-6 mb-8 border-b border-[#2A2F40] pb-6">
+            <div>
+               <span className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1">Volume Depósitos</span>
+               <span className="text-2xl font-black text-primary">{formatMZN(periodDeposits)}</span>
+            </div>
+            <div>
+               <span className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1">Volume Saídas</span>
+               <span className="text-2xl font-black text-red-500">{formatMZN(periodWithdrawals)}</span>
+            </div>
+            <div>
+               <span className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1">Lucro no Período (GGR)</span>
+               <span className={`text-2xl font-black ${periodGGR >= 0 ? 'text-sky-400' : 'text-red-500'}`}>{formatMZN(periodGGR)}</span>
+            </div>
+          </div>
+          
+          <div className="flex-1 min-h-[350px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorDepositos" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#28A745" stopOpacity={0.5}/>
+                    <stop offset="95%" stopColor="#28A745" stopOpacity={0}/>
+                  </linearGradient>
+                  <linearGradient id="colorLevantamentos" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#EF4444" stopOpacity={0.5}/>
+                    <stop offset="95%" stopColor="#EF4444" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#2A2F40" vertical={false} />
+                <XAxis dataKey="displayDate" stroke="#6B7280" fontSize={11} tickLine={false} axisLine={false} />
+                <YAxis stroke="#6B7280" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(val) => `MZN ${val >= 1000 ? (val/1000).toFixed(1)+'k' : val}`} />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#1A1D27', borderColor: '#2A2F40', borderRadius: '12px', color: '#fff', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)' }} 
+                  itemStyle={{ fontWeight: 'bold' }} 
+                />
+                <Legend verticalAlign="top" height={36} iconType="circle" />
+                <Area type="monotone" dataKey="depositos" name="Entradas (Depósitos)" stroke="#28A745" strokeWidth={3} fillOpacity={1} fill="url(#colorDepositos)" />
+                <Area type="monotone" dataKey="levantamentos" name="Saídas (Levantamentos)" stroke="#EF4444" strokeWidth={3} fillOpacity={1} fill="url(#colorLevantamentos)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
         </div>
+
+        {/* GRÁFICO DE UTILIZADORES (Crescimento "Estilo Aviator") */}
+        <div className="bg-[#101116] border border-[#2A2F40] rounded-2xl p-4 sm:p-6 shadow-xl flex flex-col">
+          <div className="flex flex-wrap gap-6 mb-8 border-b border-[#2A2F40] pb-6">
+            <div>
+               <span className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1">Novos Registos no Período</span>
+               <span className="text-2xl font-black text-sky-400">{chartData.reduce((acc, curr) => acc + curr.usuarios, 0).toLocaleString()} <span className="text-lg font-medium text-gray-500">contas</span></span>
+            </div>
+            <div>
+               <span className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1">Média Diária</span>
+               <span className="text-2xl font-black text-purple-400">
+                 {Math.ceil(chartData.reduce((acc, curr) => acc + curr.usuarios, 0) / (filter === 'hoje' ? 1 : filter === '7d' ? 7 : filter === '30d' ? 30 : 90)).toLocaleString()} 
+                 <span className="text-sm font-medium text-gray-500 ml-1">users/dia</span>
+               </span>
+            </div>
+          </div>
+          
+          <div className="flex-1 min-h-[350px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorUsuarios" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#0EA5E9" stopOpacity={0.6}/>
+                    <stop offset="95%" stopColor="#0EA5E9" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#2A2F40" vertical={false} />
+                <XAxis dataKey="displayDate" stroke="#6B7280" fontSize={11} tickLine={false} axisLine={false} />
+                <YAxis stroke="#6B7280" fontSize={11} tickLine={false} axisLine={false} />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#1A1D27', borderColor: '#2A2F40', borderRadius: '12px', color: '#fff', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)' }} 
+                  itemStyle={{ fontWeight: 'bold' }} 
+                />
+                <Legend verticalAlign="top" height={36} iconType="circle" />
+                <Area type="monotone" dataKey="usuarios" name="Novas Contas" stroke="#0EA5E9" strokeWidth={4} fillOpacity={1} fill="url(#colorUsuarios)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
       </div>
 
     </div>

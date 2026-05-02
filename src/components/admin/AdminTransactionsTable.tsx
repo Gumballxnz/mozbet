@@ -21,24 +21,22 @@ export function AdminTransactionsTable({ initialTransactions }: { initialTransac
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    const channel = supabase.channel('admin-transactions')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, async (payload) => {
-        if (payload.eventType === 'INSERT') {
-          // Precisamos do telemóvel associado ao utilizador para exibir na tabela
-          const { data: userData } = await supabase.from('users').select('phone').eq('id', payload.new.user_id).single();
-          const newTx = { ...payload.new, phone: userData?.phone || 'Desconhecido' } as Transaction;
-          setTransactions(prev => [newTx, ...prev]);
-        } else if (payload.eventType === 'UPDATE') {
-          setTransactions(prev => prev.map(tx => String(tx.id) === String(payload.new.id) ? { ...tx, ...payload.new } : tx));
-        } else if (payload.eventType === 'DELETE') {
-          setTransactions(prev => prev.filter(tx => String(tx.id) !== String(payload.old.id)));
+    // Polling seguro usando Server Actions a cada 3 segundos
+    // Isso ignora o bloqueio do RLS porque usa o supabaseAdmin no backend
+    const interval = setInterval(async () => {
+      try {
+        const { getLatestTransactions } = await import("@/app/admin/transactions/actions");
+        const latest = await getLatestTransactions();
+        if (latest && latest.length > 0) {
+          // Apenas atualiza se houver dados
+          setTransactions(latest as Transaction[]);
         }
-      })
-      .subscribe();
+      } catch (err) {
+        console.error("Erro ao buscar transações em realtime:", err);
+      }
+    }, 3000);
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => clearInterval(interval);
   }, []);
 
   const filtered = transactions.filter(t => t.phone?.includes(search) || t.type.includes(search.toUpperCase()));

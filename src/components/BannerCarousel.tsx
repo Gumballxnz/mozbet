@@ -81,7 +81,7 @@ export function BannerCarousel({ initialBanners }: { initialBanners: Banner[] })
           }`}
         >
           <img
-            src={slide.image_url?.startsWith("http") ? `/api/proxy-image?url=${encodeURIComponent(slide.image_url)}` : slide.image_url}
+            src={slide.image_url}
             alt={slide.title}
             className="absolute inset-0 w-full h-full object-cover opacity-60 sm:opacity-80 transition-transform duration-[6000ms] ease-out scale-100 group-hover:scale-105"
           />

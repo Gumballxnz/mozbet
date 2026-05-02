@@ -131,7 +131,7 @@ export function GameCatalog() {
               className="relative rounded-[28px] overflow-hidden aspect-[4/5] group active:scale-[0.97] transition-all cursor-pointer text-left shadow-lg bg-card"
             >
               <img
-                src={game.banner_url?.startsWith("http") ? `/api/proxy-image?url=${encodeURIComponent(game.banner_url)}` : game.banner_url}
+                src={game.banner_url}
                 alt={game.name}
                 loading="lazy"
                 className="absolute inset-0 w-full h-full object-cover"

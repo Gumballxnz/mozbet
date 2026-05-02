@@ -5,6 +5,8 @@ import { supabase } from "@/lib/supabase";
 import { formatMZN } from "@/lib/utils";
 import { ArrowDownLeft, ArrowUpRight, CheckCircle2, Clock, XCircle, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 interface Transaction {
   id: string;
@@ -19,6 +21,8 @@ interface Transaction {
 export function AdminTransactionsTable({ initialTransactions }: { initialTransactions: Transaction[] }) {
   const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
   const [search, setSearch] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
   useEffect(() => {
     // Polling seguro usando Server Actions a cada 3 segundos
@@ -39,7 +43,46 @@ export function AdminTransactionsTable({ initialTransactions }: { initialTransac
     return () => clearInterval(interval);
   }, []);
 
-  const filtered = transactions.filter(t => t.phone?.includes(search) || t.type.includes(search.toUpperCase()));
+  const filtered = transactions.filter(t => {
+    const matchesSearch = t.phone?.includes(search) || t.type.includes(search.toUpperCase());
+    
+    if (!startDate && !endDate) return matchesSearch;
+    
+    const txDate = new Date(t.created_at);
+    const start = startDate ? new Date(startDate) : new Date(0);
+    const end = endDate ? new Date(endDate) : new Date();
+    // Ajustar fim do dia para a data final
+    if (endDate) end.setHours(23, 59, 59, 999);
+    
+    const isInRange = txDate >= start && txDate <= end;
+    return matchesSearch && isInRange;
+  });
+
+  const handleDownloadCSV = () => {
+    if (filtered.length === 0) return toast.error("Nenhuma transação para exportar.");
+    
+    const headers = ["Data", "Tipo", "Telefone", "Valor", "Estado", "ID"];
+    const rows = filtered.map(t => [
+      new Date(t.created_at).toLocaleString("pt-MZ"),
+      t.type,
+      `+258 ${t.phone}`,
+      t.amount.toString(),
+      t.status,
+      t.id
+    ]);
+
+    const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `extrato-mozbet-${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("Extrato baixado com sucesso!");
+  };
 
   return (
     <div className="space-y-6">
@@ -49,14 +92,39 @@ export function AdminTransactionsTable({ initialTransactions }: { initialTransac
           <p className="text-muted-foreground">Monitorização Realtime de M-Pesa e E-Mola.</p>
         </div>
         
-        <div className="relative w-full sm:w-72">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input 
-            placeholder="Procurar telemóvel ou tipo..." 
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 bg-[#101116] border-[#2A2F40] h-10 text-white"
-          />
+        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+          <div className="flex items-center gap-2 bg-[#101116] border border-[#2A2F40] rounded-xl px-2">
+            <input 
+              type="date" 
+              value={startDate} 
+              onChange={(e) => setStartDate(e.target.value)} 
+              className="bg-transparent text-[10px] text-white outline-none p-2 h-9"
+            />
+            <span className="text-gray-500">até</span>
+            <input 
+              type="date" 
+              value={endDate} 
+              onChange={(e) => setEndDate(e.target.value)} 
+              className="bg-transparent text-[10px] text-white outline-none p-2 h-9"
+            />
+          </div>
+
+          <Button 
+            onClick={handleDownloadCSV}
+            className="bg-primary/20 text-primary border border-primary/50 font-bold h-10 px-4"
+          >
+            Baixar Extrato
+          </Button>
+
+          <div className="relative flex-1 sm:w-60">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input 
+              placeholder="Procurar telemóvel..." 
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9 bg-[#101116] border-[#2A2F40] h-10 text-white"
+            />
+          </div>
         </div>
       </div>
 

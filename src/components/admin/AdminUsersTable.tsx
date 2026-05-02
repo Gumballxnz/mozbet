@@ -232,7 +232,7 @@ export function AdminUsersTable({ initialUsers, currentUserRole }: { initialUser
             onClick={() => setGlobalModalOpen(true)}
             className="bg-primary/20 text-primary border border-primary/50 font-bold hidden md:flex"
           >
-            <Megaphone className="w-4 h-4 mr-2" /> Comunicação Global
+            <Megaphone className="w-4 h-4 mr-2" /> Comunicado Global
           </Button>
           <div className="relative flex-1 sm:w-72">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -252,6 +252,7 @@ export function AdminUsersTable({ initialUsers, currentUserRole }: { initialUser
             <thead className="text-[10px] text-gray-500 uppercase bg-[#0B0C10] border-b border-[#2A2F40] font-black tracking-wider">
               <tr>
                 <th className="px-6 py-4">Jogador (ID Único)</th>
+                <th className="px-6 py-4">Data de Criação</th>
                 <th className="px-6 py-4">Saldo Real</th>
                 <th className="px-6 py-4">Status / Bloqueios</th>
                 <th className="px-6 py-4 text-right">Ações</th>
@@ -272,6 +273,9 @@ export function AdminUsersTable({ initialUsers, currentUserRole }: { initialUser
                       {user.role === 'admin' && <span className="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-primary/20 text-primary border border-primary/30">Administrador</span>}
                       {user.role === 'user' && <span className="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-gray-500/20 text-gray-400 border border-gray-500/30">Utilizador</span>}
                     </div>
+                  </td>
+                  <td className="px-6 py-4 text-xs text-gray-400 font-mono-data align-middle">
+                    {new Date(user.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                   </td>
                   <td className="px-6 py-4 font-mono-data font-black text-primary text-lg align-middle">
                     {formatMZN(user.balance)}
@@ -329,10 +333,26 @@ export function AdminUsersTable({ initialUsers, currentUserRole }: { initialUser
           {selectedUser && (
             <div className="space-y-6 pt-2">
               
+              <div className="bg-[#0B0C10] border border-[#2A2F40] p-4 rounded-xl flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <MessageCircle className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider block">Número de Telefone</span>
+                    <span className="text-lg font-black text-white">+{selectedUser.phone}</span>
+                  </div>
+                </div>
+                <div className="text-right">
+                   <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider block">Membro desde</span>
+                   <span className="text-xs font-bold text-gray-300">{new Date(selectedUser.created_at).toLocaleDateString('pt-BR')}</span>
+                </div>
+              </div>
+
               {selectedUser.email ? (
                  <div className="bg-sky-900/20 border border-sky-500/30 p-3 rounded-xl flex items-center gap-3">
                    <Mail className="w-5 h-5 text-sky-400" />
-                   <span className="text-sm font-bold text-sky-100">{maskEmail(selectedUser.email)}</span>
+                   <span className="text-sm font-bold text-sky-100">{selectedUser.email}</span>
                  </div>
               ) : (
                 <div className="bg-gray-900/40 border border-gray-800 p-3 rounded-xl flex items-center gap-3">

@@ -42,7 +42,39 @@ const EarplaneGame = ({ balance, onUpdateBalance, onBack }: Props) => {
     } catch (err) {}
   }, []);
 
+  const fetchRoundState = useCallback(async () => {
+    try {
+      const res = await fetch("/api/game/round?game=earplane");
+      const data = await res.json();
+      if (!data.round) return;
+      currentRoundId.current = data.round.id;
+      const startMs = new Date(data.round.startedAt).getTime();
+      const now = Date.now();
+      
+      // Fix UTC Timeout: Se o startMs estiver muito atrasado, sincroniza com o 'now'
+      if (Math.abs(startMs - now) > 60000 && data.round.status === "running") {
+         startedAt.current = now - 5000;
+      } else {
+         startedAt.current = startMs;
+      }
+
+      if (data.round.status === "waiting") {
+        setPhase("waiting");
+        setMultiplier(1.0);
+        setHasBet1(false); setHasBet2(false);
+        setCashed1(false); setCashed2(false);
+        setCountdown(Math.max(1, Math.ceil((startMs - now) / 1000)));
+      } else if (data.round.status === "crashed") {
+        setPhase("crashed");
+        setMultiplier(data.round.crashPoint || 1.0);
+      } else {
+        setPhase("rising");
+      }
+    } catch (err) {}
+  }, []);
+
   useEffect(() => {
+    fetchRoundState();
     fetchHistory();
     joinRoom("game_earplane");
 
@@ -74,7 +106,7 @@ const EarplaneGame = ({ balance, onUpdateBalance, onBack }: Props) => {
       socket.off("game_update", handleUpdate);
       leaveRoom("game_earplane");
     };
-  }, [fetchHistory]);
+  }, [fetchHistory, fetchRoundState]);
 
   // Loop do Multiplicador (Local mas sincronizado com StartedAt do servidor)
   useEffect(() => {

@@ -187,6 +187,12 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
   useEffect(() => {
     if (!isOpen) return;
 
+    // Se o chat estiver vazio, vamos preencher com mensagens determinísticas para não parecer morto
+    if (messages.length === 0) {
+      const initialMsgs = getDeterministicChatMessages(15);
+      setMessages(initialMsgs);
+    }
+
     joinRoom("chat_global");
 
     const handleMessage = (data: any) => {

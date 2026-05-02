@@ -28,7 +28,38 @@ const PurpleCrashGame = ({ balance, onUpdateBalance, onBack }: Props) => {
   const startedAt = useRef<number>(0);
   const currentRoundId = useRef<string | null>(null);
 
+  const fetchRoundState = useCallback(async () => {
+    try {
+      const res = await fetch("/api/game/round?game=crash");
+      const data = await res.json();
+      if (!data.round) return;
+      currentRoundId.current = data.round.id;
+      const startMs = new Date(data.round.startedAt).getTime();
+      const now = Date.now();
+      
+      if (Math.abs(startMs - now) > 60000 && data.round.status === "rising") {
+         startedAt.current = now - 5000;
+      } else {
+         startedAt.current = startMs;
+      }
+
+      if (data.round.status === "waiting") {
+        setPhase("waiting");
+        setMultiplier(1.0);
+        setHasBet1(false); setHasBet2(false);
+        setCashed1(false); setCashed2(false);
+        setCountdown(Math.max(1, Math.ceil((startMs - now) / 1000)));
+      } else if (data.round.status === "crashed") {
+        setPhase("crashed");
+        setMultiplier(data.round.crashPoint || 1.0);
+      } else {
+        setPhase("rising");
+      }
+    } catch (err) {}
+  }, []);
+
   useEffect(() => {
+    fetchRoundState();
     joinRoom("game_crash");
 
     const handleUpdate = (data: any) => {
@@ -58,7 +89,7 @@ const PurpleCrashGame = ({ balance, onUpdateBalance, onBack }: Props) => {
       socket.off("game_update", handleUpdate);
       leaveRoom("game_crash");
     };
-  }, []);
+  }, [fetchRoundState]);
 
   // Loop do Multiplicador (Sincronizado)
   useEffect(() => {

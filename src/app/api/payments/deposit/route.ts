@@ -30,7 +30,6 @@ export async function POST(req: Request) {
     }
 
     // 3. Criar o registo da transação como PENDENTE no Banco de Dados
-    // Este registo é essencial. Só vamos dar o saldo quando a e2Payments disser "PAGO".
     const { data: transaction, error: txError } = await supabaseAdmin
       .from("transactions")
       .insert([
@@ -50,10 +49,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Erro interno ao iniciar depósito." }, { status: 500 });
     }
 
-    // 4. Comunicar com a e2Payments (Envia o PUSH M-Pesa pro celular)
-    // Usamos o ID da transação como referência.
-    // ATENÇÃO: Desativado temporariamente (simulação) até as chaves reais serem colocadas na sexta.
-    
+    // Notificação: Depósito Iniciado
+    await supabaseAdmin.from('notifications').insert({
+      user_id: decoded.id,
+      title: "Depósito Iniciado",
+      message: `Sua solicitação de depósito de ${numAmount.toFixed(2)} MZN via telemóvel foi registrada. Aguardando confirmação.`,
+      type: "deposit_pending"
+    });
+
     const hasKeys = !!process.env.E2P_CLIENT_ID;
     
     if (hasKeys) {
@@ -66,15 +69,32 @@ export async function POST(req: Request) {
           .update({ status: "FAILED" })
           .eq("id", transaction.id);
           
+        // Notificação: Depósito Falhou
+        await supabaseAdmin.from('notifications').insert({
+          user_id: decoded.id,
+          title: "Depósito Falhou",
+          message: `Falha no depósito de ${numAmount.toFixed(2)} MZN: Ocorreu um erro ao processar o seu depósito. Por favor, verifique se o número de telefone e o valor inseridos estão corretos e tente novamente.`,
+          type: "deposit_failed"
+        });
+          
         return NextResponse.json({ error: e2pResponse.error }, { status: 502 });
       }
     } else {
-      // MODO SIMULAÇÃO (Enquanto esperamos sexta-feira)
-      // Como não tem chaves, vamos fingir que o pagamento demorou 2 segundos e aprovou logo o saldo.
+      // MODO SIMULAÇÃO (Enquanto esperamos chaves)
       await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Simular uma falha ocasional para testar (com base num numero de telefone especifico ou não, mas vamos deixar aprovar sempre no mock)
       
       // Marca como completo
       await supabaseAdmin.from("transactions").update({ status: "COMPLETED" }).eq("id", transaction.id);
+      
+      // Notificação: Depósito Concluído
+      await supabaseAdmin.from('notifications').insert({
+        user_id: decoded.id,
+        title: "Depósito Concluído",
+        message: `O seu depósito de ${numAmount.toFixed(2)} MZN foi aprovado com sucesso e creditado na sua conta. Boas apostas!`,
+        type: "deposit_success"
+      });
       
       // Adiciona o saldo à conta
       const { data: user } = await supabaseAdmin.from("users").select("balance, has_deposited").eq("id", decoded.id).single();
@@ -82,15 +102,21 @@ export async function POST(req: Request) {
       if (user) {
         let finalBalance = Number(user.balance) + numAmount;
         
-        // Aplica o Bónus de 500% se for o 1º depósito (Max: 25.000 MT de Bónus)
+        // Aplica o Bónus de 500% se for o 1º depósito
         if (!user.has_deposited) {
           const bonus = Math.min(numAmount * 5, 25000);
           finalBalance += bonus;
           
-          // Regista a transação do Bónus
           await supabaseAdmin.from("transactions").insert([{
             user_id: decoded.id, type: "BONUS", amount: bonus, status: "COMPLETED", phone: decoded.phone
           }]);
+          
+          await supabaseAdmin.from('notifications').insert({
+            user_id: decoded.id,
+            title: "Bónus de Boas-Vindas!",
+            message: `Acaba de receber ${bonus.toFixed(2)} MZN de Bónus no seu primeiro depósito!`,
+            type: "promo"
+          });
         }
         
         await supabaseAdmin.from("users").update({

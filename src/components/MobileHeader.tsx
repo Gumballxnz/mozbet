@@ -3,7 +3,7 @@
 import { useAppStore } from "@/lib/store";
 import { useTranslation } from "@/hooks/useTranslation";
 import { Button } from "@/components/ui/button";
-import { User, Wallet, LogOut, MessageCircle, Bell } from "lucide-react";
+import { User, Wallet, LogOut, MessageCircle, Bell, Zap, AlertTriangle, ExternalLink, X } from "lucide-react";
 import { formatMZN } from "@/lib/utils";
 import Link from "next/link";
 import { useMemo, useState, useEffect } from "react";
@@ -25,6 +25,15 @@ export function MobileHeader() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [hasUnread, setHasUnread] = useState(false);
+  const [activeTab, setActiveTab] = useState<'promos' | 'notifs'>('notifs');
+
+  const getRelativeTime = (dateString: string) => {
+    const diffInMs = new Date().getTime() - new Date(dateString).getTime();
+    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+    if (diffInDays === 0) return "HOJE";
+    if (diffInDays === 1) return "HÁ 1 DIA";
+    return `HÁ ${diffInDays} DIAS`;
+  };
 
   // Carregar e ouvir notificações com Server Actions (Polling seguro e leve a cada 5s)
   useEffect(() => {
@@ -35,19 +44,23 @@ export function MobileHeader() {
         const { getLatestNotifications } = await import("@/app/actions/notifications");
         const data = await getLatestNotifications();
         
+        // Obter ids globais lidos do localStorage
+        const readGlobalIds = JSON.parse(localStorage.getItem('read_global_notifs') || '[]');
+        
         setNotifications(data);
-        if (data.some((n: any) => !n.is_read)) setHasUnread(true);
+        
+        // Verifica se há alguma notificação do user não lida OU alguma global não lida
+        const hasUnreadPrivate = data.some((n: any) => !n.is_read && n.user_id === user.id);
+        const hasUnreadGlobal = data.some((n: any) => n.user_id === null && !readGlobalIds.includes(n.id));
+        
+        setHasUnread(hasUnreadPrivate || hasUnreadGlobal);
       } catch (err) {
-        // Silencioso em caso de erro de rede
+        // Silencioso
       }
     };
     
-    // Fetch Inicial
     fetchNotifs();
-
-    // Polling contínuo
     const interval = setInterval(fetchNotifs, 5000);
-
     return () => clearInterval(interval);
   }, [user]);
 
@@ -55,9 +68,17 @@ export function MobileHeader() {
     setHasUnread(false);
     if (!user) return;
     
+    // Marcar as privadas na DB
     const unreadIds = notifications.filter(n => !n.is_read && n.user_id === user.id).map(n => n.id);
     
-    // UI otimista
+    // Marcar as globais no localStorage
+    const globalIds = notifications.filter(n => n.user_id === null).map(n => n.id);
+    if (globalIds.length > 0) {
+      const readGlobalIds = JSON.parse(localStorage.getItem('read_global_notifs') || '[]');
+      const newGlobalIds = Array.from(new Set([...readGlobalIds, ...globalIds]));
+      localStorage.setItem('read_global_notifs', JSON.stringify(newGlobalIds));
+    }
+    
     setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
     
     if (unreadIds.length > 0) {
@@ -172,31 +193,86 @@ export function MobileHeader() {
 
       {/* Dropdown de Notificações */}
       {showNotifications && isLoggedIn && (
-        <div className="fixed top-[60px] right-4 w-[300px] z-50 bg-surface-elevated border border-white/10 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-4">
-          <div className="p-3 border-b border-white/5 bg-black/40">
-            <h3 className="font-bold text-sm text-white flex justify-between items-center">
-              Notificações
-              <button onClick={() => setShowNotifications(false)} className="text-muted-foreground hover:text-white">✕</button>
-            </h3>
-          </div>
-          <div className="max-h-[300px] overflow-y-auto">
-            {notifications.length === 0 ? (
-              <div className="p-6 text-center text-muted-foreground text-xs">
-                Sem notificações no momento.
+        <div className="fixed top-[60px] right-4 w-[350px] z-50 bg-[#101116] border border-[#2A2F40] rounded-2xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-4">
+          <div className="p-4 bg-[#0B0C10] relative">
+            <button onClick={() => setShowNotifications(false)} className="absolute top-4 right-4 text-muted-foreground hover:text-white"><X className="w-4 h-4" /></button>
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center border border-primary/30">
+                <Bell className="w-4 h-4 text-primary" />
               </div>
-            ) : (
-              notifications.map((notif) => (
-                <div key={notif.id} className={`p-4 hover:bg-white/5 transition-colors cursor-pointer border-l-2 ${notif.is_read ? 'border-transparent' : 'border-primary'}`}>
-                  <h4 className="font-bold text-sm text-white mb-1 capitalize">{notif.type || "Notificação"}</h4>
-                  <p className="text-xs text-muted-foreground leading-snug">
-                    {notif.message}
-                  </p>
-                  <span className="text-[10px] text-gray-500 mt-2 block">
-                    {new Date(notif.created_at).toLocaleDateString('pt-MZ')} às {new Date(notif.created_at).toLocaleTimeString('pt-MZ', {hour: '2-digit', minute:'2-digit'})}
-                  </span>
-                </div>
-              ))
-            )}
+              <h3 className="font-black text-xl text-primary tracking-wide uppercase">NOTIFICAÇÕES</h3>
+            </div>
+            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1 ml-10">Fique por dentro das novidades</p>
+          </div>
+          
+          <div className="flex border-b border-[#2A2F40]">
+             <button 
+               className={`flex-1 py-3 text-xs font-bold flex items-center justify-center gap-2 transition-colors ${activeTab === 'promos' ? 'text-white border-b-2 border-primary' : 'text-gray-500 hover:text-gray-300'}`}
+               onClick={() => setActiveTab('promos')}
+             >
+               <Zap className="w-4 h-4" /> PROMOÇÕES
+             </button>
+             <button 
+               className={`flex-1 py-3 text-xs font-bold flex items-center justify-center gap-2 transition-colors ${activeTab === 'notifs' ? 'text-white border-b-2 border-primary' : 'text-gray-500 hover:text-gray-300'}`}
+               onClick={() => setActiveTab('notifs')}
+             >
+               <Bell className="w-4 h-4" /> NOTIFICAÇÕES
+             </button>
+          </div>
+
+          <div className="max-h-[350px] overflow-y-auto bg-[#101116] p-3 space-y-3">
+             {(() => {
+               const promos = notifications.filter(n => n.type === 'promo');
+               const notifs = notifications.filter(n => n.type !== 'promo');
+               const itemsToRender = activeTab === 'promos' ? promos : notifs;
+
+               if (itemsToRender.length === 0) {
+                 return <div className="p-6 text-center text-muted-foreground text-xs font-bold">Sem novidades no momento.</div>;
+               }
+
+               return itemsToRender.map((notif) => {
+                 const isFailed = notif.type === 'deposit_failed';
+                 const isPromo = notif.type === 'promo';
+                 
+                 return (
+                   <div key={notif.id} className={`border rounded-xl p-4 relative overflow-hidden ${isFailed ? 'bg-red-950/20 border-red-900/30' : 'bg-[#1A1D27] border-[#2A2F40]'}`}>
+                     {!notif.is_read && <div className="absolute top-3 right-3 w-2 h-2 rounded-full bg-primary" />}
+                     
+                     <div className="flex items-center gap-3 mb-3">
+                       <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 border ${
+                         isPromo ? 'bg-blue-600/20 border-blue-500/30' : 
+                         isFailed ? 'border-red-500/30' : 
+                         'border-gray-600/30'
+                       }`}>
+                          {isPromo ? <Zap className="w-5 h-5 text-blue-400" /> : 
+                           isFailed ? <AlertTriangle className="w-5 h-5 text-red-500" /> : 
+                           <Bell className="w-5 h-5 text-gray-400" />}
+                       </div>
+                       <div>
+                         <h4 className="text-white font-black uppercase text-sm">{notif.title || "Notificação"}</h4>
+                         <span className="text-[9px] text-gray-400 font-bold uppercase">{getRelativeTime(notif.created_at)}</span>
+                       </div>
+                     </div>
+                     
+                     <p className={`text-xs font-medium leading-relaxed ${isFailed ? 'text-gray-300' : 'text-gray-400'} ${isPromo || isFailed ? 'mb-4' : ''}`}>
+                       {notif.message}
+                     </p>
+                     
+                     {isPromo && (
+                       <Button className="w-full bg-[#0B0C10] border border-[#2A2F40] hover:bg-white/5 text-white font-bold h-10" onClick={() => { setShowNotifications(false); setDepositOpen(true); }}>
+                         DEPOSITAR <ExternalLink className="w-4 h-4 ml-2" />
+                       </Button>
+                     )}
+                     
+                     {isFailed && (
+                       <Button className="w-full bg-[#0B0C10] border border-[#2A2F40] hover:bg-white/5 text-white font-bold h-10" onClick={() => { setShowNotifications(false); setDepositOpen(true); }}>
+                         TENTAR NOVAMENTE <ExternalLink className="w-4 h-4 ml-2" />
+                       </Button>
+                     )}
+                   </div>
+                 );
+               });
+             })()}
           </div>
         </div>
       )}

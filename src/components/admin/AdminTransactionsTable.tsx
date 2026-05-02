@@ -29,9 +29,9 @@ export function AdminTransactionsTable({ initialTransactions }: { initialTransac
           const newTx = { ...payload.new, phone: userData?.phone || 'Desconhecido' } as Transaction;
           setTransactions(prev => [newTx, ...prev]);
         } else if (payload.eventType === 'UPDATE') {
-          setTransactions(prev => prev.map(tx => tx.id === payload.new.id ? { ...tx, ...payload.new } : tx));
+          setTransactions(prev => prev.map(tx => String(tx.id) === String(payload.new.id) ? { ...tx, ...payload.new } : tx));
         } else if (payload.eventType === 'DELETE') {
-          setTransactions(prev => prev.filter(tx => tx.id !== payload.old.id));
+          setTransactions(prev => prev.filter(tx => String(tx.id) !== String(payload.old.id)));
         }
       })
       .subscribe();

@@ -17,8 +17,7 @@ export async function GET() {
       { games: data || [] },
       {
         headers: {
-          // Cache de 5 minutos no browser e CDN da Vercel
-          "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+          "Cache-Control": "no-cache, no-store, must-revalidate",
         }
       }
     );

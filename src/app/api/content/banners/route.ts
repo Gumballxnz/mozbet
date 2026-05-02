@@ -17,7 +17,7 @@ export async function GET() {
       { banners: data || [] },
       {
         headers: {
-          "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+          "Cache-Control": "no-cache, no-store, must-revalidate",
         }
       }
     );

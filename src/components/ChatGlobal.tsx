@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAppStore } from "@/lib/store";
 import { toast } from "sonner";
+import { socket, joinRoom, leaveRoom } from "@/lib/socket";
 
 interface ChatGlobalProps {
   isOpen: boolean;

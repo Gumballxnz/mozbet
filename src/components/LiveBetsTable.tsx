@@ -232,15 +232,15 @@ export function LiveBetsTable() {
         </div>
         
         <div className="overflow-x-auto no-scrollbar mt-2">
-          <table className="w-full text-left border-collapse min-w-[600px]">
+          <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="text-[11px] text-muted-foreground font-bold">
-                <th className="px-4 py-3 font-medium">Jogo</th>
-                <th className="px-4 py-3 font-medium">Hora</th>
-                <th className="px-4 py-3 font-medium">Utilizador</th>
-                <th className="px-4 py-3 font-medium">Valor da aposta</th>
-                <th className="px-4 py-3 font-medium text-center">Multiplicador</th>
-                <th className="px-4 py-3 font-medium text-right">Pagamento</th>
+              <tr className="text-[10px] md:text-[11px] text-muted-foreground font-bold whitespace-nowrap">
+                <th className="px-2 md:px-4 py-3 font-medium">Jogo</th>
+                <th className="px-2 md:px-4 py-3 font-medium hidden md:table-cell">Hora</th>
+                <th className="px-2 md:px-4 py-3 font-medium">Utilizador</th>
+                <th className="px-2 md:px-4 py-3 font-medium">Aposta</th>
+                <th className="px-2 md:px-4 py-3 font-medium text-center">Mult</th>
+                <th className="px-2 md:px-4 py-3 font-medium text-right">Pagamento</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
@@ -249,9 +249,9 @@ export function LiveBetsTable() {
                   key={`${act.time}-${act.id}-${i}`} 
                   className={`group transition-all duration-500 ease-in-out ${act.isNew && activeTab === "all" ? 'bg-white/5' : 'hover:bg-white/[0.02]'}`}
                 >
-                  <td className="px-4 py-3">
-                    <span className="font-bold text-white text-xs flex items-center gap-2">
-                      <div className="w-5 h-5 rounded overflow-hidden bg-white/5 shrink-0">
+                  <td className="px-2 md:px-4 py-2 md:py-3 max-w-[80px] md:max-w-none truncate">
+                    <span className="font-bold text-white text-[10px] md:text-xs flex items-center gap-1.5 md:gap-2">
+                      <div className="hidden md:block w-5 h-5 rounded overflow-hidden bg-white/5 shrink-0">
                         <img 
                           src={act.gameIcon} 
                           alt={act.game}
@@ -262,48 +262,48 @@ export function LiveBetsTable() {
                           }}
                         />
                       </div>
-                      {act.game}
+                      <span className="truncate">{act.game}</span>
                     </span>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-2 md:px-4 py-2 md:py-3 hidden md:table-cell">
                     <span className="text-xs font-medium text-muted-foreground">
                       {act.time}
                     </span>
                   </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-1.5">
-                      <BadgeCheck size={14} className={act.isLoss ? "text-muted-foreground" : "text-primary"} />
-                      <span className="text-xs font-bold text-gray-300">
+                  <td className="px-2 md:px-4 py-2 md:py-3">
+                    <div className="flex items-center gap-1 md:gap-1.5">
+                      <BadgeCheck size={12} className={`md:w-[14px] md:h-[14px] ${act.isLoss ? "text-muted-foreground" : "text-primary"}`} />
+                      <span className="text-[10px] md:text-xs font-bold text-gray-300">
                         {act.id}
                       </span>
                     </div>
                   </td>
-                  <td className="px-4 py-3">
-                    <span className="text-xs font-medium text-white flex items-center gap-1">
-                      <span className="text-[9px] bg-white/10 text-gray-400 px-1 rounded font-black">MT</span>
-                      {act.betAmount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                  <td className="px-2 md:px-4 py-2 md:py-3">
+                    <span className="text-[10px] md:text-xs font-medium text-white flex items-center gap-1">
+                      <span className="hidden md:inline text-[9px] bg-white/10 text-gray-400 px-1 rounded font-black">MT</span>
+                      {act.betAmount.toLocaleString("pt-BR", { minimumFractionDigits: 0 })}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-center">
+                  <td className="px-1 md:px-4 py-2 md:py-3 text-center">
                     {act.isLoss ? (
-                      <span className="inline-block px-2 py-0.5 rounded bg-white/5 text-gray-500 font-bold text-xs">
+                      <span className="inline-block px-1 md:px-2 py-0.5 rounded bg-white/5 text-gray-500 font-bold text-[9px] md:text-xs">
                         x{act.multiplier.toFixed(2)}
                       </span>
                     ) : (
-                      <span className="inline-block px-2 py-0.5 rounded bg-purple-500/20 text-purple-400 font-bold text-xs">
+                      <span className="inline-block px-1 md:px-2 py-0.5 rounded bg-purple-500/20 text-purple-400 font-bold text-[9px] md:text-xs">
                         x{act.multiplier.toFixed(2)}
                       </span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="px-2 md:px-4 py-2 md:py-3 text-right">
                     {act.isLoss ? (
-                      <span className="text-xs font-bold text-gray-500 flex items-center justify-end gap-1">
+                      <span className="text-[10px] md:text-xs font-bold text-gray-500 flex items-center justify-end gap-1">
                         -
                       </span>
                     ) : (
-                      <span className="text-xs font-black text-emerald-400 flex items-center justify-end gap-1">
-                        <span className="text-[9px] bg-emerald-500/20 text-emerald-400 px-1 rounded font-black">MT</span>
-                        {act.payout.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                      <span className="text-[10px] md:text-xs font-black text-emerald-400 flex items-center justify-end gap-0.5 md:gap-1">
+                        <span className="hidden md:inline text-[9px] bg-emerald-500/20 text-emerald-400 px-1 rounded font-black">MT</span>
+                        {act.payout.toLocaleString("pt-BR", { minimumFractionDigits: 0 })}
                       </span>
                     )}
                   </td>

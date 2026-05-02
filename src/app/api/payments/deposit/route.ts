@@ -71,7 +71,6 @@ export async function POST(req: Request) {
         // Notificação: Depósito Falhou
         await supabaseAdmin.from('notifications').insert({
           user_id: decoded.id,
-          title: "Depósito Falhou",
           message: `Falha no depósito de ${numAmount.toFixed(2)} MZN: Ocorreu um erro ao processar o seu depósito. Por favor, verifique se o número de telefone e o valor inseridos estão corretos e tente novamente.`,
           type: "deposit_failed"
         });

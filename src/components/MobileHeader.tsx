@@ -42,7 +42,7 @@ export function MobileHeader() {
     const fetchNotifs = async () => {
       try {
         const { getLatestNotifications } = await import("@/app/actions/notifications");
-        const data = await getLatestNotifications();
+        const data = await getLatestNotifications(Date.now());
         
         // Obter ids globais lidos do localStorage
         const readGlobalIds = JSON.parse(localStorage.getItem('read_global_notifs') || '[]');

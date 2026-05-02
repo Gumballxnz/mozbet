@@ -30,7 +30,7 @@ export async function markNotificationsAsRead(unreadIds: string[]) {
 
 import { unstable_noStore as noStore } from "next/cache";
 
-export async function getLatestNotifications() {
+export async function getLatestNotifications(_cacheBuster?: number) {
   noStore();
   const cookieStore = await cookies();
   const token = cookieStore.get("mozbet_session")?.value;

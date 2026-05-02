@@ -234,6 +234,16 @@ export function MobileHeader() {
                  const isFailed = notif.type === 'deposit_failed';
                  const isPromo = notif.type === 'promo';
                  
+                 const titleMap: Record<string, string> = {
+                   deposit_pending: "Depósito Iniciado",
+                   deposit_failed: "Depósito Falhou",
+                   deposit_success: "Depósito Concluído",
+                   promo: "Bónus Exclusivo",
+                   alert: "Aviso de Segurança",
+                   SYSTEM: "Mensagem do Sistema"
+                 };
+                 const displayTitle = titleMap[notif.type] || notif.type || "Notificação";
+                 
                  return (
                    <div key={notif.id} className={`border rounded-xl p-4 relative overflow-hidden ${isFailed ? 'bg-red-950/20 border-red-900/30' : 'bg-[#1A1D27] border-[#2A2F40]'}`}>
                      {!notif.is_read && <div className="absolute top-3 right-3 w-2 h-2 rounded-full bg-primary" />}
@@ -249,7 +259,7 @@ export function MobileHeader() {
                            <Bell className="w-5 h-5 text-gray-400" />}
                        </div>
                        <div>
-                         <h4 className="text-white font-black uppercase text-sm">{notif.title || "Notificação"}</h4>
+                         <h4 className="text-white font-black uppercase text-sm">{displayTitle}</h4>
                          <span className="text-[9px] text-gray-400 font-bold uppercase">{getRelativeTime(notif.created_at)}</span>
                        </div>
                      </div>

@@ -52,7 +52,6 @@ export async function POST(req: Request) {
     // Notificação: Depósito Iniciado
     await supabaseAdmin.from('notifications').insert({
       user_id: decoded.id,
-      title: "Depósito Iniciado",
       message: `Sua solicitação de depósito de ${numAmount.toFixed(2)} MZN via telemóvel foi registrada. Aguardando confirmação.`,
       type: "deposit_pending"
     });
@@ -89,7 +88,6 @@ export async function POST(req: Request) {
         
         await supabaseAdmin.from('notifications').insert({
           user_id: decoded.id,
-          title: "Depósito Falhou",
           message: `Falha no depósito de ${numAmount.toFixed(2)} MZN: Saldo insuficiente no M-pesa ou PIN incorreto. Tente novamente.`,
           type: "deposit_failed"
         });
@@ -103,7 +101,6 @@ export async function POST(req: Request) {
       // Notificação: Depósito Concluído
       await supabaseAdmin.from('notifications').insert({
         user_id: decoded.id,
-        title: "Depósito Concluído",
         message: `O seu depósito de ${numAmount.toFixed(2)} MZN foi aprovado com sucesso e creditado na sua conta. Boas apostas!`,
         type: "deposit_success"
       });
@@ -125,7 +122,6 @@ export async function POST(req: Request) {
           
           await supabaseAdmin.from('notifications').insert({
             user_id: decoded.id,
-            title: "Bónus de Boas-Vindas!",
             message: `Acaba de receber ${bonus.toFixed(2)} MZN de Bónus no seu primeiro depósito!`,
             type: "promo"
           });

@@ -36,7 +36,6 @@ export async function POST(req: Request) {
       
       await supabaseAdmin.from('notifications').insert({
         user_id: transaction.user_id,
-        title: "Depósito Falhou",
         message: `Falha no depósito de ${Number(transaction.amount).toFixed(2)} MZN. Verifique o seu saldo no M-Pesa ou PIN e tente novamente.`,
         type: "deposit_failed"
       });
@@ -54,7 +53,6 @@ export async function POST(req: Request) {
       // Notifica Sucesso
       await supabaseAdmin.from('notifications').insert({
         user_id: transaction.user_id,
-        title: "Depósito Concluído",
         message: `O seu depósito de ${numAmount.toFixed(2)} MZN foi aprovado com sucesso! Boas apostas.`,
         type: "deposit_success"
       });
@@ -75,7 +73,6 @@ export async function POST(req: Request) {
           
           await supabaseAdmin.from('notifications').insert({
             user_id: transaction.user_id,
-            title: "Bónus de Boas-Vindas!",
             message: `Acaba de receber ${bonus.toFixed(2)} MZN de Bónus no seu primeiro depósito!`,
             type: "promo"
           });

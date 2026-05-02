@@ -56,6 +56,10 @@ interface AppState {
   // Jogo ativo
   activeGame: string | null;
   setActiveGame: (game: string | null) => void;
+
+  // Global Online Count
+  onlineCount: number;
+  setOnlineCount: (count: number) => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -113,4 +117,8 @@ export const useAppStore = create<AppState>((set) => ({
   // Jogo
   activeGame: null,
   setActiveGame: (game) => set({ activeGame: game }),
+
+  // Global Online Count
+  onlineCount: 200, // Começa com 200 para evitar mostrar 0
+  setOnlineCount: (count) => set({ onlineCount: count }),
 }));

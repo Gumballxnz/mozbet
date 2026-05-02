@@ -130,8 +130,8 @@ export function LiveBetsTable() {
   useEffect(() => {
     isMounted.current = true;
     
-    // Início Misto (Determinístico sem Aviator para não poluir antes do realtime chegar)
-    setActivities(generateDeterministicBets(15, true));
+    // Início Misto (Determinístico COM Aviator para garantir que todos os jogos apareçam)
+    setActivities(generateDeterministicBets(15, false));
     
     // 1. Ouvir o servidor Supabase para Apostas Reais e Crash de Rondas
     const channel = supabase.channel('live-bets-sync')
@@ -166,11 +166,11 @@ export function LiveBetsTable() {
       })
       .subscribe();
     
-    // 2. Fallback Determinístico (Preenche de forma cadenciada jogos "Offline" como Mines, Plinko)
+    // 2. Fallback Determinístico (Preenche de forma cadenciada todos os jogos)
     const interval = setInterval(() => {
       if (isMounted.current) {
         setActivities(prev => {
-          const novo = generateDeterministicBets(1, true)[0]; // Não gera Aviator aqui, deixa pro DB
+          const novo = generateDeterministicBets(1, false)[0]; // Gera todos os jogos
           novo.isNew = true;
           const restos = prev.slice(0, 14).map(a => ({...a, isNew: false}));
           return [novo, ...restos];

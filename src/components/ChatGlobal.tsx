@@ -170,10 +170,9 @@ function getDeterministicChatMessages(count: number): ChatMessage[] {
 
 // ===== COMPONENTE PRINCIPAL =====
 export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalProps) {
-  const { isLoggedIn, fakeChatMessages: messages, setFakeChatMessages: setMessages } = useAppStore();
+  const { isLoggedIn, fakeChatMessages: messages, setFakeChatMessages: setMessages, onlineCount, setOnlineCount } = useAppStore();
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
-  const [online, setOnline] = useState(0);
   const [isConnected, setIsConnected] = useState(socket.connected);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -184,7 +183,28 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
     }
   }, []);
 
-  // Sincronizar com Socket.io
+  // Sincronizar o online_count INDEPENDENTE de o chat estar aberto
+  useEffect(() => {
+    const handleOnline = (count: number) => {
+      setOnlineCount(count);
+    };
+
+    const onConnect = () => setIsConnected(true);
+    const onDisconnect = () => setIsConnected(false);
+
+    setIsConnected(socket.connected);
+    socket.on("connect", onConnect);
+    socket.on("disconnect", onDisconnect);
+    socket.on("online_count", handleOnline);
+
+    return () => {
+      socket.off("connect", onConnect);
+      socket.off("disconnect", onDisconnect);
+      socket.off("online_count", handleOnline);
+    };
+  }, [setOnlineCount]);
+
+  // Sincronizar Mensagens apenas quando o chat está aberto
   useEffect(() => {
     if (!isOpen) return;
 
@@ -205,27 +225,10 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
       setTimeout(scrollToBottom, 50);
     };
 
-    const handleOnline = (count: number) => {
-      console.log("Recebido online_count:", count);
-      setOnline(count);
-    };
-
-    const onConnect = () => setIsConnected(true);
-    const onDisconnect = () => setIsConnected(false);
-
-    // Atualiza imediatamente o estado caso já esteja conectado
-    setIsConnected(socket.connected);
-
-    socket.on("connect", onConnect);
-    socket.on("disconnect", onDisconnect);
     socket.on("receive_message", handleMessage);
-    socket.on("online_count", handleOnline);
 
     return () => {
-      socket.off("connect", onConnect);
-      socket.off("disconnect", onDisconnect);
       socket.off("receive_message", handleMessage);
-      socket.off("online_count", handleOnline);
       leaveRoom("chat_global");
     };
   }, [isOpen, setMessages, scrollToBottom]);
@@ -334,14 +337,14 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
             <div>
               <h2 className="text-lg font-extrabold tracking-tight">Chat ao Vivo</h2>
               <p className={`text-[10px] font-bold ${isConnected ? "text-primary" : "text-red-500"}`}>
-                {isConnected ? "🟢" : "🔴"} {isConnected ? `${online} online agora` : "Desconectado da VPS"}
+                {isConnected ? "🟢" : "🔴"} {isConnected ? `${onlineCount} online agora` : "Desconectado da VPS"}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1.5 text-xs">
               <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-              <span className="font-bold text-primary">{online}</span>
+              <span className="font-bold text-primary">{onlineCount}</span>
             </div>
             <button className="text-muted-foreground hover:text-foreground">
               <Info size={18} />

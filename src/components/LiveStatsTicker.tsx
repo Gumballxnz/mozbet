@@ -13,7 +13,7 @@ interface StatsData {
 
 export function LiveStatsTicker() {
   const [stats, setStats] = useState<StatsData | null>(null);
-  const { isLoggedIn } = useAppStore();
+  const { isLoggedIn, onlineCount } = useAppStore();
 
   useEffect(() => {
     // Buscar stats a cada 10 segundos
@@ -53,6 +53,9 @@ export function LiveStatsTicker() {
 
   if (!stats) return null;
 
+  // Preferir o onlineCount do Socket.io se estiver disponível, senão cair para o stats.online
+  const displayOnline = onlineCount > 0 ? onlineCount : stats.online;
+
   // Memoizar para evitar repaints gigantes e limiter para máx 15 itens
   const allEvents = Array.from({ length: 1 }).map(() => {
     return [
@@ -72,7 +75,7 @@ export function LiveStatsTicker() {
           </div>
           <Users size={12} className="text-gray-400" />
           <span className="text-[10px] font-black text-white">
-            {stats.online} <span className="text-gray-500 font-bold ml-1 hidden sm:inline">ONLINE</span>
+            {displayOnline} <span className="text-gray-500 font-bold ml-1 hidden sm:inline">ONLINE</span>
           </span>
           {stats.isReal && (
             <span className="bg-red-500/20 text-red-500 text-[8px] px-1.5 rounded uppercase font-bold ml-1">Real (Admin)</span>

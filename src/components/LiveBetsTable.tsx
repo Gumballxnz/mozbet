@@ -3,124 +3,8 @@
 import { useEffect, useState, useRef } from "react";
 import { BadgeCheck } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { socket } from "@/lib/socket";
 import { GAMES } from "@/lib/games";
-
-// Separa os jogos quentes dos normais
-const HOT_GAMES = GAMES.filter(g => g.hot);
-const NORMAL_GAMES = GAMES.filter(g => !g.hot);
-
-// IDs Partilhados com o Chat
-const SHARED_FAKE_IDS = [
-  "A8B2C4F1", "F9D3E2A0", "B7C1D9F4", "E4A2B5C1", "D1F8E3A2",
-  "C5B4A1F9", "8F2D1A3B", "3C9E4B1F", "2A5B8C1D", "1E7F3D2A"
-];
-
-function generateDeterministicBets(count: number, excludeAviator: boolean = false) {
-  const now = Date.now();
-  const currentSecond = Math.floor(now / 1000);
-  
-  let availableHot = HOT_GAMES;
-  let availableNormal = NORMAL_GAMES;
-
-  if (excludeAviator) {
-    availableHot = availableHot.filter(g => g.id !== "aviator");
-    availableNormal = availableNormal.filter(g => g.id !== "aviator");
-  }
-  
-  const results = [];
-  
-  for (let i = 0; i < count; i++) {
-    const seed = currentSecond - i;
-    const pseudoRandom = (Math.abs(Math.sin(seed * 9999)) * 10000) % 1;
-    const pseudoRandom2 = (Math.abs(Math.cos(seed * 8888)) * 10000) % 1;
-    const pseudoRandom3 = (Math.abs(Math.sin(seed * 7777)) * 10000) % 1;
-    const pseudoRandom4 = (Math.abs(Math.cos(seed * 5555)) * 10000) % 1;
-    
-    const fakeId = SHARED_FAKE_IDS[Math.floor(pseudoRandom * SHARED_FAKE_IDS.length)];
-
-    const baseBets = [10, 20, 50, 100, 200, 500, 1000, 2000, 5000];
-    const betAmount = baseBets[Math.floor(pseudoRandom * baseBets.length)];
-    
-    // 25% de probabilidade de perda natural
-    const isLoss = pseudoRandom2 < 0.25;
-    
-    const multiplier = Number((1.01 + pseudoRandom2 * 19).toFixed(2));
-    let payout = 0;
-    if (!isLoss) {
-      payout = Number((betAmount * multiplier).toFixed(2));
-    }
-
-    const timeObj = new Date(seed * 1000);
-    const timeStr = timeObj.toLocaleTimeString('pt-PT', { hour12: false });
-    
-    // 60% chance de selecionar um jogo HOT, 40% NORMAL
-    let selectedGame;
-    if (pseudoRandom4 < 0.60 && availableHot.length > 0) {
-       selectedGame = availableHot[Math.floor(pseudoRandom3 * availableHot.length)];
-    } else if (availableNormal.length > 0) {
-       selectedGame = availableNormal[Math.floor(pseudoRandom3 * availableNormal.length)];
-    } else {
-       selectedGame = availableHot[0]; // Fallback absoluto
-    }
-
-    results.push({
-      game: selectedGame.name,
-      gameIcon: selectedGame.banner,
-      id: fakeId,
-      time: timeStr,
-      betAmount,
-      multiplier,
-      payout,
-      isLoss,
-      isNew: i === 0,
-      isReal: false
-    });
-  }
-  
-  return results;
-}
-
-// Quando o Aviator (ou outro jogo) crasha no servidor real, geramos apostas relacionadas com ele
-function generateCrashFakes(gameId: string, realCrashPoint: number) {
-  const results = [];
-  const count = Math.floor(Math.random() * 3) + 1; // 1 a 3 fakes
-  const game = GAMES.find(g => g.id === gameId) || { name: gameId, banner: `/api/img/banner-${gameId}` };
-  
-  for (let i = 0; i < count; i++) {
-    const fakeId = SHARED_FAKE_IDS[Math.floor(Math.random() * SHARED_FAKE_IDS.length)];
-    const baseBets = [10, 50, 100, 200, 500];
-    const betAmount = baseBets[Math.floor(Math.random() * baseBets.length)];
-    
-    // Alguém que sacou antes do crash, ou alguém que não sacou (perdeu)
-    const isLoss = Math.random() < 0.3; // 30% perdem
-    
-    let multiplier = 0;
-    let payout = 0;
-    
-    if (isLoss) {
-      multiplier = realCrashPoint; // Ele crachou neste exato momento e o user perdeu
-      payout = 0;
-    } else {
-      // O utilizador sacou num momento anterior ao crash
-      multiplier = Number((Math.random() * (realCrashPoint - 1.01) + 1.01).toFixed(2));
-      payout = Number((betAmount * multiplier).toFixed(2));
-    }
-
-    results.push({
-      game: game.name,
-      gameIcon: game.banner,
-      id: fakeId,
-      time: new Date().toLocaleTimeString('pt-PT', { hour12: false }),
-      betAmount,
-      multiplier,
-      payout,
-      isLoss,
-      isNew: true,
-      isReal: false
-    });
-  }
-  return results;
-}
 
 export function LiveBetsTable() {
   const [activities, setActivities] = useState<any[]>([]);
@@ -130,25 +14,24 @@ export function LiveBetsTable() {
   useEffect(() => {
     isMounted.current = true;
     
-    // Início Misto (Determinístico COM Aviator para garantir que todos os jogos apareçam)
-    setActivities(generateDeterministicBets(15, false));
+    // 1. Escutar apostas FAKE geradas globalmente pelo servidor Socket.IO (garante sincronismo entre todos e 560% chance de HOT games)
+    socket.on("live_bet", (fakeBet) => {
+      if (isMounted.current) {
+        setActivities(prev => {
+          const newArr = [fakeBet, ...prev];
+          return newArr.slice(0, 15);
+        });
+      }
+    });
     
-    // 1. Ouvir o servidor Supabase para Apostas Reais e Crash de Rondas
+    // 2. Ouvir o servidor Supabase para Apostas Reais verdadeiras da plataforma
     const channel = supabase.channel('live-bets-sync')
-      // Ouvir rondas que terminaram (para gerar fakes consistentes para o Aviator)
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'game_rounds' }, (payload) => {
-         const round = payload.new;
-         if (round.status === 'crashed' && isMounted.current) {
-            const crashMult = round.crash_point || 1.00;
-            const newFakes = generateCrashFakes(round.game_id, crashMult);
-            setActivities(prev => [...newFakes, ...prev].slice(0, 15));
-         }
-      })
-      // Ouvir apostas reais de utilizadores de verdade na plataforma
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'bets' }, (payload) => {
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'bets' }, async (payload) => {
          const bet = payload.new;
          if (isMounted.current) {
+           // Busca o nome e banner do jogo real da nossa lista local para ser rápido
            const game = GAMES.find(g => g.id === bet.game_id) || { name: bet.game_id, banner: `/api/img/banner-${bet.game_id}` };
+           
            const realBet = {
                game: game.name,
                gameIcon: game.banner,
@@ -165,23 +48,11 @@ export function LiveBetsTable() {
          }
       })
       .subscribe();
-    
-    // 2. Fallback Determinístico (Preenche de forma cadenciada todos os jogos)
-    const interval = setInterval(() => {
-      if (isMounted.current) {
-        setActivities(prev => {
-          const novo = generateDeterministicBets(1, false)[0]; // Gera todos os jogos
-          novo.isNew = true;
-          const restos = prev.slice(0, 14).map(a => ({...a, isNew: false}));
-          return [novo, ...restos];
-        });
-      }
-    }, 4500);
-    
+
     return () => {
       isMounted.current = false;
+      socket.off("live_bet");
       supabase.removeChannel(channel);
-      clearInterval(interval);
     };
   }, []);
 

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { verifyToken } from "@/lib/auth-server";
+import { verifyToken, supabaseAdmin } from "@/lib/auth-server";
 import { validateBet, deductBalance, creditBalance, shouldPlayerWin } from "@/lib/game-controller";
 
 // Simula um Crash Game.

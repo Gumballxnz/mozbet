@@ -147,13 +147,13 @@ export function GameCatalog() {
               )}
 
               {/* Botão de favorito */}
-              <div className="absolute top-2 right-2 w-8 h-8 bg-black/70 rounded-lg flex items-center justify-center backdrop-blur-sm z-10">
+              <div className="absolute top-2 right-2 w-8 h-8 bg-black/80 rounded-lg flex items-center justify-center z-10 shadow-md">
                 <Heart size={16} className="text-yellow-400" fill="none" />
               </div>
 
               {/* Percentagem RTP */}
               <div className="absolute top-2 left-1/2 -translate-x-1/2 z-10">
-                <span className="text-[9px] font-bold bg-black/60 backdrop-blur-sm text-white px-2 py-0.5 rounded">
+                <span className="text-[9px] font-bold bg-black/80 text-white px-2 py-0.5 rounded shadow-sm">
                   {game.rtp_display}
                 </span>
               </div>

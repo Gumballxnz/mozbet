@@ -1,8 +1,7 @@
-"use client";
-
 import { useState, useEffect, useRef, useCallback } from "react";
 import { ArrowLeft, Volume2, Menu, Maximize2, Plane, Minus, Plus, X } from "lucide-react";
 import { toast } from "sonner";
+import { socket, joinRoom, leaveRoom } from "@/lib/socket";
 
 interface Props {
   balance: number;
@@ -13,7 +12,7 @@ interface Props {
 const PurpleCrashGame = ({ balance, onUpdateBalance, onBack }: Props) => {
   const [phase, setPhase] = useState<"waiting" | "rising" | "crashed">("waiting");
   const [multiplier, setMultiplier] = useState(1.0);
-  const [countdown, setCountdown] = useState(4);
+  const [countdown, setCountdown] = useState(5);
   const [bet1, setBet1] = useState(5);
   const [bet2, setBet2] = useState(5);
   const [auto1, setAuto1] = useState(false);
@@ -25,91 +24,84 @@ const PurpleCrashGame = ({ balance, onUpdateBalance, onBack }: Props) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [statsTab, setStatsTab] = useState("apostas");
   const [lang, setLang] = useState("PT");
-  const crashRef = useRef(0);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  
+  const startedAt = useRef<number>(0);
+  const currentRoundId = useRef<string | null>(null);
 
-  const startRound = useCallback(async () => {
-    setPhase("waiting");
-    setMultiplier(1.0);
-    setCountdown(4);
-    setCashed1(false); setCashed2(false);
-    
-    let serverCrash = 0;
-    let c = 4;
-    const cd = setInterval(async () => {
-      c--;
-      setCountdown(c);
-      if (c <= 0) {
-        clearInterval(cd);
-        
-        if (hasBet1 || hasBet2) {
-            try {
-              const totalBet = (hasBet1 ? bet1 : 0) + (hasBet2 ? bet2 : 0);
-              const res = await fetch("/api/game/crash/play", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ betAmount: totalBet, gameId: "purple-crash" })
-              });
-              const data = await res.json();
-              if (data.success) {
-                serverCrash = data.crashPoint;
-                onUpdateBalance(data.newBalance);
-              } else {
-                toast.error(data.error);
-                setHasBet1(false);
-                setHasBet2(false);
-                serverCrash = 1.05 + Math.random();
-              }
-            } catch (e) {
-              serverCrash = 1.02;
-            }
-        } else {
-            serverCrash = 1.05 + Math.random() * Math.random() * 18;
-        }
+  useEffect(() => {
+    joinRoom("game_crash");
 
-        crashRef.current = serverCrash;
+    const handleUpdate = (data: any) => {
+      if (data.game !== "crash") return;
+      currentRoundId.current = data.round_id;
+
+      if (data.status === "waiting") {
+        setPhase("waiting");
+        setMultiplier(1.0);
+        setHasBet1(false);
+        setHasBet2(false);
+        setCashed1(false);
+        setCashed2(false);
+        const startMs = new Date(data.started_at).getTime();
+        setCountdown(Math.max(1, Math.ceil((startMs - Date.now()) / 1000)));
+      } else if (data.status === "running") {
         setPhase("rising");
+        startedAt.current = new Date(data.started_at).getTime();
+      } else if (data.status === "crashed") {
+        setPhase("crashed");
+        setMultiplier(data.crash_point);
       }
-    }, 1000);
-  }, [hasBet1, hasBet2, bet1, bet2, onUpdateBalance]);
+    };
 
-  useEffect(() => { startRound(); }, [startRound]);
+    socket.on("game_update", handleUpdate);
+    return () => {
+      socket.off("game_update", handleUpdate);
+      leaveRoom("game_crash");
+    };
+  }, []);
 
+  // Loop do Multiplicador (Sincronizado)
   useEffect(() => {
     if (phase !== "rising") return;
-    intervalRef.current = setInterval(() => {
-      setMultiplier(p => {
-        const n = p + 0.01 + p * 0.013;
-        if (n >= crashRef.current) {
-          clearInterval(intervalRef.current!);
-          setPhase("crashed");
-          return crashRef.current;
-        }
-        if (auto1 && hasBet1 && !cashed1 && n >= 2) cashOut(1, n);
-        if (auto2 && hasBet2 && !cashed2 && n >= 2) cashOut(2, n);
-        return parseFloat(n.toFixed(2));
-      });
-    }, 80);
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
-  }, [phase, auto1, auto2, hasBet1, hasBet2, cashed1, cashed2, bet1, bet2]);
+    const interval = setInterval(() => {
+      const elapsed = Date.now() - startedAt.current;
+      const m = Math.exp(0.00006 * elapsed);
+      const val = parseFloat(m.toFixed(2));
+      setMultiplier(val);
+      
+      // Auto cashout se ligado
+      if (auto1 && hasBet1 && !cashed1 && val >= 2) cashOut(1, val);
+      if (auto2 && hasBet2 && !cashed2 && val >= 2) cashOut(2, val);
+    }, 50);
+    return () => clearInterval(interval);
+  }, [phase, auto1, auto2, hasBet1, hasBet2, cashed1, cashed2]);
 
-  useEffect(() => {
-    if (phase === "crashed") {
-      setHasBet1(false); setHasBet2(false);
-      const t = setTimeout(startRound, 2500);
-      return () => clearTimeout(t);
-    }
-  }, [phase, startRound]);
 
-  const place = (n: 1 | 2) => {
+  const place = async (n: 1 | 2) => {
     const amt = n === 1 ? bet1 : bet2;
     if (amt > balance) {
       toast.error("Saldo insuficiente");
       return;
     }
     if (amt <= 0 || phase !== "waiting") return;
-    if (n === 1) setHasBet1(true); else setHasBet2(true);
-    toast.success("Aposta aceite!");
+
+    try {
+      const res = await fetch("/api/game/crash/play", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ betAmount: amt, gameId: "crash" })
+      });
+      const data = await res.json();
+      if (data.success) {
+        if (n === 1) setHasBet1(true); else setHasBet2(true);
+        onUpdateBalance(data.newBalance);
+        toast.success("Aposta aceite!");
+      } else {
+        toast.error(data.error || "Erro ao apostar");
+      }
+    } catch (e) {
+      toast.error("Erro de conexão");
+    }
   };
 
   const cashOut = async (n: 1 | 2, currentMult: number = multiplier) => {
@@ -125,12 +117,15 @@ const PurpleCrashGame = ({ balance, onUpdateBalance, onBack }: Props) => {
       const res = await fetch("/api/game/crash/cashout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ betAmount: amt, multiplier: currentMult, gameId: "purple-crash" })
+        body: JSON.stringify({ betAmount: amt, multiplier: currentMult, gameId: "crash" })
       });
       const data = await res.json();
       if (data.success) {
         onUpdateBalance(data.newBalance);
-        toast.success(`Retirada: ${(amt * currentMult).toFixed(2)} MZN!`);
+        toast.success(`Ganhou ${(amt * currentMult).toFixed(2)} MZN!`);
+      } else {
+        toast.error(data.error || "Erro no cashout");
+        if (n === 1) setCashed1(false); else setCashed2(false);
       }
     } catch (e) {
       toast.error("Erro na retirada.");

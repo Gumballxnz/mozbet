@@ -5,6 +5,7 @@ import { ArrowLeft, User as UserIcon } from "lucide-react";
 import { toast } from "sonner";
 import { useAppStore } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
+import { socket, joinRoom, leaveRoom } from "@/lib/socket";
 
 interface Props {
   balance: number;
@@ -164,45 +165,46 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
   useEffect(() => {
     fetchRoundState();
     fetchHistory();
-    const channel = supabase
-      .channel("public:game_rounds")
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "game_rounds", filter: "game_id=eq.aviator" }, (payload) => {
-          const round = payload.new;
-          currentRoundId.current = round.id;
-          
-          if (round.status === "waiting") {
-            setPhase("waiting");
-            setMultiplier(1.0);
-            setBetsState(prev => prev.map(b => ({ ...b, hasBet: false, cashedOut: false })));
-            const startMs = new Date(round.started_at).getTime();
-            setCountdown(Math.max(1, Math.ceil((startMs - Date.now()) / 1000)));
-            setRoundFakes(generateRoundFakes(0));
-          } else if (round.status === "running") {
-            setPhase("rising");
-            const startMs = new Date(round.started_at).getTime();
-            if (Math.abs(startMs - Date.now()) > 60000) startedAt.current = Date.now();
-            else startedAt.current = startMs;
-            setRoundFakes(generateRoundFakes(9999));
-          } else if (round.status === "crashed") {
-            setPhase("crashed");
-            const crashP = Number(round.crash_point);
-            setMultiplier(crashP);
-            setRoundFakes(generateRoundFakes(crashP));
-            fetchHistory();
-            
-            // Força perdas para quem não sacou
-            setBetsState(prev => prev.map(b => ({
-              ...b, 
-              hasBet: b.hasBet && !b.cashedOut ? false : b.hasBet // Se apostou e não sacou, perde a aposta (fica "falso")
-            })));
-          }
-        }
-      )
-      .subscribe();
-    const pollInterval = setInterval(fetchRoundState, 3000);
+    
+    joinRoom("game_aviator");
+
+    const handleUpdate = (data: any) => {
+      if (data.game !== "aviator") return;
+      currentRoundId.current = data.round_id;
+
+      if (data.status === "waiting") {
+        setPhase("waiting");
+        setMultiplier(1.0);
+        setBetsState(prev => prev.map(b => ({ ...b, hasBet: false, cashedOut: false })));
+        const startMs = new Date(data.started_at).getTime();
+        setCountdown(Math.max(1, Math.ceil((startMs - Date.now()) / 1000)));
+        setRoundFakes(generateRoundFakes(0));
+      } else if (data.status === "running") {
+        setPhase("rising");
+        const startMs = new Date(data.started_at).getTime();
+        // Sincronização de tempo com o servidor
+        startedAt.current = startMs;
+        setRoundFakes(generateRoundFakes(9999));
+      } else if (data.status === "crashed") {
+        setPhase("crashed");
+        const crashP = Number(data.crash_point);
+        setMultiplier(crashP);
+        setRoundFakes(generateRoundFakes(crashP));
+        fetchHistory();
+        
+        // Força perdas para quem não sacou
+        setBetsState(prev => prev.map(b => ({
+          ...b, 
+          hasBet: b.hasBet && !b.cashedOut ? false : b.hasBet
+        })));
+      }
+    };
+
+    socket.on("game_update", handleUpdate);
+
     return () => {
-      supabase.removeChannel(channel);
-      clearInterval(pollInterval);
+      socket.off("game_update", handleUpdate);
+      leaveRoom("game_aviator");
     };
   }, [fetchRoundState, fetchHistory]);
 
@@ -233,15 +235,27 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
     if (phase !== "waiting") { toast.error("Aguarde a próxima ronda."); return; }
     if (amount > balance) { toast.error("Saldo insuficiente!"); return; }
     
-    setBetsState(prev => {
-      const next = [...prev];
-      next[boxIndex] = { ...next[boxIndex], hasBet: true, betAmount: amount };
-      return next;
-    });
-    
-    // Simplificando o pedido para não dar throw de erros se api falhar no teste
-    onUpdateBalance(balance - amount);
-    toast.success("Aposta aceite!");
+    try {
+      const res = await fetch("/api/game/crash/play", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ betAmount: amount, gameId: "aviator" })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setBetsState(prev => {
+          const next = [...prev];
+          next[boxIndex] = { ...next[boxIndex], hasBet: true, betAmount: amount };
+          return next;
+        });
+        onUpdateBalance(data.newBalance);
+        toast.success("Aposta aceite!");
+      } else {
+        toast.error(data.error || "Erro ao apostar");
+      }
+    } catch (err) {
+      toast.error("Erro de conexão");
+    }
   };
 
   const handleCashout = async (boxIndex: number) => {
@@ -249,15 +263,31 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
     const box = betsState[boxIndex];
     if (!box.hasBet || box.cashedOut) return;
     
-    const win = box.betAmount * multiplier;
-    setBetsState(prev => {
-      const next = [...prev];
-      next[boxIndex] = { ...next[boxIndex], cashedOut: true, lastWin: win };
-      return next;
-    });
-    
-    onUpdateBalance(balance + win);
-    toast.success(`Sacou ${win.toFixed(2)} MZN!`);
+    try {
+      const res = await fetch("/api/game/crash/cashout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          betAmount: box.betAmount, 
+          multiplier: multiplier, 
+          gameId: "aviator" 
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setBetsState(prev => {
+          const next = [...prev];
+          next[boxIndex] = { ...next[boxIndex], cashedOut: true, lastWin: data.winAmount };
+          return next;
+        });
+        onUpdateBalance(data.newBalance);
+        toast.success(`Sacou ${data.winAmount.toFixed(2)} MZN!`);
+      } else {
+        toast.error(data.error || "Erro no cashout");
+      }
+    } catch (err) {
+      toast.error("Erro na retirada");
+    }
   };
 
   return (

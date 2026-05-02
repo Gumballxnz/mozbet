@@ -182,69 +182,32 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
     }
   }, []);
 
-  // Sincronizar contagem de online com o servidor
+  // Sincronizar com Socket.io
   useEffect(() => {
     if (!isOpen) return;
-    const fetchStats = async () => {
-      try {
-        const res = await fetch("/api/game/stats");
-        const data = await res.json();
-        // Online real + factor pra parecer mais cheio
-        if (data.online) setOnline(data.online);
-      } catch (err) {}
+
+    joinRoom("chat_global");
+
+    const handleMessage = (data: any) => {
+      const currentMsgs = useAppStore.getState().fakeChatMessages;
+      // Evitar duplicados se a mensagem for sua e já estiver na tela (optimistic)
+      if (currentMsgs.find(m => m.id === data.id)) return;
+      
+      setMessages([...currentMsgs, data].slice(-100));
+      setTimeout(scrollToBottom, 50);
     };
-    fetchStats();
-    const interval = setInterval(fetchStats, 10000);
-    return () => clearInterval(interval);
-  }, [isOpen]);
 
-  // Motor Determinístico Contínuo
-  useEffect(() => {
-    if (!isOpen) return;
+    const handleOnline = (count: number) => {
+      setOnline(count);
+    };
 
-    // Gerar 20 mensagens do passado recente + atuais
-    const initialDeterministic = getDeterministicChatMessages(20);
-    setMessages(initialDeterministic);
-    setTimeout(scrollToBottom, 200);
-
-    const interval = setInterval(() => {
-      // Pega os últimos 15 segundos para ver se há mensagem nova
-      const newDetMessages = getDeterministicChatMessages(5);
-      
-      const currentMessages = useAppStore.getState().fakeChatMessages;
-      // Criar um Set de IDs para não duplicar
-      const existingIds = new Set(currentMessages.map((m: any) => m.id));
-      const messagesToAdd = newDetMessages.filter(m => !existingIds.has(m.id));
-      
-      if (messagesToAdd.length > 0) {
-        // PRESERVAR mensagens reais (tipo !== 'fake_user' e !== 'win_announcement')
-        // Juntar tudo, ordenar por data e manter limite
-        const merged = [...currentMessages, ...messagesToAdd]
-          .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
-          .slice(-100);
-        setMessages(merged);
-        setTimeout(scrollToBottom, 50);
-      }
-    }, 5000); // Check a cada 5 segundos (Otimização Mobile)
-
-    // Supabase subscription (para as tuas próprias mensagens reais que mandares pro chat)
-    const channel = supabase
-      .channel("public:chat_messages")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "chat_messages" },
-        (payload) => {
-          const newMsg = payload.new as ChatMessage;
-          const currentMsgs = useAppStore.getState().fakeChatMessages;
-          setMessages([...currentMsgs, newMsg].slice(-100));
-          setTimeout(scrollToBottom, 100);
-        }
-      )
-      .subscribe();
+    socket.on("receive_message", handleMessage);
+    socket.on("online_count", handleOnline);
 
     return () => {
-      clearInterval(interval);
-      supabase.removeChannel(channel);
+      socket.off("receive_message", handleMessage);
+      socket.off("online_count", handleOnline);
+      leaveRoom("chat_global");
     };
   }, [isOpen, setMessages, scrollToBottom]);
 
@@ -294,7 +257,7 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
     const user = useAppStore.getState().user;
     const maskedName = user?.id ? user.id.split("-")[0].toUpperCase() : "USER";
     
-    // OPTIMISTIC UI: Adicionar a mensagem IMEDIATAMENTE na tela
+    // OPTIMISTIC UI
     const optimisticMsg: ChatMessage = {
       id: `real-${Date.now()}`,
       user_id: user?.id || "unknown",
@@ -313,18 +276,18 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
     setIsSending(true);
 
     try {
-      const res = await fetch("/api/chat/message", {
+      // 1. Salvar na BD via API
+      await fetch("/api/chat/message", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: messageText }),
       });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-      // Mensagem já está visível — a API confirmou o save no BD
+      // 2. Emitir via Socket para todos (incluindo você, mas o handleMessage ignora duplicados por ID)
+      socket.emit("send_message", optimisticMsg);
+
     } catch (err: any) {
       toast.error(err.message || "Erro ao enviar");
-      // Remover a mensagem optimistic se falhou
       const msgs = useAppStore.getState().fakeChatMessages;
       setMessages(msgs.filter(m => m.id !== optimisticMsg.id));
       setInput(messageText);

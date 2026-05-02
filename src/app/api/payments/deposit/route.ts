@@ -49,14 +49,27 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Erro interno ao iniciar depósito." }, { status: 500 });
     }
 
-    // Notificação: Depósito Iniciado
+    const hasKeys = !!process.env.E2P_CLIENT_ID;
+    
+    // MODO SIMULAÇÃO RÁPIDO (Apenas para o teste falho de 2MT)
+    if (!hasKeys && numAmount === 2) {
+      await supabaseAdmin.from("transactions").update({ status: "FAILED" }).eq("id", transaction.id);
+      
+      await supabaseAdmin.from('notifications').insert({
+        user_id: decoded.id,
+        message: `Falha no depósito de ${numAmount.toFixed(2)} MZN: Saldo insuficiente no M-pesa ou PIN incorreto. Tente novamente.`,
+        type: "deposit_failed"
+      });
+      
+      return NextResponse.json({ error: "Falha simulada no M-pesa (Depósito de 2MT)." }, { status: 400 });
+    }
+
+    // Para todos os outros casos (Reais ou Simulação de Sucesso), enviamos o PENDING
     await supabaseAdmin.from('notifications').insert({
       user_id: decoded.id,
       message: `Sua solicitação de depósito de ${numAmount.toFixed(2)} MZN via telemóvel foi registrada. Aguardando confirmação.`,
       type: "deposit_pending"
     });
-
-    const hasKeys = !!process.env.E2P_CLIENT_ID;
     
     if (hasKeys) {
       const e2pResponse = await initiateC2BPayment(decoded.phone, numAmount, transaction.id);
@@ -80,19 +93,6 @@ export async function POST(req: Request) {
     } else {
       // MODO SIMULAÇÃO (Enquanto esperamos chaves)
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // SIMULAÇÃO DE FALHA: Se o utilizador depositar exatamente 2 MT, simula uma falha no M-pesa
-      if (numAmount === 2) {
-        await supabaseAdmin.from("transactions").update({ status: "FAILED" }).eq("id", transaction.id);
-        
-        await supabaseAdmin.from('notifications').insert({
-          user_id: decoded.id,
-          message: `Falha no depósito de ${numAmount.toFixed(2)} MZN: Saldo insuficiente no M-pesa ou PIN incorreto. Tente novamente.`,
-          type: "deposit_failed"
-        });
-        
-        return NextResponse.json({ error: "Falha simulada no M-pesa (Depósito de 2MT)." }, { status: 400 });
-      }
       
       // Marca como completo
       await supabaseAdmin.from("transactions").update({ status: "COMPLETED" }).eq("id", transaction.id);

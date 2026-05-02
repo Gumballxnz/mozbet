@@ -148,7 +148,11 @@ export default function AdminBannersPage() {
               <div className="w-full lg:w-[450px] shrink-0 bg-black rounded-xl overflow-hidden aspect-[21/9] relative border border-white/5">
                 {banner.image_url ? (
                   <>
-                    <img src={banner.image_url} alt="Preview" className="absolute inset-0 w-full h-full object-cover opacity-60" />
+                    <img 
+                      src={banner.image_url.startsWith("http") ? `/api/proxy-image?url=${encodeURIComponent(banner.image_url)}` : banner.image_url} 
+                      alt="Preview" 
+                      className="absolute inset-0 w-full h-full object-cover opacity-60" 
+                    />
                     <div className="absolute inset-0 flex flex-col justify-center p-6 bg-gradient-to-r from-black/80 to-transparent">
                       <span className="text-[10px] bg-primary/20 text-primary border border-primary px-2 py-0.5 rounded-full w-fit mb-2 font-black tracking-widest">{banner.badge || "BADGE"}</span>
                       <h4 className="text-white font-black leading-tight text-2xl drop-shadow-md">

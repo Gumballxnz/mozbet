@@ -26,53 +26,48 @@ export function MobileHeader() {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [hasUnread, setHasUnread] = useState(false);
 
-  // Carregar e ouvir notificações
+  // Carregar e ouvir notificações com Server Actions (Polling seguro e leve a cada 5s)
   useEffect(() => {
     if (!user) return;
 
-    // 1. Fetch Inicial
     const fetchNotifs = async () => {
-      const { data } = await supabase
-        .from('notifications')
-        .select('*')
-        .or(`user_id.eq.${user.id},user_id.is.null`)
-        .order('created_at', { ascending: false })
-        .limit(10);
-      
-      if (data) {
+      try {
+        const { getLatestNotifications } = await import("@/app/actions/notifications");
+        const data = await getLatestNotifications();
+        
         setNotifications(data);
-        if (data.some(n => !n.is_read)) setHasUnread(true);
+        if (data.some((n: any) => !n.is_read)) setHasUnread(true);
+      } catch (err) {
+        // Silencioso em caso de erro de rede
       }
     };
+    
+    // Fetch Inicial
     fetchNotifs();
 
-    // 2. Ouvir Realtime
-    const channel = supabase.channel(`notifs_${user.id}`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' }, payload => {
-        // Se a notificação for para mim ou Global (null)
-        if (payload.new.user_id === user.id || payload.new.user_id === null) {
-          setNotifications(prev => [payload.new, ...prev]);
-          setHasUnread(true);
-        }
-      })
-      .subscribe();
+    // Polling contínuo
+    const interval = setInterval(fetchNotifs, 5000);
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => clearInterval(interval);
   }, [user]);
 
   const markAsRead = async () => {
     setHasUnread(false);
     if (!user) return;
     
-    // Opcional: Atualizar DB para is_read = true dos que pertencem a ele
     const unreadIds = notifications.filter(n => !n.is_read && n.user_id === user.id).map(n => n.id);
-    if (unreadIds.length > 0) {
-      supabase.from('notifications').update({ is_read: true }).in('id', unreadIds).then();
-    }
     
+    // UI otimista
     setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+    
+    if (unreadIds.length > 0) {
+      try {
+        const { markNotificationsAsRead } = await import("@/app/actions/notifications");
+        await markNotificationsAsRead(unreadIds);
+      } catch (e) {
+        console.error(e);
+      }
+    }
   };
 
   const defaultAvatar = useMemo(() => {

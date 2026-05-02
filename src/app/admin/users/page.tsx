@@ -8,7 +8,8 @@ import { verifyToken } from "@/lib/auth-server";
 
 export default async function AdminUsersPage() {
   // Obter quem é o admin atual
-  const token = cookies().get("mozbet_session")?.value;
+  const cookieStore = await cookies();
+  const token = cookieStore.get("mozbet_session")?.value;
   let currentUserRole = "admin";
   if (token) {
     const payload = await verifyToken<{ id: string; role: string }>(token);

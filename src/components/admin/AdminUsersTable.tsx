@@ -80,8 +80,24 @@ export function AdminUsersTable({ initialUsers, currentUserRole }: { initialUser
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Erro ao executar ação");
       
-      toast.success(action === 'delete' ? "Conta apagada." : "Estado da conta atualizado com sucesso.", { id: "admin-action" });
-      if (action === 'delete') setSelectedUser(null);
+      toast.success(data.message || "Ação concluída.", { id: "admin-action" });
+      
+      // Update local state instantly (Optimistic UI)
+      if (action === 'delete') {
+        setSelectedUser(null);
+        setUsers(prev => prev.filter(u => u.id !== userId));
+      } else {
+        const updates: Partial<UserData> = {};
+        if (action === 'ban' || action === 'suspend') updates.is_active = false;
+        if (action === 'activate') updates.is_active = true;
+        if (action === 'promote') { updates.role = 'admin'; updates.is_admin = true; }
+        if (action === 'demote') { updates.role = 'user'; updates.is_admin = false; }
+        
+        setUsers(prev => prev.map(u => u.id === userId ? { ...u, ...updates } : u));
+        if (selectedUser?.id === userId) {
+          setSelectedUser(prev => prev ? { ...prev, ...updates } : prev);
+        }
+      }
     } catch (err: any) {
       toast.error(err.message || "Erro ao executar ação", { id: "admin-action" });
     }
@@ -100,6 +116,13 @@ export function AdminUsersTable({ initialUsers, currentUserRole }: { initialUser
       if (!res.ok) throw new Error(data.error || "Erro ao reter saldo");
       
       toast.success(!currentStatus ? "Saldo Bloqueado com sucesso. O cliente não pode jogar nem levantar." : "Saldo desbloqueado!", { id: "admin-action" });
+      
+      // Update local state instantly
+      const updates = { balance_retained: !currentStatus };
+      setUsers(prev => prev.map(u => u.id === userId ? { ...u, ...updates } : u));
+      if (selectedUser?.id === userId) {
+        setSelectedUser(prev => prev ? { ...prev, ...updates } : prev);
+      }
     } catch (err: any) {
       toast.error(err.message || "Erro ao reter saldo.", { id: "admin-action" });
     }

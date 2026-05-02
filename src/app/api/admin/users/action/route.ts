@@ -37,12 +37,17 @@ export async function POST(req: NextRequest) {
       const { error } = await supabaseAdmin.from("users").update({ role: newRole, is_admin: newIsAdmin }).eq("id", userId);
       if (error) throw error;
       
-      if (action === 'promote') {
+      if (action === 'promote' || action === 'demote') {
+         const title = action === 'promote' ? "Promoção a Administrador" : "Aviso de Despromoção";
+         const siteMsg = action === 'promote' 
+           ? "Parabéns! Foi promovido a Administrador da MozBet." 
+           : "A sua conta foi rebaixada para Utilizador comum.";
+           
          // Notificação no site
          await supabaseAdmin.from("notifications").insert({
             user_id: userId,
-            title: "Promoção a Administrador",
-            message: "Parabéns! Foi promovido a Administrador da MozBet.",
+            title: title,
+            message: siteMsg,
             type: "SYSTEM"
          });
          
@@ -51,6 +56,19 @@ export async function POST(req: NextRequest) {
          if (targetUser?.email) {
             const RESEND_API_KEY = process.env.RESEND_API_KEY;
             if (RESEND_API_KEY) {
+               const emailSubject = action === 'promote' ? "Promoção a Administrador - MozBet" : "Aviso de Conta - MozBet";
+               const emailHtml = action === 'promote'
+                 ? `<div style="font-family: sans-serif; padding: 20px;">
+                     <h2>Promoção a Administrador 🎉</h2>
+                     <p>Parabéns! A sua conta foi promovida a Administrador na plataforma MozBet pelo dono do projeto.</p>
+                     <p>Já tem os acessos necessários. Pode entrar no Painel de Controlo em <a href="https://mozbet-test.vercel.app/admin">mozbet-test.vercel.app/admin</a>.</p>
+                    </div>`
+                 : `<div style="font-family: sans-serif; padding: 20px;">
+                     <h2>Aviso de Privilégios ⚠️</h2>
+                     <p>Os seus privilégios de Administrador foram revogados pelo dono do projeto.</p>
+                     <p>A sua conta voltou ao estado de Utilizador comum e já não tem acesso ao Painel de Controlo.</p>
+                    </div>`;
+
                await fetch("https://api.resend.com/emails", {
                  method: "POST",
                  headers: {
@@ -60,12 +78,8 @@ export async function POST(req: NextRequest) {
                  body: JSON.stringify({
                    from: "MozBet RH <onboarding@resend.dev>",
                    to: [targetUser.email],
-                   subject: "Promoção a Administrador - MozBet",
-                   html: `<div style="font-family: sans-serif; padding: 20px;">
-                           <h2>Promoção a Administrador 🎉</h2>
-                           <p>Parabéns! A sua conta foi promovida a Administrador na plataforma MozBet pelo dono do projeto.</p>
-                           <p>Já tem os acessos necessários. Pode entrar no Painel de Controlo em <a href="https://mozbet-test.vercel.app/admin">mozbet-test.vercel.app/admin</a>.</p>
-                          </div>`
+                   subject: emailSubject,
+                   html: emailHtml
                  })
                });
             }

@@ -149,7 +149,7 @@ export default function AdminBannersPage() {
                 {banner.image_url ? (
                   <>
                     <img 
-                      src={banner.image_url.startsWith("http") ? `/api/proxy-image?url=${encodeURIComponent(banner.image_url)}` : banner.image_url} 
+                      src={banner.image_url} 
                       alt="Preview" 
                       className="absolute inset-0 w-full h-full object-cover opacity-60" 
                     />

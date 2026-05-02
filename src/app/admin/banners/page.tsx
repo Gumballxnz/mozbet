@@ -32,30 +32,23 @@ export default function AdminBannersPage() {
 
   const fetchBanners = async () => {
     setLoading(true);
-    const { data } = await supabase
-      .from("banners")
-      .select("*")
-      .order("sort_order", { ascending: true });
-    
-    if (data && data.length > 0) {
-      setBanners(data);
-      // Guardar cópia original de cada banner para detecção de alterações
-      const origMap: Record<string, BannerData> = {};
-      data.forEach(b => { origMap[b.id] = { ...b }; });
-      setOriginals(origMap);
-    } else {
-      // Injetar defaults se BD vazia
-      const defaultBanners: BannerData[] = [
-        { id: crypto.randomUUID(), title: "Aviator", highlight: "Ganhe Já", description: "O Jogo de Explosão mais popular do Mundo. Voe alto e ganhe!", badge: "HOT", action_text: "Jogar Agora", image_url: `${CDN}/banner-aviator`, link_url: "/aviator", sort_order: 1, is_active: true },
-        { id: crypto.randomUUID(), title: "Plinko", highlight: "Multiplique", description: "Deixe cair a bola e multiplique o seu dinheiro até 1000x.", badge: "NOVO", action_text: "Apostar Agora", image_url: `${CDN}/banner-plinko`, link_url: "/plinko", sort_order: 2, is_active: true },
-        { id: crypto.randomUUID(), title: "Mines", highlight: "Cuidado com a Bomba", description: "Quantas estrelas consegues encontrar antes da explosão?", badge: "CLÁSSICO", action_text: "Jogar Agora", image_url: `${CDN}/banner-mines`, link_url: "/mines", sort_order: 3, is_active: true },
-        { id: crypto.randomUUID(), title: "Fortune", highlight: "Tiger", description: "A sorte do tigre chegou a Moçambique. Ganha o super bónus!", badge: "POPULAR", action_text: "Tentar a Sorte", image_url: `${CDN}/game-tiger`, link_url: "/tiger", sort_order: 4, is_active: true },
-        { id: crypto.randomUUID(), title: "Bónus VIP", highlight: "20% Cashback", description: "Junta-te ao clube de jogadores VIP e recebe dinheiro de volta todas as semanas.", badge: "EXCLUSIVO", action_text: "Ver Regras", image_url: `${CDN}/banner-promo`, link_url: "/vip", sort_order: 5, is_active: true },
-      ];
-      setBanners(defaultBanners);
-      const origMap: Record<string, BannerData> = {};
-      defaultBanners.forEach(b => { origMap[b.id] = { ...b }; });
-      setOriginals(origMap);
+    try {
+      const res = await fetch("/api/content/banners");
+      const { banners: data } = await res.json();
+      
+      if (data && data.length > 0) {
+        setBanners(data);
+        const origMap: Record<string, BannerData> = {};
+        data.forEach((b: BannerData) => { origMap[b.id] = { ...b }; });
+        setOriginals(origMap);
+      } else {
+        setBanners([]);
+        setOriginals({});
+      }
+    } catch (err) {
+      console.error("Erro ao carregar banners:", err);
+      setBanners([]);
+      setOriginals({});
     }
     setLoading(false);
   };

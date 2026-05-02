@@ -213,6 +213,9 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
     const onConnect = () => setIsConnected(true);
     const onDisconnect = () => setIsConnected(false);
 
+    // Atualiza imediatamente o estado caso já esteja conectado
+    setIsConnected(socket.connected);
+
     socket.on("connect", onConnect);
     socket.on("disconnect", onDisconnect);
     socket.on("receive_message", handleMessage);

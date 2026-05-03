@@ -58,14 +58,14 @@ const SHARED_FAKE_IDS = [
   "C5B4A1F9", "8F2D1A3B", "3C9E4B1F", "2A5B8C1D", "1E7F3D2A"
 ];
 
-// Mostrar apenas ID Mascarado (Privacidade total)
+// Mostrar apenas ID Mascarado (Privacidade total - NUNCA MOSTRAR NÚMEROS)
 function maskId(username: string): string {
   if (!username) return "USER***";
-  // Se for um UUID ou ID longo, pegamos o primeiro bloco
+  // Remove qualquer traço de UUID
   const cleanId = username.includes("-") ? username.split("-")[0] : username;
-  // Se for número de telemóvel (detetado por dígitos), mascaramos
-  if (/^\d+$/.test(cleanId)) {
-    return cleanId.slice(0, 3) + "X" + cleanId.slice(-1) + "***";
+  // Se por acaso vier um número de telefone, ignoramos e mostramos um ID genérico
+  if (/^\d{8,}/.test(cleanId)) {
+    return "MZ" + Math.abs(cleanId.split('').reduce((a,b)=>(((a<<5)-a)+b.charCodeAt(0))|0,0)).toString(16).toUpperCase().slice(0,4) + "***";
   }
   return cleanId.slice(0, 4).toUpperCase() + "***";
 }
@@ -177,13 +177,12 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
 
     const messageText = input.trim();
     const user = useAppStore.getState().user;
-    const maskedName = user?.id ? user.id.split("-")[0].toUpperCase() : "USER";
     
     // OPTIMISTIC UI
     const optimisticMsg: ChatMessage = {
       id: `real-${Date.now()}`,
       user_id: user?.id || "unknown",
-      username: maskedName,
+      username: user?.id ? user.id.split("-")[0].toUpperCase() : "USER", // ID, NUNCA TELEFONE
       message: messageText,
       type: "message",
       avatar: user?.avatar || SITE_AVATARS[0],

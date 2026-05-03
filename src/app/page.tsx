@@ -1,4 +1,4 @@
-import dynamic from "next/dynamic";
+import nextDynamic from "next/dynamic";
 import { Suspense } from "react";
 import { supabaseAdmin } from "@/lib/auth-server";
 import { LiveBetsTable } from "@/components/LiveBetsTable";
@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
 
 // Otimização Mobile: Code Splitting! O catálogo de jogos e suas dezenas de imagens 
 // não bloqueiam o carregamento inicial da página (First Contentful Paint)
-const GameCatalog = dynamic(() => import("@/components/GameCatalog").then(mod => mod.GameCatalog), {
+const GameCatalog = nextDynamic(() => import("@/components/GameCatalog").then(mod => mod.GameCatalog), {
   loading: () => (
     <div className="flex flex-col items-center justify-center py-20">
       <div className="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin mb-4" />

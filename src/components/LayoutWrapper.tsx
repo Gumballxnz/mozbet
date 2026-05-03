@@ -1,5 +1,5 @@
 "use client";
-
+import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { MobileHeader } from "@/components/MobileHeader";
 import { MobileNavigation } from "@/components/MobileNavigation";
@@ -24,6 +24,23 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const isAdmin = pathname?.startsWith("/admin");
   const isEngine = pathname?.startsWith("/engine");
 
+  // Bot Heartbeat (Cérebro Autónomo do Chat)
+  useEffect(() => {
+    const triggerBot = async () => {
+      try {
+        await fetch("/api/chat/bot-heartbeat");
+      } catch (e) {
+        // Silencioso
+      }
+    };
+
+    // Trigger inicial e a cada 25 segundos
+    const interval = setInterval(triggerBot, 25000);
+    triggerBot();
+
+    return () => clearInterval(interval);
+  }, []);
+
   if (isAdmin || isEngine) {
     return (
       <>
@@ -36,26 +53,30 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <DesktopSidebar />
-      <div className="flex-1 flex flex-col min-w-0">
-        <MobileHeader />
-        <main className="flex-1 pb-24 lg:pb-0">
-          {children}
-        </main>
-        <Footer />
-        <MobileNavigation />
+    <div className="flex flex-col min-h-screen bg-background text-foreground font-sans selection:bg-primary/30">
+      <div className="flex flex-1 relative overflow-hidden">
+        <DesktopSidebar />
+        <div className="flex-1 flex flex-col min-w-0">
+          <MobileHeader />
+          <main className="flex-1 pb-24 lg:pb-0">
+            {children}
+          </main>
+          <Footer />
+          <MobileNavigation />
+        </div>
+        
+        {/* Componentes Globais (Lazy Loaded) */}
+        <RegisterModal />
+        <DepositModal />
+        <SupportChat />
+        <ChatGlobal 
+          isOpen={chatOpen} 
+          onClose={() => setChatOpen(false)} 
+          onPlayGame={(id) => { setChatOpen(false); router.push(`/jogar/${id}?mode=real`); }}
+        />
+        <MobileSidebar />
+        <Toaster theme="dark" position="top-center" richColors />
       </div>
-      <RegisterModal />
-      <DepositModal />
-      <SupportChat />
-      <ChatGlobal 
-        isOpen={chatOpen} 
-        onClose={() => setChatOpen(false)} 
-        onPlayGame={(id) => { setChatOpen(false); router.push(`/jogar/${id}?mode=demo`); }}
-      />
-      <MobileSidebar />
-      <Toaster theme="dark" position="top-center" richColors />
     </div>
   );
 }

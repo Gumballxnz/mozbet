@@ -30,19 +30,21 @@ export default function AdminGamesPage() {
 
   const fetchGames = async () => {
     setLoading(true);
-    const { data } = await supabase
-      .from("games")
-      .select("*")
-      .order("sort_order", { ascending: true });
-    
-    if (data && data.length > 0) {
-      setGames(data);
-      const origMap: Record<string, GameData> = {};
-      data.forEach(g => { origMap[g.id] = { ...g }; });
-      setOriginals(origMap);
-    } else {
-      setGames([]);
-      setOriginals({});
+    try {
+      const res = await fetch("/api/content/games");
+      const { games: data } = await res.json();
+      
+      if (data && data.length > 0) {
+        setGames(data);
+        const origMap: Record<string, GameData> = {};
+        data.forEach(g => { origMap[g.id] = { ...g }; });
+        setOriginals(origMap);
+      } else {
+        setGames([]);
+        setOriginals({});
+      }
+    } catch (err) {
+      console.error("Erro ao carregar jogos:", err);
     }
     setLoading(false);
   };

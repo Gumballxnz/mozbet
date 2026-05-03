@@ -1,8 +1,11 @@
-"use client";
-
 import { useState, useEffect } from "react";
 import { useAppStore } from "@/lib/store";
-import { User, Mail, Phone, Camera, Save, LogOut, Gift, KeyRound, Calendar, Hash, CheckSquare, Square, ChevronLeft } from "lucide-react";
+import { 
+  User as UserIcon, Mail, Phone, Camera, Save, LogOut, 
+  Gift, KeyRound, Calendar, Hash, CheckSquare, Square, 
+  ChevronLeft, Wallet, ArrowUpCircle, Pencil, ShieldCheck,
+  TrendingUp, Lock
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -18,7 +21,7 @@ const AVATARS = [
 ];
 
 export default function PerfilPage() {
-  const { user, logout } = useAppStore();
+  const { user, logout, balance, setDepositOpen } = useAppStore();
   const router = useRouter();
   
   const fallbackAvatar = user?.id 
@@ -29,15 +32,12 @@ export default function PerfilPage() {
   const [selectedAvatar, setSelectedAvatar] = useState(user?.avatar || fallbackAvatar);
   const [isSaving, setIsSaving] = useState(false);
   const [commercialOptIn, setCommercialOptIn] = useState(true);
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   
-  // Se o utilizador já tem um email, bloqueamos o input até ele clicar em "Alterar"
   const [isEmailEditing, setIsEmailEditing] = useState(!user?.email);
-  
-  // Estados para OTP
   const [showOtpInput, setShowOtpInput] = useState(false);
   const [emailOtp, setEmailOtp] = useState("");
   
-  // Estado de Palavra-passe
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [passwordMethod, setPasswordMethod] = useState<"sms" | "email">("email");
   const [passwordOtp, setPasswordOtp] = useState("");
@@ -48,366 +48,263 @@ export default function PerfilPage() {
     return null;
   }
 
-  const shortId = user.id ? user.id.split("-")[0].toUpperCase() : "MZ9982X";
-  const registerDate = user.createdAt ? new Date(user.createdAt).toLocaleDateString("pt-MZ") : new Date().toLocaleDateString("pt-MZ");
-  const bonusBalance = 0; // Simulated bonus
-
-  // Verifica se houve alguma alteração real nos dados do utilizador
-  const hasChanges = 
-    email !== (user.email || "") || 
-    selectedAvatar !== (user.avatar || fallbackAvatar) || 
-    commercialOptIn !== true;
+  const shortId = user.id ? user.id.split("-")[0].toUpperCase() : "552223";
+  const registerDate = user.createdAt ? new Date(user.createdAt).toLocaleDateString("pt-MZ") : "29/04/2026";
+  
+  // Dados simulados que serão ligados ao DB na próxima fase
+  const bonusBalance = (user as any).bonus_balance || 0.00; 
+  const toUnlock = (user as any).unlocked_balance || 0.00;
+  const vipLevel = (user as any).vip_level || 1;
 
   const handleSave = async () => {
-    // 1. Só pedir OTP se o email estiver a ser alterado para um NOVO email (diferente do atual)
-    const isNewEmail = email && email.includes("@") && email !== user.email;
-    
-    if (isNewEmail && !showOtpInput) {
-      setIsSaving(true);
-      try {
-        const res = await fetch("/api/profile/send-email-otp", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email }),
-        });
-        const data = await res.json();
-        
-        if (!res.ok) throw new Error(data.error || "Erro ao pedir código.");
-        
-        toast.success("Enviámos um código para o teu e-mail.");
-        setShowOtpInput(true);
-      } catch (err: any) {
-        toast.error(err.message);
-      } finally {
-        setIsSaving(false);
-      }
-      return;
-    }
-
-    // 2. Se mudou o email e está a aguardar OTP, obriga a inserir
-    if (isNewEmail && showOtpInput && !emailOtp) {
-      toast.error("Introduz o código de verificação enviado para o teu e-mail.");
-      return;
-    }
-
     setIsSaving(true);
     try {
       const res = await fetch("/api/profile/update", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, otp: emailOtp, commercialOptIn, avatar: selectedAvatar }),
+        body: JSON.stringify({ avatar: selectedAvatar, email }),
       });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Falha ao atualizar");
-
-      // Avatar guardado no servidor — funciona em todos os dispositivos
-      toast.success("Perfil e preferências guardados com sucesso!");
-      setTimeout(() => window.location.reload(), 1000);
+      if (!res.ok) throw new Error("Falha ao salvar");
+      toast.success("Avatar atualizado!");
+      setShowAvatarPicker(false);
+      setTimeout(() => window.location.reload(), 500);
     } catch (err: any) {
-      toast.error(err.message || "Ocorreu um erro ao guardar.");
+      toast.error(err.message);
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleChangePassword = () => {
-    setShowPasswordModal(true);
-    setPasswordStep("choose");
-  };
-
-  const requestPasswordReset = async () => {
-    // Simulando o pedido de OTP para senha
-    setIsSaving(true);
-    setTimeout(() => {
-      toast.success(`Enviámos um código para o teu ${passwordMethod === "email" ? "E-mail" : "Telemóvel"}.`);
-      setIsSaving(false);
-      setPasswordStep("verify");
-    }, 1500);
-  };
-  
-  const verifyPasswordReset = () => {
-    if (passwordOtp.length < 4) {
-      toast.error("Introduz o código de verificação válido.");
-      return;
-    }
-    toast.success("Nova senha configurada com sucesso!");
-    setShowPasswordModal(false);
-    setPasswordStep("choose");
-    setPasswordOtp("");
-  };
-
   const handleLogout = async () => {
-    const confirmLogout = window.confirm("Tens a certeza que queres sair da tua conta? Precisarás de fazer login novamente para jogar.");
-    
-    if (!confirmLogout) return;
-
+    if (!window.confirm("Deseja realmente sair?")) return;
     try {
       await fetch("/api/auth/logout", { method: "POST" });
       logout();
       router.push("/");
     } catch {
-      toast.error("Erro ao sair da conta");
+      toast.error("Erro ao sair");
     }
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-4 py-8 space-y-6 animate-in fade-in">
-      <div className="flex items-center gap-3">
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          onClick={() => router.push("/")}
-          className="bg-black/40 hover:bg-white/10 rounded-full w-10 h-10 border border-white/5"
-        >
-          <ChevronLeft className="w-5 h-5 text-white" />
-        </Button>
-        <div>
-          <h1 className="text-2xl font-bold text-white mb-1">Área do Jogador</h1>
-          <p className="text-muted-foreground text-sm">Gerencie o seu perfil, segurança e preferências.</p>
+    <div className="max-w-2xl mx-auto p-4 py-6 pb-24 space-y-8 animate-in fade-in duration-500">
+      
+      {/* HEADER: AVATAR & VIP */}
+      <div className="flex flex-col items-center space-y-4">
+        <div className="relative">
+          <div className="w-28 h-28 rounded-full p-1 bg-gradient-to-tr from-primary via-emerald-400 to-primary shadow-[0_0_25px_rgba(0,255,127,0.3)] animate-pulse-slow">
+            <div className="w-full h-full rounded-full bg-[#0f1015] p-1">
+              <img 
+                src={selectedAvatar} 
+                alt="Profile" 
+                className="w-full h-full rounded-full object-cover bg-surface"
+              />
+            </div>
+          </div>
+          
+          {/* Botão Editar Avatar */}
+          <button 
+            onClick={() => setShowAvatarPicker(!showAvatarPicker)}
+            className="absolute bottom-1 right-1 bg-primary text-black p-1.5 rounded-full border-2 border-[#0f1015] hover:scale-110 transition-transform shadow-lg"
+          >
+            <Pencil size={14} className="font-bold" />
+          </button>
+
+          {/* Badge VIP */}
+          <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-primary text-black text-[10px] font-black px-3 py-1 rounded-full border-2 border-[#0f1015] flex items-center gap-1 shadow-lg">
+            <ShieldCheck size={10} />
+            VIP {vipLevel}
+          </div>
+        </div>
+
+        <div className="text-center">
+          <h2 className="text-2xl font-black text-white tracking-tight">{user.phone}</h2>
+          <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest opacity-60">ID: {shortId}</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        {/* Info Box */}
-        <div className="bg-surface border border-white/5 p-4 rounded-2xl flex flex-col items-center justify-center text-center">
-          <Hash className="w-5 h-5 text-primary mb-2" />
-          <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">ID de Jogador</p>
-          <p className="font-black text-white">{shortId}</p>
-        </div>
-        <div className="bg-surface border border-white/5 p-4 rounded-2xl flex flex-col items-center justify-center text-center">
-          <Calendar className="w-5 h-5 text-primary mb-2" />
-          <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Membro Desde</p>
-          <p className="font-black text-white">{registerDate}</p>
-        </div>
-      </div>
-
-      <div className="bg-surface border border-white/5 p-6 rounded-2xl space-y-6">
-        
-        {/* BONUS E SALDOS */}
-        <div className="flex items-center justify-between bg-black/40 border border-primary/20 rounded-xl p-4">
-           <div className="flex items-center gap-3">
-             <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                <Gift className="w-5 h-5 text-primary" />
-             </div>
-             <div>
-               <p className="text-xs text-muted-foreground font-bold">Saldo de Bónus</p>
-               <p className="text-xl font-black text-primary">{bonusBalance.toFixed(2)} MT</p>
-             </div>
-           </div>
-           <Button variant="outline" size="sm" className="border-primary text-primary hover:bg-primary hover:text-black">
-             Usar
-           </Button>
-        </div>
-
-        {/* AVATARES */}
-        <div className="space-y-4">
-          <label className="text-sm font-medium text-white flex items-center gap-2">
-            <Camera className="w-4 h-4" />
-            Escolher Avatar de Cassino
-          </label>
-          <div className="flex flex-wrap gap-4">
-            {AVATARS.map((avatar, idx) => (
-              <button
-                key={idx}
-                onClick={() => setSelectedAvatar(avatar)}
-                className={`relative w-14 h-14 rounded-full overflow-hidden border-2 transition-all ${
-                  selectedAvatar === avatar 
-                    ? "border-primary scale-110 shadow-[0_0_15px_rgba(0,255,127,0.3)]" 
-                    : "border-transparent opacity-50 hover:opacity-100"
-                }`}
+      {/* SELECÇÃO DE AVATAR (Expandível) */}
+      {showAvatarPicker && (
+        <div className="bg-surface border border-white/5 p-4 rounded-2xl animate-in slide-in-from-top-2 duration-300">
+          <p className="text-xs font-bold text-muted-foreground uppercase mb-4 text-center">Escolher Novo Avatar</p>
+          <div className="flex flex-wrap justify-center gap-3">
+            {AVATARS.map((av, i) => (
+              <button 
+                key={i}
+                onClick={() => setSelectedAvatar(av)}
+                className={`w-12 h-12 rounded-full overflow-hidden border-2 transition-all ${selectedAvatar === av ? 'border-primary scale-110' : 'border-transparent opacity-40 hover:opacity-100'}`}
               >
-                <img src={avatar} alt={`Avatar ${idx + 1}`} className="w-full h-full object-cover" />
+                <img src={av} alt="" className="w-full h-full object-cover" />
               </button>
             ))}
           </div>
+          <div className="mt-4 flex gap-2">
+            <Button variant="ghost" className="flex-1 text-xs" onClick={() => setShowAvatarPicker(false)}>Cancelar</Button>
+            <Button className="flex-1 bg-primary text-black font-bold text-xs" onClick={handleSave} disabled={isSaving}>
+              {isSaving ? "A guardar..." : "Confirmar"}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* BOTÕES DE ACÇÃO PRINCIPAIS */}
+      <div className="space-y-3">
+        <Button 
+          onClick={() => setDepositOpen(true)}
+          className="w-full h-14 bg-primary text-black hover:bg-primary/90 font-black text-lg rounded-2xl flex items-center justify-center gap-2 shadow-xl shadow-primary/10 transition-all hover:scale-[1.01] active:scale-[0.98]"
+        >
+          <Wallet size={24} />
+          DEPOSITAR
+        </Button>
+        
+        <div className="grid grid-cols-2 gap-3">
+          <Button 
+            variant="outline"
+            className="h-12 bg-surface border-white/5 text-white font-bold rounded-xl hover:bg-white/5 flex items-center gap-2"
+          >
+            <ArrowUpCircle size={18} className="text-primary" />
+            LEVANTAMENTO
+          </Button>
+          <Button 
+            onClick={handleLogout}
+            className="h-12 bg-red-500/10 border border-red-500/20 text-red-500 font-bold rounded-xl hover:bg-red-500/20 flex items-center gap-2"
+          >
+            <LogOut size={18} />
+            SAIR
+          </Button>
+        </div>
+      </div>
+
+      {/* CARDS DE SALDO E INFO (Grelha) */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="bg-surface/50 border border-white/5 p-4 rounded-2xl space-y-1">
+          <p className="text-[10px] font-black text-muted-foreground uppercase tracking-wider">Bónus</p>
+          <div className="flex items-baseline gap-1">
+            <span className="text-lg font-black text-white">{bonusBalance.toFixed(2)}</span>
+            <span className="text-[10px] font-bold text-muted-foreground">MZN</span>
+          </div>
         </div>
 
-        <hr className="border-white/5" />
+        <div className="bg-surface/50 border border-white/5 p-4 rounded-2xl space-y-1">
+          <p className="text-[10px] font-black text-emerald-500 uppercase tracking-wider">Saldo Real</p>
+          <div className="flex items-baseline gap-1">
+            <span className="text-lg font-black text-white">{balance.toFixed(2)}</span>
+            <span className="text-[10px] font-bold text-muted-foreground">MZN</span>
+          </div>
+        </div>
 
-        {/* DADOS */}
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-white flex items-center gap-2">
-              <Phone className="w-4 h-4" />
-              Número de Telemóvel
-            </label>
+        <div className="bg-surface/50 border border-white/5 p-4 rounded-2xl space-y-1">
+          <p className="text-[10px] font-black text-muted-foreground uppercase tracking-wider">A Desbloquear</p>
+          <div className="flex items-baseline gap-1">
+            <span className="text-lg font-black text-white">{toUnlock.toFixed(2)}</span>
+            <span className="text-[10px] font-bold text-muted-foreground">MZN</span>
+          </div>
+        </div>
+
+        <div className="bg-surface/50 border border-white/5 p-4 rounded-2xl space-y-1">
+          <div className="flex items-center gap-1">
+            <Calendar size={10} className="text-primary" />
+            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-wider">Registo</p>
+          </div>
+          <div className="flex items-baseline gap-1">
+            <span className="text-sm font-black text-white">{registerDate}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* DEFINIÇÕES ADICIONAIS */}
+      <div className="bg-surface border border-white/5 p-5 rounded-3xl space-y-6">
+        <div className="space-y-2">
+          <label className="text-[11px] font-black text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+            <Mail size={14} className="text-primary" />
+            E-mail Registado
+          </label>
+          <div className="flex gap-2">
             <Input 
-              value={`+258 ${user.phone}`} 
+              value={email || "Sem e-mail associado"} 
               disabled 
-              className="bg-black/50 border-white/10 text-muted-foreground opacity-70"
+              className="bg-black/40 border-white/10 text-white font-medium h-12 rounded-xl disabled:opacity-80"
             />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-white flex items-center gap-2">
-              <Mail className="w-4 h-4" />
-              {user.email && !isEmailEditing ? "Email Registado" : "Adicionar Email"}
-            </label>
-            <div className="flex gap-2">
-              <Input 
-                placeholder="seu.email@exemplo.com"
-                value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  setShowOtpInput(false);
-                  setEmailOtp("");
-                }}
-                disabled={!isEmailEditing || showOtpInput}
-                className="bg-black/50 border-white/10 text-white flex-1 disabled:opacity-70 disabled:cursor-not-allowed"
-              />
-              {!isEmailEditing ? (
-                <Button 
-                  variant="outline"
-                  onClick={() => setIsEmailEditing(true)}
-                  className="bg-black/40 border-white/10 hover:bg-white/5"
-                >
-                  Alterar
-                </Button>
-              ) : showOtpInput && (
-                <Button 
-                  variant="outline"
-                  onClick={() => {
-                    setShowOtpInput(false);
-                    setEmailOtp("");
-                  }}
-                  className="bg-black/40 border-white/10 hover:bg-white/5"
-                >
-                  Cancelar
-                </Button>
-              )}
-            </div>
-            
-            {showOtpInput && (
-              <div className="mt-4 p-4 border border-primary/20 bg-primary/5 rounded-xl space-y-3 animate-in fade-in slide-in-from-top-2">
-                <label className="text-xs font-bold text-primary flex items-center gap-2">
-                  Verifica a tua Caixa de Entrada
-                </label>
-                <p className="text-[10px] text-muted-foreground leading-tight">
-                  Enviámos um código de 6 dígitos para <strong className="text-white">{email}</strong>. Introduz o código abaixo para confirmar e receber os bónus de boas-vindas.
-                </p>
-                <Input 
-                  placeholder="000000"
-                  value={emailOtp}
-                  onChange={(e) => setEmailOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                  className="bg-black/50 border-primary/30 text-white text-center tracking-[0.5em] font-bold text-lg"
-                  maxLength={6}
-                />
-              </div>
-            )}
-            
-            {/* Checkbox Comercial */}
-            {!showOtpInput && (
-            <div 
-               className="flex items-start gap-2 mt-2 cursor-pointer"
-               onClick={() => setCommercialOptIn(!commercialOptIn)}
-            >
-               <div className="mt-0.5 text-primary">
-                 {commercialOptIn ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4 text-muted-foreground" />}
-               </div>
-               <p className="text-[10px] text-muted-foreground leading-tight">
-                 Estou disposto a receber emails com ofertas comerciais, bónus exclusivos e novidades da plataforma MozBet.
-               </p>
-            </div>
-            )}
-          </div>
-          
-          <div className="pt-2">
-             <Button 
-               variant="outline" 
-               onClick={handleChangePassword}
-               className="w-full justify-start bg-black/40 border-white/10 text-white hover:bg-white/5"
-             >
-               <KeyRound className="w-4 h-4 mr-2 text-muted-foreground" />
-               Alterar Palavra-Passe
-             </Button>
+            <Button variant="outline" className="h-12 border-white/10 hover:bg-white/5 text-xs font-bold" onClick={() => setIsEmailEditing(true)}>
+              ALTERAR
+            </Button>
           </div>
         </div>
 
         <Button 
-          onClick={handleSave} 
-          disabled={isSaving || !hasChanges}
-          className="w-full bg-primary text-black hover:bg-primary/90 font-bold h-12 disabled:opacity-50"
+          variant="ghost" 
+          onClick={() => setShowPasswordModal(true)}
+          className="w-full h-12 justify-between bg-black/20 border border-white/5 text-white hover:bg-white/5 rounded-xl px-4"
         >
-          {isSaving ? "A Salvar..." : (
-            <>
-              <Save className="w-4 h-4 mr-2" />
-              Guardar Preferências
-            </>
-          )}
+          <div className="flex items-center gap-3">
+            <KeyRound size={18} className="text-muted-foreground" />
+            <span className="text-sm font-bold">Alterar Palavra-Passe</span>
+          </div>
+          <ChevronLeft size={18} className="rotate-180 text-muted-foreground" />
         </Button>
-
       </div>
 
-      <Button 
-        variant="destructive" 
-        onClick={handleLogout}
-        className="w-full bg-red-500/10 text-red-500 hover:bg-red-500/20 h-12"
+      {/* CHECKBOX MARKETING */}
+      <div 
+         className="flex items-start gap-3 p-2 cursor-pointer group"
+         onClick={() => setCommercialOptIn(!commercialOptIn)}
       >
-        <LogOut className="w-4 h-4 mr-2" />
-        Sair da Conta
-      </Button>
-      
-      {/* MODAL ALTERAR PALAVRA-PASSE */}
-      {showPasswordModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-surface-elevated border border-white/10 rounded-2xl p-6 w-full max-w-sm space-y-4">
-            <h3 className="font-bold text-lg text-white">Alterar Palavra-passe</h3>
-            
-            {passwordStep === "choose" && (
-              <div className="space-y-4">
-                <p className="text-sm text-muted-foreground">Onde queres receber o código de verificação para alterar a tua senha?</p>
-                <div className="space-y-2">
-                  <button
-                    onClick={() => setPasswordMethod("email")}
-                    disabled={!user.email}
-                    className={`w-full flex flex-col p-3 rounded-xl border ${passwordMethod === "email" ? "bg-primary/10 border-primary" : "bg-white/5 border-transparent"} ${!user.email && "opacity-50"}`}
-                  >
-                    <span className="font-bold text-white text-sm flex items-center gap-2">
-                      <Mail className="w-4 h-4" /> E-mail {user.email && <span className="bg-emerald-500/20 text-emerald-400 text-[9px] px-1.5 py-0.5 rounded-full">Recomendado</span>}
-                    </span>
-                    <span className="text-xs text-muted-foreground text-left mt-1">
-                      {user.email ? user.email : "Nenhum e-mail associado"}
-                    </span>
-                  </button>
-                  <button
-                    onClick={() => setPasswordMethod("sms")}
-                    className={`w-full flex flex-col p-3 rounded-xl border ${passwordMethod === "sms" ? "bg-primary/10 border-primary" : "bg-white/5 border-transparent"}`}
-                  >
-                    <span className="font-bold text-white text-sm flex items-center gap-2">
-                      <Phone className="w-4 h-4" /> SMS
-                    </span>
-                    <span className="text-xs text-muted-foreground text-left mt-1">
-                      Custo adicional pode ser aplicado
-                    </span>
-                  </button>
-                </div>
-                <div className="flex gap-2 pt-2">
-                  <Button variant="outline" className="flex-1 border-white/10" onClick={() => setShowPasswordModal(false)}>Cancelar</Button>
-                  <Button className="flex-1 bg-primary text-black font-bold" disabled={isSaving} onClick={requestPasswordReset}>Enviar Código</Button>
-                </div>
-              </div>
-            )}
+         <div className="mt-0.5 transition-colors">
+           {commercialOptIn ? <CheckSquare className="w-5 h-5 text-primary" /> : <Square className="w-5 h-5 text-muted-foreground group-hover:text-white" />}
+         </div>
+         <p className="text-[11px] text-muted-foreground leading-relaxed">
+           Estou disposto a receber emails com ofertas comerciais, bónus exclusivos e novidades da plataforma MozBet.
+         </p>
+      </div>
 
-            {passwordStep === "verify" && (
-              <div className="space-y-4">
-                <p className="text-sm text-muted-foreground">Introduz o código que recebeste no teu {passwordMethod === "email" ? "e-mail" : "telemóvel"}.</p>
-                <Input 
-                  placeholder="000000"
-                  value={passwordOtp}
-                  onChange={(e) => setPasswordOtp(e.target.value.replace(/\D/g, ""))}
-                  className="bg-black/50 border-primary/30 text-white text-center tracking-[0.5em] font-bold text-lg"
-                  maxLength={6}
-                />
-                <div className="flex gap-2 pt-2">
-                  <Button variant="outline" className="flex-1 border-white/10" onClick={() => setPasswordStep("choose")}>Voltar</Button>
-                  <Button className="flex-1 bg-primary text-black font-bold" onClick={verifyPasswordReset}>Verificar</Button>
+      {/* MODAL PALAVRA-PASSE (SIMPLIFICADO) */}
+      {showPasswordModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in">
+          <div className="bg-[#1a1b23] border border-white/10 rounded-3xl p-6 w-full max-w-sm space-y-6 shadow-2xl">
+            <div className="space-y-1">
+              <h3 className="font-black text-xl text-white">Nova Senha</h3>
+              <p className="text-xs text-muted-foreground">Escolha como deseja validar a alteração.</p>
+            </div>
+            
+            <div className="space-y-3">
+              <Button 
+                variant="outline" 
+                className="w-full h-14 justify-start gap-4 border-white/5 bg-black/40 hover:bg-white/5 rounded-2xl"
+                onClick={() => setPasswordMethod("email")}
+              >
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${passwordMethod === "email" ? "bg-primary text-black" : "bg-white/5 text-gray-400"}`}>
+                  <Mail size={20} />
                 </div>
-              </div>
-            )}
+                <div className="text-left">
+                  <p className="text-sm font-bold text-white">Via E-mail</p>
+                  <p className="text-[10px] text-muted-foreground">{user.email || "Não configurado"}</p>
+                </div>
+              </Button>
+
+              <Button 
+                variant="outline" 
+                className="w-full h-14 justify-start gap-4 border-white/5 bg-black/40 hover:bg-white/5 rounded-2xl"
+                onClick={() => setPasswordMethod("sms")}
+              >
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${passwordMethod === "sms" ? "bg-primary text-black" : "bg-white/5 text-gray-400"}`}>
+                  <Phone size={20} />
+                </div>
+                <div className="text-left">
+                  <p className="text-sm font-bold text-white">Via SMS</p>
+                  <p className="text-[10px] text-muted-foreground">+258 {user.phone}</p>
+                </div>
+              </Button>
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <Button variant="ghost" className="flex-1 h-12 font-bold" onClick={() => setShowPasswordModal(false)}>CANCELAR</Button>
+              <Button className="flex-1 h-12 bg-primary text-black font-black" onClick={() => toast.info("Código enviado!")}>ENVIAR</Button>
+            </div>
           </div>
         </div>
       )}
+
     </div>
   );
 }
+

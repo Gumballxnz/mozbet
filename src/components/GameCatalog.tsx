@@ -65,6 +65,7 @@ export function GameCatalog() {
   }, []);
 
   const handleGameClick = (gameId: string) => {
+    playSound('click');
     if (!isLoggedIn) {
       // Sem modo demo — obrigar registo/login para jogar
       useAppStore.getState().openRegister();
@@ -73,7 +74,7 @@ export function GameCatalog() {
 
     // Regra de segurança: Usuário comum com saldo 0 não pode entrar nos jogos
     if (!user?.isAdmin && (user?.balance || 0) <= 0) {
-      playSound('error');
+      playSound('notification');
       toast.error("Saldo Insuficiente", {
         description: "Adicione saldo à sua conta para jogar.",
         action: {

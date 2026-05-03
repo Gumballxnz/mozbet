@@ -23,7 +23,7 @@ export function MobileNavigation() {
     }
 
     if (!user?.isAdmin && (user?.balance || 0) <= 0) {
-      playSound('error');
+      playSound('notification');
       toast.error("Saldo Insuficiente", {
         description: "Adicione saldo à sua conta para jogar.",
         action: {

@@ -27,3 +27,26 @@ export const playSound = (soundName: 'error' | 'notification' | 'win' | 'cashout
     console.error("Erro ao reproduzir som:", e);
   }
 };
+
+let bgMusic: HTMLAudioElement | null = null;
+
+export const startBgMusic = () => {
+  if (typeof window === 'undefined') return;
+  
+  if (!bgMusic) {
+    bgMusic = new Audio('/sounds/bg.mp3');
+    bgMusic.loop = true;
+    bgMusic.volume = 0.4; // Volume ajustado para melhor imersão
+  }
+  
+  bgMusic.play().catch(err => {
+    console.warn("Música de fundo bloqueada:", err);
+  });
+};
+
+export const stopBgMusic = () => {
+  if (bgMusic) {
+    bgMusic.pause();
+    bgMusic.currentTime = 0;
+  }
+};

@@ -54,13 +54,13 @@ const BetBox = ({
       <div className="flex gap-2">
         <div className="flex-[1.5] flex flex-col gap-1.5">
           <div className="flex items-center bg-[#101116] rounded-xl border border-[#2A2F40] h-12 px-1">
-            <button onClick={() => setBetAmount(Math.max(10, betAmount - 10))} className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-white bg-[#272B3A] font-bold">−</button>
+            <button onClick={() => { playSound('click'); setBetAmount(Math.max(10, betAmount - 10)); }} className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-white bg-[#272B3A] font-bold">−</button>
             <input type="number" value={betAmount} onChange={(e) => setBetAmount(Math.max(10, Number(e.target.value)))} className="flex-1 w-0 text-center text-white font-bold text-lg bg-transparent outline-none" />
-            <button onClick={() => setBetAmount(betAmount + 10)} className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-white bg-[#272B3A] font-bold">+</button>
+            <button onClick={() => { playSound('click'); setBetAmount(betAmount + 10); }} className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-white bg-[#272B3A] font-bold">+</button>
           </div>
           <div className="grid grid-cols-2 gap-1.5">
             {presets.map(v => (
-              <button key={v} onClick={() => setBetAmount(v)} className="bg-[#101116] border border-[#2A2F40] rounded-lg py-1 text-[11px] font-bold text-gray-400 hover:bg-[#272B3A] hover:text-white transition-colors">{v}</button>
+              <button key={v} onClick={() => { playSound('click'); setBetAmount(v); }} className="bg-[#101116] border border-[#2A2F40] rounded-lg py-1 text-[11px] font-bold text-gray-400 hover:bg-[#272B3A] hover:text-white transition-colors">{v}</button>
             ))}
           </div>
         </div>
@@ -68,7 +68,7 @@ const BetBox = ({
         <div className="flex-[2.5]">
           {!hasBet && !cashedOut && (
             <button 
-              onClick={() => onBet(betAmount)}
+              onClick={() => { playSound('click'); onBet(betAmount); }}
               disabled={phase !== "waiting"}
               className={`w-full h-full rounded-2xl flex flex-col items-center justify-center border-b-[4px] transition-all
                 ${phase === "waiting" ? 'bg-[#28A745] hover:bg-[#218838] border-[#1E7E34] text-white cursor-pointer' : 'bg-[#1e2330] border-[#131722] text-gray-500 cursor-not-allowed opacity-80'}`}
@@ -80,7 +80,7 @@ const BetBox = ({
 
           {hasBet && !cashedOut && (
             <button 
-              onClick={onCashout}
+              onClick={() => { playSound('click'); onCashout(); }}
               disabled={phase !== "rising"}
               className="w-full h-full rounded-2xl flex flex-col items-center justify-center border-b-[4px] transition-all bg-[#D35400] hover:bg-[#E67E22] border-[#A04000] text-white"
             >

@@ -95,7 +95,7 @@ const MinesGame = ({ onClose, balance, onBet }: MinesGameProps) => {
   // ==========================================
   const handleCellClick = async (index: number) => {
     if (!isPlaying || grid[index].status !== "hidden" || isLoading || !sessionId) return;
-
+    playSound('click');
     setIsLoading(true);
 
     try {

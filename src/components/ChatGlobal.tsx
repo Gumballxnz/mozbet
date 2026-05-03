@@ -150,7 +150,7 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
 
     // 1. Ouvir mensagens via SOCKET.IO (Bots e anúncios da VPS)
     const onSocketMessage = (newMessage: ChatMessage) => {
-      console.log("💬 SOCKET: Nova mensagem recebida!", newMessage);
+
       setMessages((prev: ChatMessage[]) => {
         if (prev.some(m => m.id === newMessage.id)) return prev;
         return [...prev, newMessage].slice(-100);
@@ -167,7 +167,7 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
         schema: 'public', 
         table: 'chat_messages' 
       }, (payload) => {
-        console.log("🚀 SUPABASE: Nova mensagem recebida!", payload.new);
+
         const newMessage = payload.new as ChatMessage;
         
         setMessages((prev: ChatMessage[]) => {
@@ -178,7 +178,7 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
         if (isOpen) setTimeout(scrollToBottom, 100);
       })
       .subscribe((status, err) => {
-        console.log("📡 Realtime Status:", status);
+
         if (err) console.error("❌ Erro Realtime:", err);
       });
 

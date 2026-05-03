@@ -24,23 +24,6 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const isAdmin = pathname?.startsWith("/admin");
   const isEngine = pathname?.startsWith("/engine");
 
-  // Bot Heartbeat (Cérebro Autónomo do Chat)
-  useEffect(() => {
-    const triggerBot = async () => {
-      try {
-        await fetch("/api/chat/bot-heartbeat");
-      } catch (e) {
-        // Silencioso
-      }
-    };
-
-    // Trigger inicial e a cada 25 segundos
-    const interval = setInterval(triggerBot, 25000);
-    triggerBot();
-
-    return () => clearInterval(interval);
-  }, []);
-
   if (isAdmin || isEngine) {
     return (
       <>

@@ -42,6 +42,44 @@ const MinesGame = ({ onClose, balance, onBet }: MinesGameProps) => {
   }, [mineCount, isPlaying]);
 
   // ==========================================
+  // RECUPERAR SESSÃO ATIVA (Ponto 5)
+  // ==========================================
+  useEffect(() => {
+    const checkActiveSession = async () => {
+      if (!isLoggedIn) return;
+      setIsLoading(true);
+      try {
+        const res = await fetch("/api/game/mines/session");
+        const data = await res.json();
+        if (data.session) {
+          const s = data.session;
+          setSessionId(s.id);
+          setBetAmount(s.betAmount);
+          setMineCount(s.mineCount);
+          setCurrentMultiplier(s.currentMultiplier);
+          setPotentialWin(s.potentialWin);
+          setRevealedCount(s.revealedIndices.length);
+          
+          // Restaurar o grid visual
+          const newGrid = Array(25).fill({ status: "hidden" });
+          s.revealedIndices.forEach((idx: number) => {
+            newGrid[idx] = { status: "safe" };
+          });
+          setGrid(newGrid);
+          setIsPlaying(true);
+          
+          toast.info("Jogo restaurado! Continue de onde parou.");
+        }
+      } catch (e) {
+        console.error("Erro ao recuperar sessão", e);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    checkActiveSession();
+  }, [isLoggedIn]);
+
+  // ==========================================
   // INICIAR JOGO (chamada ao servidor)
   // ==========================================
   const handleStart = async () => {

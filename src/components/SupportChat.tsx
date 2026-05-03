@@ -158,16 +158,17 @@ export function SupportChat() {
           )}
           <button
             ref={dragRef}
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation();
               if (!dragStart.current.moved) {
                 setSupportOpen(true);
               }
             }}
-            onMouseDown={(e) => handleDragStart(e.clientX, e.clientY)}
-            onTouchStart={(e) => handleDragStart(e.touches[0].clientX, e.touches[0].clientY)}
-            onTouchMove={(e) => handleDragMove(e.touches[0].clientX, e.touches[0].clientY)}
-            onTouchEnd={handleDragEnd}
-            onContextMenu={(e) => { e.preventDefault(); setShowCloseHint(!showCloseHint); }}
+            onMouseDown={(e) => { e.stopPropagation(); handleDragStart(e.clientX, e.clientY); }}
+            onTouchStart={(e) => { e.stopPropagation(); handleDragStart(e.touches[0].clientX, e.touches[0].clientY); }}
+            onTouchMove={(e) => { e.stopPropagation(); handleDragMove(e.touches[0].clientX, e.touches[0].clientY); }}
+            onTouchEnd={(e) => { e.stopPropagation(); handleDragEnd(); }}
+            onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); setShowCloseHint(!showCloseHint); }}
             className={`w-14 h-14 bg-primary text-black rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(0,255,127,0.4)] transition-transform ${
               isDragging ? "scale-110 cursor-grabbing" : "hover:scale-105 cursor-grab animate-pulse-glow"
             }`}

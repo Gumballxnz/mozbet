@@ -33,6 +33,31 @@ const PlinkoGame = ({ balance, onUpdateBalance, onBack }: Props) => {
   const [path, setPath] = useState<number[]>([]);
   const [finalSlot, setFinalSlot] = useState<number | null>(null);
   const [autoMode, setAutoMode] = useState(false);
+  const [history, setHistory] = useState<number[]>([]);
+
+  const fetchHistory = async () => {
+    try {
+      const res = await fetch("/api/game/history?game=plinko&limit=12");
+      const data = await res.json();
+      if (data.history) {
+        setHistory(data.history.map((h: any) => h.crashPoint));
+      }
+    } catch (e) {}
+  };
+
+  const saveResult = async (result: number) => {
+    try {
+      await fetch("/api/game/history/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ gameId: "plinko", result: `${result.toFixed(1)}x` })
+      });
+    } catch (e) {}
+  };
+
+  useEffect(() => {
+    fetchHistory();
+  }, []);
 
   const MULTIPLIERS = pins === 16 ? MULTIPLIERS_16 : pins === 14 ? MULTIPLIERS_14 : MULTIPLIERS_12;
 
@@ -86,6 +111,8 @@ const PlinkoGame = ({ balance, onUpdateBalance, onBack }: Props) => {
           setLastWin(win);
           setFinalSlot(fs);
           setDropping(false);
+          saveResult(MULTIPLIERS[fs]); // Salva o resultado no banco
+          setHistory(prev => [MULTIPLIERS[fs], ...prev.slice(0, 11)]);
           playSound('win');
           updateBalance(newBalance); // Saldo final após o ganho
         }
@@ -109,8 +136,17 @@ const PlinkoGame = ({ balance, onUpdateBalance, onBack }: Props) => {
       </div>
 
       {/* Funnel */}
-      <div className="flex justify-center mt-2">
+      <div className="flex justify-center mt-2 relative z-20">
         <div className="w-0 h-0 border-l-[20px] border-r-[20px] border-t-[25px] border-l-transparent border-r-transparent border-t-white/40" />
+      </div>
+
+      {/* History Caps (Ponto 5) */}
+      <div className="flex gap-1.5 px-4 overflow-x-auto no-scrollbar relative z-10 py-2">
+        {history.map((val, i) => (
+          <div key={i} className={`min-w-[40px] h-6 flex items-center justify-center rounded-md text-[9px] font-black border backdrop-blur-md ${val >= 2 ? 'bg-orange-500/20 border-orange-500/30 text-orange-400' : 'bg-green-500/20 border-green-500/30 text-green-400'}`}>
+            {val.toFixed(1)}x
+          </div>
+        ))}
       </div>
 
       {/* Board */}

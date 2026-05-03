@@ -17,8 +17,48 @@ const ChickenHighwayGame = ({ onClose, balance, onBet }: ChickenHighwayGameProps
   const [isPlaying, setIsPlaying] = useState(false);
   const [multiplier, setMultiplier] = useState(1.0);
   const [isCrashed, setIsCrashed] = useState(false);
-  const [history, setHistory] = useState([1.54, 2.1, 1.05, 12.4, 1.87]);
+  const [history, setHistory] = useState<number[]>([]);
   const [targetCrash, setTargetCrash] = useState(0);
+
+  const fetchHistory = async () => {
+    try {
+      const res = await fetch("/api/game/history?game=chicken-highway&limit=10");
+      const data = await res.json();
+      if (data.history) {
+        setHistory(data.history.map((h: any) => h.crashPoint));
+      }
+    } catch (e) {}
+  };
+
+  useEffect(() => {
+    fetchHistory();
+
+    const checkActiveSession = async () => {
+      try {
+        const res = await fetch("/api/game/crash/session?gameId=chicken-highway");
+        const data = await res.json();
+        if (data.session) {
+          const s = data.session;
+          setBetAmount(s.betAmount);
+          setTargetCrash(s.targetCrash);
+          setMultiplier(s.currentMultiplier);
+          setIsPlaying(true);
+          toast.info("Aposta em curso restaurada!");
+        }
+      } catch (e) {}
+    };
+    checkActiveSession();
+  }, []);
+
+  const saveResult = async (result: number) => {
+    try {
+      await fetch("/api/game/history/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ gameId: "chicken-highway", result: `${result.toFixed(2)}x` })
+      });
+    } catch (e) {}
+  };
 
   useEffect(() => {
     let interval: any;
@@ -31,7 +71,8 @@ const ChickenHighwayGame = ({ onClose, balance, onBet }: ChickenHighwayGameProps
             setIsPlaying(false);
             playSound('crash');
             toast.error(`A galinha foi atropelada! ${targetCrash.toFixed(2)}x`);
-            setHistory(prevH => [targetCrash, ...prevH.slice(0, 4)]);
+            saveResult(targetCrash);
+            setHistory(prevH => [targetCrash, ...prevH.slice(0, 9)]);
             return targetCrash;
           }
           return next;

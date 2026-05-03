@@ -31,6 +31,22 @@ const FishinatorGame = ({ onClose, balance, onBet }: FishinatorGameProps) => {
 
   useEffect(() => {
     fetchHistory();
+
+    const checkActiveSession = async () => {
+      try {
+        const res = await fetch("/api/game/crash/session?gameId=fishinator");
+        const data = await res.json();
+        if (data.session) {
+          const s = data.session;
+          setBetAmount(s.betAmount);
+          setTargetCrash(s.targetCrash);
+          setMultiplier(s.currentMultiplier);
+          setIsPlaying(true);
+          toast.info("Pescaria em curso restaurada!");
+        }
+      } catch (e) {}
+    };
+    checkActiveSession();
   }, []);
 
   const saveResult = async (result: number) => {

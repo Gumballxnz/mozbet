@@ -39,7 +39,14 @@ export function BannerCarousel({ initialBanners }: { initialBanners: Banner[] })
     
     // Se o link for apenas o ID do jogo (ex: /aviator ou aviator), manda para /jogar/ID
     const gameId = link.startsWith('/') ? link.substring(1) : link;
-    const isSpecialPage = ['perfil', 'depositar', 'sacar', 'promocoes', 'vip', 'ajuda', 'sobre'].includes(gameId);
+    
+    // VIP deve levar para o perfil para ver o nível de bónus
+    if (gameId === 'vip') {
+      router.push('/perfil');
+      return;
+    }
+
+    const isSpecialPage = ['perfil', 'depositar', 'sacar', 'promocoes', 'ajuda', 'sobre'].includes(gameId);
     
     if (isSpecialPage) {
       router.push(link.startsWith('/') ? link : `/${link}`);
@@ -64,11 +71,18 @@ export function BannerCarousel({ initialBanners }: { initialBanners: Banner[] })
     };
   }, []);
 
+  // SINCRONIZAÇÃO GLOBAL (UTC) - Todos vêm o mesmo slide ao mesmo tempo
   useEffect(() => {
     if (banners.length <= 1) return;
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % banners.length);
-    }, 5000);
+    
+    const syncCarousel = () => {
+      const now = Date.now();
+      const slideIndex = Math.floor(now / 5000) % banners.length;
+      setCurrentSlide(slideIndex);
+    };
+
+    syncCarousel();
+    const timer = setInterval(syncCarousel, 1000); // Checa a cada segundo para manter o sync
     return () => clearInterval(timer);
   }, [banners.length]);
 

@@ -4,37 +4,49 @@ import { AuthProvider } from "@/providers/AuthProvider";
 import { LayoutWrapper } from "@/components/LayoutWrapper";
 
 export const metadata: Metadata = {
-  title: "MOZBET — Casa de Apostas Online",
+  metadataBase: new URL("https://mozbet.online"),
+  title: {
+    default: "MOZBET — A Melhor Casa de Apostas Online em Moçambique 🇲🇿",
+    template: "%s | MOZBET"
+  },
   description:
-    "A melhor plataforma de apostas e jogos online de Moçambique. Crash games, slots, casino e muito mais. Deposite com M-Pesa e E-Mola.",
+    "Aposta na MOZBET, a plataforma #1 de Moçambique. Aviator, Mines, Crash Games e Casino ao vivo. Depósitos instantâneos via M-Pesa e E-Mola. Regista-te e ganha bónus!",
   authors: [{ name: "MOZBET" }],
   keywords: [
-    "apostas online",
-    "casa de apostas",
-    "moçambique",
-    "crash game",
-    "aviator",
-    "mines",
-    "mpesa",
-    "emola",
-    "mozbet",
+    "apostas online moçambique",
+    "casino online mpesa",
+    "jogar aviator moçambique",
+    "moçambique apostas desportivas",
+    "mozbet online",
+    "ganhar dinheiro online moçambique",
+    "emola apostas",
   ],
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
     type: "website",
-    title: "MOZBET — Casa de Apostas Online",
-    description:
-      "A melhor plataforma de apostas e jogos online de Moçambique.",
+    title: "MOZBET — Casa de Apostas e Casino Online",
+    description: "A melhor plataforma de apostas de Moçambique. Joga Aviator, Mines e ganha bónus exclusivos.",
     siteName: "MOZBET",
+    locale: "pt_MZ",
+    url: "https://mozbet.online",
   },
   twitter: {
     card: "summary_large_image",
     title: "MOZBET — Casa de Apostas Online",
-    description:
-      "A melhor plataforma de apostas e jogos online de Moçambique.",
+    description: "A melhor plataforma de apostas de Moçambique. Joga e ganha com M-Pesa.",
   },
   robots: {
     index: true,
     follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
   },
 };
 

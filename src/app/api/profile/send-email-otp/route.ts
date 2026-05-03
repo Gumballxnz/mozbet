@@ -63,7 +63,7 @@ export async function POST(req: Request) {
     // 4. Enviar email com Resend
     try {
       const { data: emailResult, error: emailError } = await resend.emails.send({
-        from: "MozBet Suporte <onboarding@resend.dev>", // Sandbox
+        from: "MozBet Suporte <suporte@mozbet.online>", 
         to: [email],
         subject: "Código de Verificação MozBet",
         html: `

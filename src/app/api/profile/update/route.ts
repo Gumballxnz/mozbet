@@ -78,7 +78,7 @@ export async function POST(req: Request) {
     if (email && email.includes("@")) {
       try {
         await resend.emails.send({
-          from: "MozBet Suporte <onboarding@resend.dev>", // Usando sandbox do resend free
+          from: "MozBet Suporte <suporte@mozbet.online>",
           to: [email],
           subject: "Bem-vindo à MozBet! 🎉",
           html: `
@@ -117,7 +117,7 @@ export async function POST(req: Request) {
                 </div>
                 
                 <div style="text-align: center; margin-top: 40px;">
-                  <a href="https://mozbet-test.vercel.app" style="background-color: #00FF7F; color: #0f172a; text-decoration: none; padding: 14px 32px; border-radius: 50px; font-weight: bold; font-size: 16px; display: inline-block;">
+                  <a href="https://mozbet.online" style="background-color: #00FF7F; color: #0f172a; text-decoration: none; padding: 14px 32px; border-radius: 50px; font-weight: bold; font-size: 16px; display: inline-block;">
                     Voltar a Jogar
                   </a>
                 </div>

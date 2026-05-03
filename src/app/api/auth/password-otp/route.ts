@@ -35,7 +35,7 @@ export async function POST(req: Request) {
 
     // Enviar via Resend
     await resend.emails.send({
-      from: "MozBet Segurança <seguranca@resend.dev>",
+      from: "MozBet Segurança <suporte@mozbet.online>",
       to: [user.email],
       subject: "Código de Segurança - MozBet",
       html: `

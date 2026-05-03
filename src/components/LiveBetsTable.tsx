@@ -14,7 +14,14 @@ export function LiveBetsTable() {
   useEffect(() => {
     isMounted.current = true;
     
-    // 1. Escutar apostas FAKE geradas globalmente pelo servidor Socket.IO (garante sincronismo entre todos e 560% chance de HOT games)
+    // 1. Carregamento inicial (Histórico da VPS) - Resolve o problema do F5
+    socket.on("initial_live_bets", (history) => {
+      if (isMounted.current) {
+        setActivities(history);
+      }
+    });
+
+    // 2. Escutar apostas FAKE geradas globalmente pelo servidor Socket.IO
     socket.on("live_bet", (fakeBet) => {
       if (isMounted.current) {
         setActivities(prev => {

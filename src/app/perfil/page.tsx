@@ -335,7 +335,7 @@ export default function PerfilPage() {
                     type="number"
                     value={withdrawAmount}
                     onChange={(e) => setWithdrawAmount(e.target.value)}
-                    placeholder="Min: 100.00 MZN"
+                    placeholder="ex: 10.00 MZN"
                     className="bg-black/60 border-primary/20 focus:border-primary text-white font-black h-12 rounded-xl pl-10 text-lg"
                   />
                   <Wallet size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-primary" />

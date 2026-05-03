@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
 interface Banner {
@@ -10,12 +11,14 @@ interface Banner {
   description: string;
   badge: string;
   action_text: string;
+  action_link: string;
   image_url: string;
 }
 
 export function BannerCarousel({ initialBanners }: { initialBanners: Banner[] }) {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [banners, setBanners] = useState<Banner[]>(initialBanners);
+  const router = useRouter();
 
   // Se initialBanners vier vazio por alguma falha do SSR, tenta carregar no client
   useEffect(() => {
@@ -30,6 +33,21 @@ export function BannerCarousel({ initialBanners }: { initialBanners: Banner[] })
       loadBanners();
     }
   }, [initialBanners]);
+
+  const handleBannerClick = (link: string) => {
+    if (!link) return;
+    
+    // Se o link for apenas o ID do jogo (ex: /aviator ou aviator), manda para /jogar/ID
+    const gameId = link.startsWith('/') ? link.substring(1) : link;
+    const isSpecialPage = ['perfil', 'depositar', 'sacar', 'promocoes'].includes(gameId);
+    
+    if (isSpecialPage) {
+      router.push(link.startsWith('/') ? link : `/${link}`);
+    } else {
+      // Por padrão, assume que é um link de jogo
+      router.push(`/jogar/${gameId}`);
+    }
+  };
 
   // Realtime Supabase Banners
   useEffect(() => {
@@ -99,7 +117,10 @@ export function BannerCarousel({ initialBanners }: { initialBanners: Banner[] })
               {slide.description}
             </p>
             <div className="mt-5">
-              <button className="h-10 px-6 rounded-xl bg-primary text-primary-foreground font-extrabold text-sm shadow-[0_4px_0_0_hsl(var(--primary-dark))] active:translate-y-1 active:shadow-none transition-all">
+              <button 
+                onClick={() => handleBannerClick(slide.action_link)}
+                className="h-10 px-6 rounded-xl bg-primary text-primary-foreground font-extrabold text-sm shadow-[0_4px_0_0_hsl(var(--primary-dark))] active:translate-y-1 active:shadow-none transition-all"
+              >
                 {slide.action_text}
               </button>
             </div>

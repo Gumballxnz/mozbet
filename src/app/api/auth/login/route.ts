@@ -33,15 +33,7 @@ function checkRateLimit(ip: string): boolean {
 
 export async function POST(req: Request) {
   try {
-    // Pegar IP real atrás de proxies/Cloudflare
-    const ip = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown";
-    
-    if (!checkRateLimit(ip)) {
-      return NextResponse.json(
-        { error: "Muitas tentativas. Tente novamente em 1 minuto." },
-        { status: 429 }
-      );
-    }
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0] || req.headers.get("x-real-ip") || "unknown";
     const { phone, password } = await req.json();
 
     if (!phone || !password) {
@@ -50,45 +42,87 @@ export async function POST(req: Request) {
 
     const cleanPhone = phone.replace(/\D/g, "");
 
-    // 1. Buscar usuário
+    // 1. Verificar se o IP está banido
+    const { data: isBanned } = await supabaseAdmin
+      .from("banned_ips")
+      .select("id")
+      .eq("ip_address", ip)
+      .single();
+
+    if (isBanned) {
+      return NextResponse.json({ error: "Acesso negado por segurança." }, { status: 403 });
+    }
+
+    // 2. Buscar usuário com colunas de segurança
     const { data: user, error: dbError } = await supabaseAdmin
       .from("users")
-      .select("id, phone, email, password_hash, balance, has_deposited, created_at, is_active, is_admin")
+      .select("id, phone, email, password_hash, balance, has_deposited, created_at, is_active, is_admin, is_suspended, failed_attempts, lockout_until")
       .eq("phone", cleanPhone)
       .single();
 
     if (dbError || !user) {
-      return NextResponse.json(
-        { error: "Número ou palavra-passe incorretos." },
-        { status: 401 }
-      );
+      // Registrar tentativa falha por IP para detectar brute force
+      await supabaseAdmin.from("login_attempts").insert({ ip_address: ip, identifier: cleanPhone, success: false });
+      return NextResponse.json({ error: "Número ou palavra-passe incorretos." }, { status: 401 });
     }
 
-    // 2. Verificar se a conta está ativa
-    if (!user.is_active) {
-      return NextResponse.json(
-        { error: "Conta bloqueada. Contacte o suporte." },
-        { status: 403 }
-      );
+    // 3. Verificar suspensão ou bloqueio temporário
+    if (user.is_suspended) {
+      return NextResponse.json({ error: "Esta conta foi suspensa por múltiplas tentativas de invasão. Contacte o suporte." }, { status: 403 });
     }
 
-    // 3. Verificar senha
+    if (user.lockout_until && new Date(user.lockout_until) > new Date()) {
+      const remainingHours = Math.ceil((new Date(user.lockout_until).getTime() - Date.now()) / (1000 * 60 * 60));
+      return NextResponse.json({ error: `Muitas tentativas falhas. Tente novamente em ${remainingHours} horas.` }, { status: 403 });
+    }
+
+    // 4. Verificar senha
     const isPasswordValid = await bcrypt.compare(password, user.password_hash);
+    
     if (!isPasswordValid) {
-      return NextResponse.json(
-        { error: "Número ou palavra-passe incorretos." },
-        { status: 401 }
-      );
+      const newAttempts = (user.failed_attempts || 0) + 1;
+      let updateData: any = { failed_attempts: newAttempts };
+
+      if (newAttempts >= 10) {
+        updateData.is_suspended = true;
+      } else if (newAttempts >= 5) {
+        // Bloqueio de 12 horas
+        updateData.lockout_until = new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString();
+      }
+
+      await supabaseAdmin.from("users").update(updateData).eq("id", user.id);
+      await supabaseAdmin.from("login_attempts").insert({ ip_address: ip, identifier: cleanPhone, success: false });
+
+      return NextResponse.json({ error: "Número ou palavra-passe incorretos." }, { status: 401 });
     }
 
-    // 4. Gerar JWT
-    const token = await signToken({
-      id: user.id,
-      phone: user.phone,
-      isAdmin: user.is_admin,
+    // 5. Verificar limite de dispositivos (Máximo 3 sessões ativas)
+    // Limpar sessões antigas (mais de 7 dias) antes de contar
+    await supabaseAdmin.from("active_sessions").delete().lt("last_active", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
+    
+    const { count: sessionCount } = await supabaseAdmin
+      .from("active_sessions")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", user.id);
+
+    if ((sessionCount || 0) >= 3) {
+      return NextResponse.json({ error: "Limite de dispositivos atingido. Termine sessão num dos seus aparelhos." }, { status: 403 });
+    }
+
+    // 6. Sucesso! Resetar tentativas falhas
+    await supabaseAdmin.from("users").update({ failed_attempts: 0, lockout_until: null }).eq("id", user.id);
+    await supabaseAdmin.from("login_attempts").insert({ ip_address: ip, identifier: cleanPhone, success: true });
+
+    // 7. Gerar JWT e registrar sessão
+    const token = await signToken({ id: user.id, phone: user.phone, isAdmin: user.is_admin });
+
+    await supabaseAdmin.from("active_sessions").insert({
+      user_id: user.id,
+      session_id: token.substring(0, 50), // Guardamos apenas o início por segurança
+      ip_address: ip,
+      device_info: req.headers.get("user-agent") || "unknown"
     });
 
-    // 5. Configurar o Cookie HttpOnly
     const response = NextResponse.json(
       {
         message: "Login efetuado com sucesso",

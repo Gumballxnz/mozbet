@@ -193,7 +193,9 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
         const crashP = Number(data.crash_point);
         setMultiplier(crashP);
         setRoundFakes(generateRoundFakes(crashP));
-        fetchHistory();
+        
+        // Pequeno delay para garantir que o servidor salvou o resultado antes de buscarmos
+        setTimeout(fetchHistory, 1000);
         
         // Força perdas para quem não sacou
         setBetsState(prev => prev.map(b => ({

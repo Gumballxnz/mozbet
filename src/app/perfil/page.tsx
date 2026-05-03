@@ -143,7 +143,9 @@ export default function PerfilPage() {
       setShowAvatarPicker(false);
       setShowOtpInput(false);
       setIsEmailEditing(false);
-      setTimeout(() => window.location.reload(), 800);
+      // Recarrega o estado global sem forçar reload pesado da página se possível
+      // mas o reload garante que o AuthProvider puxe os dados frescos
+      setTimeout(() => window.location.reload(), 500);
     } catch (err: any) {
       toast.error(err.message);
     } finally {

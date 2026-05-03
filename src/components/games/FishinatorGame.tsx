@@ -16,8 +16,31 @@ const FishinatorGame = ({ onClose, balance, onBet }: FishinatorGameProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [multiplier, setMultiplier] = useState(1.0);
   const [isCrashed, setIsCrashed] = useState(false);
-  const [history, setHistory] = useState([1.54, 2.1, 1.05, 12.4, 1.87]);
   const [targetCrash, setTargetCrash] = useState(0);
+
+  const fetchHistory = async () => {
+    try {
+      const res = await fetch("/api/game/history?game=fishinator&limit=10");
+      const data = await res.json();
+      if (data.history) {
+        setHistory(data.history.map((h: any) => h.crashPoint));
+      }
+    } catch (e) {}
+  };
+
+  useEffect(() => {
+    fetchHistory();
+  }, []);
+
+  const saveResult = async (result: number) => {
+    try {
+      await fetch("/api/game/history/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ gameId: "fishinator", result: `${result.toFixed(2)}x` })
+      });
+    } catch (e) {}
+  };
 
   useEffect(() => {
     let interval: any;
@@ -30,7 +53,8 @@ const FishinatorGame = ({ onClose, balance, onBet }: FishinatorGameProps) => {
             setIsPlaying(false);
             playSound('crash');
             toast.error(`O peixe fugiu! ${targetCrash.toFixed(2)}x`);
-            setHistory(prevH => [targetCrash, ...prevH.slice(0, 5)]);
+            saveResult(targetCrash);
+            setHistory(prevH => [targetCrash, ...prevH.slice(0, 9)]);
             return targetCrash;
           }
           return next;

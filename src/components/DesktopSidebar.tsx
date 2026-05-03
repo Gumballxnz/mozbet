@@ -182,7 +182,13 @@ export function DesktopSidebar() {
       )}
 
       {/* Botão de Suporte no fundo */}
-      <div className="p-3 border-t border-white/5">
+      <div className="p-3 border-t border-white/5 space-y-2">
+        <div className="flex items-center gap-2 px-3 py-1">
+          <div className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(0,255,127,0.5)]" />
+          <span className="text-[10px] font-bold text-primary uppercase tracking-widest">
+            {useAppStore.getState().onlineCount} Online
+          </span>
+        </div>
         <button 
           onClick={() => setSupportOpen(true)}
           className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary transition-colors ${collapsed ? "justify-center px-0" : ""}`}

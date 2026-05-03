@@ -108,9 +108,15 @@ export function MobileHeader() {
       <header className="glass sticky top-0 z-40 w-full px-4 py-3 flex items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-1 active:scale-95 transition-transform">
-          <span className="text-xl font-extrabold tracking-tight text-white">
-            MOZ<span className="text-primary glow-primary">BET</span>
-          </span>
+          <div className="flex flex-col">
+            <span className="text-xl font-extrabold tracking-tight text-white">
+              MOZ<span className="text-primary glow-primary">BET</span>
+            </span>
+            <div className="flex items-center gap-1">
+              <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+              <span className="text-[8px] font-black text-primary uppercase tracking-widest">{useAppStore.getState().onlineCount} ONLINE</span>
+            </div>
+          </div>
         </Link>
 
         {/* Ações */}

@@ -305,13 +305,26 @@ export default function PerfilPage() {
                   ALTERAR
                 </Button>
               ) : (
-                <Button 
-                  className="h-12 bg-primary text-black font-bold text-xs" 
-                  onClick={handleSave}
-                  disabled={isSaving}
-                >
-                  {isSaving ? "..." : (showOtpInput ? "CONFIRMAR" : "GUARDAR")}
-                </Button>
+                <div className="flex gap-2">
+                  <Button 
+                    variant="ghost"
+                    className="h-12 text-muted-foreground hover:text-white text-xs font-bold"
+                    onClick={() => {
+                      setIsEmailEditing(false);
+                      setEmail(user?.email || "");
+                      setShowOtpInput(false);
+                    }}
+                  >
+                    CANCELAR
+                  </Button>
+                  <Button 
+                    className="h-12 bg-primary text-black font-bold text-xs px-6" 
+                    onClick={handleSave}
+                    disabled={isSaving}
+                  >
+                    {isSaving ? "..." : (showOtpInput ? "CONFIRMAR" : "GUARDAR")}
+                  </Button>
+                </div>
               )}
             </div>
 

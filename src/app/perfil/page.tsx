@@ -247,13 +247,29 @@ export default function PerfilPage() {
           </label>
           <div className="flex gap-2">
             <Input 
-              value={email || "Sem e-mail associado"} 
-              disabled 
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={!isEmailEditing}
+              placeholder="seu.email@exemplo.com"
               className="bg-black/40 border-white/10 text-white font-medium h-12 rounded-xl disabled:opacity-80"
             />
-            <Button variant="outline" className="h-12 border-white/10 hover:bg-white/5 text-xs font-bold" onClick={() => setIsEmailEditing(true)}>
-              ALTERAR
-            </Button>
+            {!isEmailEditing ? (
+              <Button 
+                variant="outline" 
+                className="h-12 border-white/10 hover:bg-white/5 text-xs font-bold" 
+                onClick={() => setIsEmailEditing(true)}
+              >
+                ALTERAR
+              </Button>
+            ) : (
+              <Button 
+                className="h-12 bg-primary text-black font-bold text-xs" 
+                onClick={handleSave}
+                disabled={isSaving}
+              >
+                {isSaving ? "..." : "GUARDAR"}
+              </Button>
+            )}
           </div>
         </div>
 
@@ -270,18 +286,20 @@ export default function PerfilPage() {
         </Button>
       </div>
 
-      {/* CHECKBOX MARKETING */}
-      <div 
-         className="flex items-start gap-3 p-2 cursor-pointer group"
-         onClick={() => setCommercialOptIn(!commercialOptIn)}
-      >
-         <div className="mt-0.5 transition-colors">
-           {commercialOptIn ? <CheckSquare className="w-5 h-5 text-primary" /> : <Square className="w-5 h-5 text-muted-foreground group-hover:text-white" />}
-         </div>
-         <p className="text-[11px] text-muted-foreground leading-relaxed">
-           Estou disposto a receber emails com ofertas comerciais, bónus exclusivos e novidades da plataforma MozBet.
-         </p>
-      </div>
+      {/* CHECKBOX MARKETING (Apenas visível se o utilizador não tiver email ou estiver a editar um vazio) */}
+      {(!user.email || isEmailEditing) && (
+        <div 
+           className="flex items-start gap-3 p-2 cursor-pointer group"
+           onClick={() => setCommercialOptIn(!commercialOptIn)}
+        >
+           <div className="mt-0.5 transition-colors">
+             {commercialOptIn ? <CheckSquare className="w-5 h-5 text-primary" /> : <Square className="w-5 h-5 text-muted-foreground group-hover:text-white" />}
+           </div>
+           <p className="text-[11px] text-muted-foreground leading-relaxed">
+             Estou disposto a receber emails com ofertas comerciais, bónus exclusivos e novidades da plataforma MozBet.
+           </p>
+        </div>
+      )}
 
       {/* MODAL PALAVRA-PASSE (SIMPLIFICADO) */}
       {showPasswordModal && (

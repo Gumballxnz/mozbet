@@ -67,106 +67,9 @@ function maskPlayerId(id: string): string {
   return id.slice(0, 4) + "***";
 }
 
-// ===== TEMPLATES DE MENSAGENS — mistura de ganhos, perdas e conversa casual =====
-const MESSAGE_TEMPLATES: Array<(id: string, amount: number, game: string) => string> = [
-  // Testemunhos de ganhos
-  (id, amount, game) => `Entrei com ${Math.floor(amount * 0.1)}MT e saquei ${amount}MT no ${game} 🔥`,
-  (id, amount, game) => `Ganhei ${amount}MT hoje no ${game}! Só entrei com ${Math.floor(amount * 0.15)}MT 💰`,
-  (id, amount, game) => `${amount}MT no ${game}!! Esta plataforma é real 🙌`,
-  (id, amount, game) => `Acabei de sacar ${amount}MT no ${game}, entrei com apenas ${Math.floor(amount * 0.08)}MT`,
-  (id, amount, game) => `${game} tá a pagar hoje!! Já fiz ${amount}MT 🚀`,
-  (id, amount, game) => `${amount}MT em 10 minutos no ${game}, quem não acredita experimenta`,
-  (id, amount, game) => `Entrei com 20MT e saí com ${amount}MT no ${game} 😂🔥`,
-  (id, amount, game) => `Já sacaram? Eu acabei de tirar ${amount}MT do ${game}`,
-  (id, amount, game) => `Meus ${amount}MT já caíram no M-Pesa! ${game} nunca falha`,
-  (id, amount, game) => `Primeiro dia aqui e já fiz ${amount}MT no ${game} 💚`,
-  (id, amount, game) => `Mais ${amount}MT no bolso graças ao ${game} 🤑`,
-  (id, amount, game) => `Com 50MT fiz ${amount}MT no ${game}`,
-  (id, amount, game) => `Depositei 100MT e tô com ${amount}MT agora só no ${game}`,
-  (id, amount, game) => `${amount}MT direto no M-Pesa, sem stress`,
-  (id, amount, game) => `Não acredito que fiz ${amount}MT num dia no ${game}!! 😱`,
-  (id, amount, game) => `${game} pagou-me ${amount}MT agora!! Obrigado MOZBET`,
 
-  // Mensagens de quem perdeu
-  (id, amount, game) => `Perdi 50MT no ${game} mas vou recuperar 😤`,
-  (id, amount, game) => `${game} me comeu hoje... amanhã volto mais forte`,
-  (id, amount, game) => `Tava a ganhar no ${game} e fiquei ganancioso, perdi tudo 💀`,
-  (id, amount, game) => `Não sacou a tempo no ${game}... aprendi a lição`,
-  (id, amount, game) => `Perdi 100MT no ${game} kkkk vou tentar o Mines agora`,
-  (id, amount, game) => `O ${game} tá difícil hoje, vou mudar de jogo`,
 
-  // Conversa casual / comunidade
-  (_id, _a, game) => `Alguém mais tá a jogar ${game}? Vamos trocar dicas`,
-  (_id, _a, _g) => `Boa noite pessoal, quem tá a jogar agora?`,
-  (_id, _a, _g) => `MOZBET é a melhor plataforma de Moçambique 💯`,
-  (_id, _a, game) => `Vou jogar mais uma rodada no ${game}, tô com sorte hoje`,
-  (_id, _a, _g) => `Quem diz que não se ganha aqui nunca tentou 😂`,
-  (_id, _a, _g) => `Saque caiu em 2 minutos no M-Pesa, incrível 🔥`,
-  (_id, _a, game) => `Minha estratégia no ${game}: entrar com pouco e sair na hora certa 🧠`,
-  (_id, _a, _g) => `Pessoal, boa sorte pra todos! 🍀`,
-  (_id, _a, game) => `${game} é viciante demais kkkk`,
-  (_id, _a, _g) => `Boa noite campeões! Quem já ganhou hoje? 🏆`,
-  (_id, _a, _g) => `Alguém no Aviator agora?`,
-  (_id, _a, _g) => `Já é o 3° saque hoje 😎 MOZBET não brinca`,
-  (_id, _a, game) => `Começando o dia no ${game}, desejem-me sorte! 🤞`,
-  (_id, _a, _g) => `Qual o melhor jogo pra começar? Sou novo aqui`,
-  (_id, _a, _g) => `Mines ou Aviator? Qual rende mais?`,
-  (_id, _a, game) => `${game} tá generoso hoje pessoal`,
-  (_id, _a, _g) => `Alguém sabe quando vão adicionar mais jogos?`,
-  (_id, _a, _g) => `Bom dia a todos 🌅 vamos lucrar!`,
-];
 
-// Motor Determinístico de Mensagens
-function getDeterministicChatMessages(count: number): ChatMessage[] {
-  const now = Date.now();
-  const currentSecond = Math.floor(now / 1000);
-  const results: ChatMessage[] = [];
-  
-  // Como o chat global tem uma velocidade que pode variar com o número de utilizadores,
-  // vamos gerar mensagens para cada 3 segundos como base determinística
-  for (let i = count; i >= 0; i--) {
-    const seed = currentSecond - (i * 3); // Mensagem a cada 3 segundos
-    
-    // Filtro para não gerar a CADA 3 segundos sempre, mas dar espaços realistas
-    const probability = (Math.abs(Math.sin(seed * 1111)) * 100) % 100;
-    if (probability > 70) continue; // 70% de chance de ter uma mensagem nestes 3s
-    
-    const pseudoRandom = (Math.abs(Math.sin(seed * 9999)) * 10000) % 1;
-    const templateIdx = Math.floor(pseudoRandom * MESSAGE_TEMPLATES.length);
-    const templateFn = MESSAGE_TEMPLATES[templateIdx];
-    
-    const avatarIdx = Math.floor((Math.abs(Math.cos(seed * 8888)) * 10000) % SITE_AVATARS.length);
-    const avatar = SITE_AVATARS[avatarIdx];
-    
-    const chars = "ABCDEF0123456789";
-    let playerId = "";
-    for (let j = 0; j < 8; j++) {
-      playerId += chars[Math.floor(((pseudoRandom * 100) + j) % chars.length)];
-    }
-    const maskedId = maskPlayerId(playerId);
-    
-    const gameIdx = Math.floor((Math.abs(Math.sin(seed * 7777)) * 10000) % GAME_POOL.length);
-    const game = GAME_POOL[gameIdx];
-    
-    const amounts = [150, 200, 350, 500, 750, 1000, 1200, 1500, 2000, 2500, 3000, 4500, 5000, 7500, 10000, 15000, 20000];
-    const amountIdx = Math.floor((Math.abs(Math.cos(seed * 6666)) * 10000) % amounts.length);
-    const amount = amounts[amountIdx];
-    
-    const messageText = templateFn(maskedId, amount, game.name);
-    
-    results.push({
-      id: `det-${seed}`,
-      user_id: `fake-${playerId}`,
-      username: maskedId,
-      message: messageText,
-      type: "fake_user",
-      avatar,
-      metadata: { game_id: game.id, game_name: game.name, amount },
-      created_at: new Date(seed * 1000).toISOString(),
-    });
-  }
-  return results;
-}
 
 // ===== COMPONENTE PRINCIPAL =====
 export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalProps) {
@@ -208,12 +111,21 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
   useEffect(() => {
     if (!isOpen) return;
 
-    // Se o chat estiver vazio, vamos preencher com mensagens determinísticas para não parecer morto
-    if (messages.length === 0) {
-      const initialMsgs = getDeterministicChatMessages(15);
-      setMessages(initialMsgs);
-    }
+    // 1. Carregar Histórico Real das últimas 50 mensagens
+    const loadHistory = async () => {
+      try {
+        const res = await fetch("/api/chat/history");
+        const data = await res.json();
+        if (data.history) {
+          setMessages(data.history);
+          setTimeout(scrollToBottom, 100);
+        }
+      } catch (err) {
+        console.error("Erro ao carregar histórico:", err);
+      }
+    };
 
+    loadHistory();
     joinRoom("chat_global");
 
     const handleMessage = (data: any) => {
@@ -232,38 +144,6 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
       leaveRoom("chat_global");
     };
   }, [isOpen, setMessages, scrollToBottom]);
-
-
-  // Anúncios de vitória do BOT MOZBET (mais espaçados)
-  useEffect(() => {
-    if (!isOpen) return;
-    const interval = setInterval(() => {
-      const g = GAME_POOL[Math.floor(Math.random() * GAME_POOL.length)];
-      const winAmount = Math.floor(Math.random() * 40000) + 500;
-      const playerId = generateFakeUsername();
-      const maskedId = maskPlayerId(playerId);
-
-      const newBotMsg: ChatMessage = {
-        id: `bot-${Date.now()}`,
-        user_id: "system-bot",
-        username: "MOZBET BOT",
-        message: `${maskedId} ganhou ${winAmount.toLocaleString("pt-MZ")} MT no ${g.name}!`,
-        type: "win_announcement",
-        metadata: {
-          username: maskedId,
-          amount: winAmount,
-          game_id: g.id,
-          game_name: g.name
-        },
-        created_at: new Date().toISOString()
-      };
-
-      setMessages([...useAppStore.getState().fakeChatMessages, newBotMsg].slice(-100));
-      setTimeout(scrollToBottom, 100);
-    }, 25000);
-
-    return () => clearInterval(interval);
-  }, [isOpen, setMessages]);
 
 
 

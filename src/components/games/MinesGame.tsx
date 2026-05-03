@@ -51,6 +51,7 @@ const MinesGame = ({ onClose, balance, onBet }: MinesGameProps) => {
     }
 
     if (balance < betAmount) {
+      playSound('notification');
       toast.error("Saldo insuficiente para realizar esta aposta.");
       return;
     }

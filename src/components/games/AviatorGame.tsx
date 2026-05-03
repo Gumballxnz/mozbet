@@ -236,7 +236,11 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
   const handleBet = async (boxIndex: number, amount: number) => {
     if (!isLoggedIn) { toast.error("Faça login para apostar!"); return; }
     if (phase !== "waiting") { toast.error("Aguarde a próxima ronda."); return; }
-    if (amount > balance) { toast.error("Saldo insuficiente!"); return; }
+    if (amount > balance) { 
+      playSound('notification');
+      toast.error("Saldo insuficiente!"); 
+      return; 
+    }
     
     try {
       const res = await fetch("/api/game/crash/play", {

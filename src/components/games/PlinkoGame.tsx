@@ -43,6 +43,7 @@ const PlinkoGame = ({ balance, onUpdateBalance, onBack }: Props) => {
     }
 
     if (bet > balance) {
+      playSound('notification');
       toast.error("Saldo insuficiente");
       return;
     }

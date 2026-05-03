@@ -43,6 +43,7 @@ const ChickenHighwayGame = ({ onClose, balance, onBet }: ChickenHighwayGameProps
 
   const handleStart = async () => {
     if (balance < betAmount) {
+      playSound('notification');
       toast.error("Saldo insuficiente");
       return;
     }

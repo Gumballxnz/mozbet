@@ -9,10 +9,13 @@ import {
   ChevronLeft, ChevronRight, Headphones, HelpCircle, Shield
 } from "lucide-react";
 import { useAppStore } from "@/lib/store";
+import { useTranslation } from "@/hooks/useTranslation";
 import { GAMES } from "@/lib/games";
 import { toast } from "sonner";
+import { Globe } from "lucide-react";
 
 export function DesktopSidebar() {
+  const { locale, setLocale } = useTranslation();
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -179,6 +182,25 @@ export function DesktopSidebar() {
         >
           <Headphones className="w-5 h-5 flex-shrink-0" />
           {!collapsed && <span className="text-sm font-medium">Suporte ao Vivo</span>}
+        </button>
+      </div>
+
+      {/* Seletor de Idioma */}
+      <div className="p-3 border-t border-white/5">
+        <button 
+          onClick={() => setLocale(locale === "pt" ? "en" : "pt")}
+          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg bg-surface hover:bg-white/5 transition-colors border border-white/5 ${collapsed ? "justify-center px-0" : "justify-between"}`}
+          title={collapsed ? "Mudar Idioma" : undefined}
+        >
+          <div className="flex items-center gap-2">
+            <Globe className="w-5 h-5 text-muted-foreground" />
+            {!collapsed && <span className="text-sm font-medium text-muted-foreground">Idioma</span>}
+          </div>
+          {!collapsed && (
+            <span className="text-[10px] font-bold bg-white/10 px-2 py-0.5 rounded text-white uppercase">
+              {locale}
+            </span>
+          )}
         </button>
       </div>
     </aside>

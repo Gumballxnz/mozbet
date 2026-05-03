@@ -51,7 +51,7 @@ interface AppState {
 
   // Chat Global
   fakeChatMessages: any[];
-  setFakeChatMessages: (messages: any[]) => void;
+  setFakeChatMessages: (messages: any[] | ((prev: any[]) => any[])) => void;
   
   // Jogo ativo
   activeGame: string | null;
@@ -112,7 +112,9 @@ export const useAppStore = create<AppState>((set) => ({
 
   // Chat Global
   fakeChatMessages: [],
-  setFakeChatMessages: (messages) => set({ fakeChatMessages: messages }),
+  setFakeChatMessages: (messages) => set((state) => ({ 
+    fakeChatMessages: typeof messages === "function" ? messages(state.fakeChatMessages) : messages 
+  })),
 
   // Jogo
   activeGame: null,

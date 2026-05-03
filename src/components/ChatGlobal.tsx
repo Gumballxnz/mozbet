@@ -155,16 +155,25 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
         schema: 'public', 
         table: 'chat_messages' 
       }, (payload) => {
-        console.log("Mensagem em tempo real recebida:", payload.new);
+        console.log("🚀 REALTIME: Nova mensagem recebida!", payload.new);
         const newMessage = payload.new as ChatMessage;
+        
+        // Atualizar o estado da store
         setMessages((prev: ChatMessage[]) => {
-          if (prev.find(m => m.id === newMessage.id)) return prev;
-          return [...prev, newMessage].slice(-100);
+          // Evitar duplicados
+          if (prev.some(m => m.id === newMessage.id)) return prev;
+          const updated = [...prev, newMessage].slice(-100);
+          return updated;
         });
-        if (isOpen) setTimeout(scrollToBottom, 50);
+
+        // Forçar scroll se o chat estiver aberto
+        if (isOpen) {
+          setTimeout(scrollToBottom, 100);
+        }
       })
-      .subscribe((status) => {
-        console.log("Status da subscrição Realtime:", status);
+      .subscribe((status, err) => {
+        console.log("📡 Realtime Status:", status);
+        if (err) console.error("❌ Erro Realtime:", err);
       });
 
     return () => {

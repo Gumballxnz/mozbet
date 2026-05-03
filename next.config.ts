@@ -17,7 +17,7 @@ const nextConfig: NextConfig = {
           { key: "X-XSS-Protection", value: "1; mode=block" },
           {
             key: "Content-Security-Policy",
-            value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' blob: data: https://res.cloudinary.com https://api.dicebear.com https://objectstorage.ca-montreal-1.oraclecloud.com; connect-src 'self' wss://*.supabase.co https://*.supabase.co ws://155.248.224.133:3001 http://155.248.224.133:3001; frame-ancestors 'self';",
+            value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' blob: data: https://api.dicebear.com https://objectstorage.ca-montreal-1.oraclecloud.com; connect-src 'self' wss://*.supabase.co https://*.supabase.co ws://155.248.224.133:3001 http://155.248.224.133:3001; frame-ancestors 'self';",
           },
           {
             key: "Permissions-Policy",
@@ -28,12 +28,16 @@ const nextConfig: NextConfig = {
     ];
   },
 
-  // Proxy WebSocket/Socket.io para a VPS para evitar erros de Mixed Content (HTTPS -> HTTP)
+  // Proxy WebSocket e Motores de Jogo para a VPS (Oracle Cloud)
   async rewrites() {
     return [
       {
         source: "/socket.io/:path*",
         destination: "http://155.248.224.133:3001/socket.io/:path*",
+      },
+      {
+        source: "/engine/:path*",
+        destination: "http://155.248.224.133:3001/engine/:path*",
       },
     ];
   },
@@ -45,8 +49,8 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "res.cloudinary.com",
-        pathname: "/dm3glrwax/**",
+        hostname: "api.dicebear.com",
+        pathname: "/**",
       },
       {
         protocol: "https",

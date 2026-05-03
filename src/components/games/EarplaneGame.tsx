@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { ArrowLeft, Menu, MessageCircle, Plane, Users, Minus, Plus } from "lucide-react";
 import { toast } from "sonner";
-import { startBgMusic } from "@/lib/sounds";
+import { playSound } from "@/lib/sounds";
 import { socket, joinRoom, leaveRoom } from "@/lib/socket";
 
 interface Props {
@@ -90,11 +90,13 @@ const EarplaneGame = ({ balance, onUpdateBalance, onBack }: Props) => {
         setCashed1(false);
         setCashed2(false);
         const startMs = new Date(data.started_at).getTime();
+        playSound('notification');
         setCountdown(Math.max(1, Math.ceil((startMs - Date.now()) / 1000)));
       } else if (data.status === "running") {
         setPhase("rising");
         startedAt.current = new Date(data.started_at).getTime();
       } else if (data.status === "crashed") {
+        playSound('crash');
         setPhase("crashed");
         setMultiplier(data.crash_point);
         fetchHistory();
@@ -118,12 +120,6 @@ const EarplaneGame = ({ balance, onUpdateBalance, onBack }: Props) => {
     }, 50);
     return () => clearInterval(interval);
   }, [phase]);
-
-  useEffect(() => {
-    const stop = startBgMusic([330, 392, 440, 494, 440, 392], 260, 0.03);
-    return stop;
-  }, []);
-
 
   const place = async (n: 1 | 2) => {
     const amt = n === 1 ? bet1 : bet2;
@@ -170,6 +166,7 @@ const EarplaneGame = ({ balance, onUpdateBalance, onBack }: Props) => {
       const data = await res.json();
       if (data.success) {
         onUpdateBalance(data.newBalance);
+        playSound('cashout');
         toast.success(`Ganhou ${(amt * multiplier).toFixed(2)} MZN!`);
       } else {
         toast.error(data.error || "Erro no cashout");

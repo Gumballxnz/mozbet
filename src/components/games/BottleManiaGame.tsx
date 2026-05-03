@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { X, Waves, Info, MousePointer2, Settings, Trophy, Anchor } from "lucide-react";
 import { toast } from "sonner";
-import { startBgMusic } from "@/lib/sounds";
+import { playSound } from "@/lib/sounds";
 
 interface BottleManiaGameProps {
   onClose: () => void;
@@ -29,7 +29,7 @@ const BottleManiaGame = ({ onClose, balance, onBet }: BottleManiaGameProps) => {
     
     setIsPlaying(true);
     setIsRevealing(true);
-    startBgMusic();
+    playSound('notification');
 
     try {
       const res = await fetch("/api/game/slot/play", {
@@ -51,10 +51,12 @@ const BottleManiaGame = ({ onClose, balance, onBet }: BottleManiaGameProps) => {
       setTimeout(() => {
         if (data.wins) {
           setMultiplier(data.multiplier);
+          playSound('win');
           toast.success(`Ganhou! ${data.multiplier}x`);
           onBet(data.newBalance); // Atualiza com o prêmio final
         } else {
           setMultiplier(0);
+          playSound('error');
           toast.error("Vazio!");
           onBet(data.newBalance);
         }

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { X, Trophy, Users, Info, Settings, Play, Shield, Clock } from "lucide-react";
 import { toast } from "sonner";
-import { startBgMusic } from "@/lib/sounds";
+import { playSound } from "@/lib/sounds";
 
 interface ChickenHighwayGameProps {
   onClose: () => void;
@@ -29,6 +29,7 @@ const ChickenHighwayGame = ({ onClose, balance, onBet }: ChickenHighwayGameProps
           if (next >= targetCrash) {
             setIsCrashed(true);
             setIsPlaying(false);
+            playSound('crash');
             toast.error(`A galinha foi atropelada! ${targetCrash.toFixed(2)}x`);
             setHistory(prevH => [targetCrash, ...prevH.slice(0, 4)]);
             return targetCrash;
@@ -59,7 +60,7 @@ const ChickenHighwayGame = ({ onClose, balance, onBet }: ChickenHighwayGameProps
         setIsPlaying(true);
         setIsCrashed(false);
         setMultiplier(1.0);
-        startBgMusic();
+        playSound('notification');
       } else {
         toast.error(data.error);
       }
@@ -78,10 +79,9 @@ const ChickenHighwayGame = ({ onClose, balance, onBet }: ChickenHighwayGameProps
         });
         const data = await res.json();
         if (data.success) {
-          toast.success(`Você ganhou ${(betAmount * multiplier).toFixed(2)} MT!`);
-          setIsPlaying(false);
           setHistory(prevH => [multiplier, ...prevH.slice(0, 4)]);
           onBet(data.newBalance);
+          playSound('cashout');
         }
       } catch (e) {
         toast.error("Erro na retirada.");

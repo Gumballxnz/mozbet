@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { X, Ship, Info, SwitchCamera, Settings, Fish, Wind } from "lucide-react";
 import { toast } from "sonner";
-import { startBgMusic } from "@/lib/sounds";
+import { playSound } from "@/lib/sounds";
 
 interface FishinatorGameProps {
   onClose: () => void;
@@ -28,6 +28,7 @@ const FishinatorGame = ({ onClose, balance, onBet }: FishinatorGameProps) => {
           if (next >= targetCrash) {
             setIsCrashed(true);
             setIsPlaying(false);
+            playSound('crash');
             toast.error(`O peixe fugiu! ${targetCrash.toFixed(2)}x`);
             setHistory(prevH => [targetCrash, ...prevH.slice(0, 5)]);
             return targetCrash;
@@ -58,7 +59,7 @@ const FishinatorGame = ({ onClose, balance, onBet }: FishinatorGameProps) => {
         setIsPlaying(true);
         setIsCrashed(false);
         setMultiplier(1.0);
-        startBgMusic();
+        playSound('notification');
       } else {
         toast.error(data.error);
       }
@@ -77,10 +78,9 @@ const FishinatorGame = ({ onClose, balance, onBet }: FishinatorGameProps) => {
         });
         const data = await res.json();
         if (data.success) {
-          toast.success(`Pescado! Você ganhou ${(betAmount * multiplier).toFixed(2)} MT!`);
-          setIsPlaying(false);
           setHistory(prevH => [multiplier, ...prevH.slice(0, 5)]);
           onBet(data.newBalance);
+          playSound('cashout');
         }
       } catch (e) {
         toast.error("Erro na retirada.");

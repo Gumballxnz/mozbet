@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { X, Train, Info, History, Play, Users, Gauge, Timer } from "lucide-react";
 import { toast } from "sonner";
-import { startBgMusic } from "@/lib/sounds";
+import { playSound } from "@/lib/sounds";
 
 interface SubwayCrashGameProps {
   onClose: () => void;
@@ -28,6 +28,7 @@ const SubwayCrashGame = ({ onClose, balance, onBet }: SubwayCrashGameProps) => {
           if (next >= targetCrash) {
             setIsCrashed(true);
             setIsPlaying(false);
+            playSound('crash');
             toast.error(`Pegou o trem! ${targetCrash.toFixed(2)}x`);
             setHistory(prevH => [targetCrash, ...prevH.slice(0, 5)]);
             return targetCrash;
@@ -58,7 +59,7 @@ const SubwayCrashGame = ({ onClose, balance, onBet }: SubwayCrashGameProps) => {
         setIsPlaying(true);
         setIsCrashed(false);
         setMultiplier(1.0);
-        startBgMusic();
+        playSound('notification');
       } else {
         toast.error(data.error);
       }
@@ -77,10 +78,9 @@ const SubwayCrashGame = ({ onClose, balance, onBet }: SubwayCrashGameProps) => {
         });
         const data = await res.json();
         if (data.success) {
-          toast.success(`Escapou! Você ganhou ${(betAmount * multiplier).toFixed(2)} MT!`);
-          setIsPlaying(false);
           setHistory(prevH => [multiplier, ...prevH.slice(0, 5)]);
-          onBet(data.newBalance); // Atualizar saldo
+          onBet(data.newBalance);
+          playSound('cashout');
         }
       } catch (e) {
         toast.error("Erro na retirada.");

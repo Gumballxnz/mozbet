@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { X, Trophy, History, Play, Users, Goal, Timer } from "lucide-react";
 import { toast } from "sonner";
-import { startBgMusic } from "@/lib/sounds";
+import { playSound } from "@/lib/sounds";
 
 interface FootballXGameProps {
   onClose: () => void;
@@ -28,6 +28,7 @@ const FootballXGame = ({ onClose, balance, onBet }: FootballXGameProps) => {
           if (next >= targetCrash) {
             setIsCrashed(true);
             setIsPlaying(false);
+            playSound('crash');
             toast.error(`Perdeu a bola! ${targetCrash.toFixed(2)}x`);
             setHistory(prevH => [targetCrash, ...prevH.slice(0, 5)]);
             return targetCrash;
@@ -58,7 +59,7 @@ const FootballXGame = ({ onClose, balance, onBet }: FootballXGameProps) => {
         setIsPlaying(true);
         setIsCrashed(false);
         setMultiplier(1.0);
-        startBgMusic();
+        playSound('notification');
       } else {
         toast.error(data.error);
       }
@@ -77,10 +78,9 @@ const FootballXGame = ({ onClose, balance, onBet }: FootballXGameProps) => {
         });
         const data = await res.json();
         if (data.success) {
-          toast.success(`GOL! Você ganhou ${(betAmount * multiplier).toFixed(2)} MT!`);
-          setIsPlaying(false);
           setHistory(prevH => [multiplier, ...prevH.slice(0, 5)]);
           onBet(data.newBalance);
+          playSound('cashout');
         }
       } catch (e) {
         toast.error("Erro na retirada.");

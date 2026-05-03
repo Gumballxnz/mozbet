@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { X, Trophy, Users, History, Info, Play, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
-import { startBgMusic } from "@/lib/sounds";
+import { playSound } from "@/lib/sounds";
 
 interface AugustusCrashGameProps {
   onClose: () => void;
@@ -29,6 +29,7 @@ const AugustusCrashGame = ({ onClose, balance, onBet }: AugustusCrashGameProps) 
           if (next >= targetCrash) {
             setIsCrashed(true);
             setIsPlaying(false);
+            playSound('crash');
             toast.error(`Crashou em ${targetCrash.toFixed(2)}x`);
             setHistory(prevH => [targetCrash, ...prevH.slice(0, 5)]);
             return targetCrash;
@@ -66,7 +67,7 @@ const AugustusCrashGame = ({ onClose, balance, onBet }: AugustusCrashGameProps) 
         setIsPlaying(true);
         setIsCrashed(false);
         setMultiplier(1.0);
-        startBgMusic();
+        playSound('notification');
       } else {
         toast.error(data.error);
       }
@@ -85,10 +86,9 @@ const AugustusCrashGame = ({ onClose, balance, onBet }: AugustusCrashGameProps) 
         });
         const data = await res.json();
         if (data.success) {
-          toast.success(`Você ganhou ${(betAmount * multiplier).toFixed(2)} MT!`);
-          setIsPlaying(false);
           setHistory(prevH => [multiplier, ...prevH.slice(0, 5)]);
           onBet(data.newBalance);
+          playSound('cashout');
         }
       } catch (e) {
         toast.error("Erro na retirada.");

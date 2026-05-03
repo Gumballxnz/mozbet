@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import crypto from "crypto";
 import { verifyToken, supabaseAdmin } from "@/lib/auth-server";
 import { validateBet, deductBalance, creditBalance, shouldPlayerWin } from "@/lib/game-controller";
 

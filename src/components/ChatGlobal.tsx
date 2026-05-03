@@ -178,8 +178,10 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
         if (isOpen) setTimeout(scrollToBottom, 100);
       })
       .subscribe((status, err) => {
-
-        if (err) console.error("❌ Erro Realtime:", err);
+        // Silenciar erros de fechamento normal (código 1000)
+        if (err && !err.message?.includes("1000")) {
+          console.error("❌ Erro Realtime:", err);
+        }
       });
 
     return () => {

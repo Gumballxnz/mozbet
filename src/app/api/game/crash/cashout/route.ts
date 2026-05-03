@@ -56,8 +56,44 @@ export async function POST(req: Request) {
         });
     }
 
-    // 2. Lógica para jogos individuais
-    const winAmount = Number((Number(betAmount) * Number(multiplier)).toFixed(2));
+    // 2. Lógica para jogos individuais (Chicken Highway, Subway, etc)
+    // Buscar aposta activa e o seu respectivo segredo (crash_point) no banco
+    const { data: bet, error: betErr } = await supabaseAdmin
+        .from("bets")
+        .select("id, amount, status, round_id, game_rounds(crash_point)")
+        .eq("user_id", payload.id)
+        .eq("game_id", gameId)
+        .eq("status", "active")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
+
+    if (betErr || !bet) {
+        return NextResponse.json({ error: "Nenhuma aposta activa encontrada." }, { status: 400 });
+    }
+
+    const serverCrashPoint = (bet.game_rounds as any).crash_point;
+    
+    // VALIDACÃO CRÍTICA: O utilizador não pode levantar mais do que o servidor definiu
+    if (Number(multiplier) > serverCrashPoint) {
+        // Se o utilizador tentar burlar enviando um multiplicador maior que o crash real,
+        // ele perde a aposta imediatamente.
+        await supabaseAdmin.from("bets").update({ status: "lost" }).eq("id", bet.id);
+        return NextResponse.json({ error: "Tentativa de fraude detectada. Aposta perdida." }, { status: 400 });
+    }
+
+    const winAmount = Number((Number(bet.amount) * Number(multiplier)).toFixed(2));
+    
+    // Marcar como ganha
+    await supabaseAdmin
+        .from("bets")
+        .update({ 
+            status: "won", 
+            cashout_multiplier: Number(multiplier),
+            win_amount: winAmount 
+        })
+        .eq("id", bet.id);
+
     const newBalance = await creditBalance(payload.id, winAmount);
 
     return NextResponse.json({

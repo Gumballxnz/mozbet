@@ -292,7 +292,6 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col lg:flex-row bg-[#0A0A0A] font-sans text-white">
-      {/* HEADER MOBILE (apenas vísivel no topo ecrãs pequenos) */}
       <div className="lg:hidden h-14 bg-[#1A1D27] flex items-center justify-between px-4 shrink-0 shadow-lg z-10 border-b border-white/5">
         <button onClick={onBack} className="text-gray-400 hover:text-white p-2 -ml-2"><ArrowLeft size={20} /></button>
         <img src="/api/img/banner-aviator" alt="Aviator" className="h-6 opacity-80 mix-blend-screen" />
@@ -343,9 +342,7 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
 
       {/* ÁREA CENTRAL E DIREITA */}
       <div className="flex-1 flex flex-col bg-[#101116]">
-        {/* HEADER DESKTOP APENAS (Sem Saldo Duplicado) */}
         <div className="hidden lg:flex h-14 bg-[#1A1D27] justify-end items-center px-6 border-b border-[#2A2F40]">
-           {/* Removido o saldo duplicado conforme o pedido. O saldo global já está visível no topo da página. */}
         </div>
 
         {/* HISTÓRICO DE RONDAS */}

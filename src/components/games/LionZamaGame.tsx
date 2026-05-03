@@ -173,10 +173,7 @@ const LionZamaGame = ({ balance, onUpdateBalance, onBack }: LionZamaProps) => {
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <div className="bg-purple-900/40 backdrop-blur-lg px-4 py-2 rounded-2xl border border-fuchsia-500/30 flex items-center gap-2 shadow-[0_0_15px_rgba(168,85,247,0.2)]">
-            <Coins className="text-fuchsia-400" size={16} />
-            
-          </div>
+          {/* Saldo removido daqui para evitar duplicação com a Navbar global */}
         </div>
       </div>
 

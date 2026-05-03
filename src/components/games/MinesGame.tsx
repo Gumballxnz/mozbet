@@ -201,9 +201,6 @@ const MinesGame = ({ onClose, balance, onBet }: MinesGameProps) => {
           <span className="font-black italic tracking-tighter text-xl">MINES</span>
         </div>
         <div className="flex items-center gap-4">
-          <div className="bg-white/5 px-3 py-1.5 rounded-full border border-white/10">
-            
-          </div>
           <button onClick={onClose} className="p-1 hover:bg-white/10 rounded-full transition-colors">
             <X size={24} />
           </button>

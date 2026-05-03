@@ -100,10 +100,6 @@ const ChickenHighwayGame = ({ onClose, balance, onBet }: ChickenHighwayGameProps
           <span className="font-black italic tracking-tighter text-xl">CHICKEN HIGHWAY</span>
         </div>
         <div className="flex items-center gap-3">
-          <div className="bg-white/5 px-3 py-1.5 rounded-full border border-white/10 flex items-center gap-2">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Live</span>
-          </div>
           <button onClick={onClose} className="p-1 hover:bg-white/10 rounded-full transition-colors">
             <X size={24} />
           </button>

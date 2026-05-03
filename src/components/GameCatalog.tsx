@@ -1,29 +1,34 @@
 "use client";
 
 import { useTranslation } from "@/hooks/useTranslation";
-import { Gamepad2, ChevronRight, Heart, LayoutGrid, Flame, Clock, Swords, Trophy } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { Gamepad2, ChevronRight, Heart, LayoutGrid, Flame, Clock, Swords, Trophy, Cherry } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAppStore } from "@/lib/store";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 
 export function GameCatalog() {
   const { t } = useTranslation();
   const { isLoggedIn } = useAppStore();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const catalogRef = useRef<HTMLDivElement>(null);
   
   const [games, setGames] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState("all");
 
-  const filters = [
-    { id: "all", label: "Todos os Jogos", icon: Gamepad2 },
-    { id: "casino", label: "Cassino", icon: LayoutGrid },
-    { id: "popular", label: "Popular", icon: Flame },
-    { id: "new", label: "Novos Jogos", icon: Clock },
-    { id: "battles", label: "Batalhas", icon: Swords },
-    { id: "sports", label: "Esportes", icon: Trophy },
-  ];
+  // Sincronizar filtro com a URL (Sidebar)
+  useEffect(() => {
+    const category = searchParams.get("category");
+    if (category) {
+      setActiveFilter(category);
+      // Scroll suave para os jogos se houver uma categoria selecionada
+      catalogRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    } else {
+      setActiveFilter("all");
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     async function loadGames() {
@@ -77,8 +82,16 @@ export function GameCatalog() {
     return cat.includes(activeFilter);
   });
 
+  const filters = [
+    { id: "all", label: "Todos os Jogos", icon: Gamepad2 },
+    { id: "crash", label: "Crash Games", icon: Flame },
+    { id: "casino", label: "Cassino", icon: LayoutGrid },
+    { id: "slots", label: "Slots", icon: Cherry },
+    { id: "popular", label: "Popular", icon: Flame },
+  ];
+
   return (
-    <div className="px-3 pt-2 pb-6">
+    <div ref={catalogRef} className="px-3 pt-2 pb-6">
       {/* Filtros em Barra Horizontal com Scroll */}
       <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar pb-4 -mx-3 px-3">
         {filters.map((filter) => {

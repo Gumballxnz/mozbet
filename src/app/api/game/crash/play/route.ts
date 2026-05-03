@@ -66,19 +66,47 @@ export async function POST(req: Request) {
       });
     }
 
-    // 4. Lógica para jogos individuais (se houver algum)
+    // 4. Lógica para jogos individuais (Chicken Highway, Subway, etc)
     const wins = shouldPlayerWin(payload.id);
     let finalCrash = 1.00;
     if (wins) {
-      finalCrash = Number((2.0 + Math.random() * 13.0).toFixed(2));
+      finalCrash = Number((1.5 + Math.random() * 8.5).toFixed(2));
     } else {
-      finalCrash = Number((1.00 + Math.random() * 0.20).toFixed(2));
+      finalCrash = Number((1.00 + Math.random() * 0.40).toFixed(2));
     }
+
+    // Criar uma "ronda privada" para este jogo individual para guardar o segredo do servidor
+    const { data: round, error: roundErr } = await supabaseAdmin
+      .from("game_rounds")
+      .insert({
+        game_id: gameId,
+        status: "crashed", // Já definimos o fim
+        crash_point: finalCrash,
+        server_seed: crypto.randomBytes(16).toString("hex"),
+      })
+      .select()
+      .single();
+
+    if (roundErr) throw roundErr;
+
+    // Criar a aposta vinculada a este segredo
+    const { error: betErr } = await supabaseAdmin
+      .from("bets")
+      .insert({
+        user_id: payload.id,
+        round_id: round.id,
+        game_id: gameId,
+        amount: Number(betAmount),
+        status: "active"
+      });
+
+    if (betErr) throw betErr;
 
     return NextResponse.json({
       success: true,
       newBalance,
       crashPoint: finalCrash,
+      roundId: round.id,
       gameId
     });
 

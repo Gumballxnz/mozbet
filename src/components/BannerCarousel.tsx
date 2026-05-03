@@ -18,7 +18,23 @@ interface Banner {
 export function BannerCarousel({ initialBanners }: { initialBanners: Banner[] }) {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [banners, setBanners] = useState<Banner[]>(initialBanners);
+  const [serverOffset, setServerOffset] = useState(0);
   const router = useRouter();
+
+  // Sincroniza a hora com o servidor para o carrossel ser global de verdade (Ponto de Tempo)
+  useEffect(() => {
+    const syncTime = async () => {
+      try {
+        const start = Date.now();
+        const res = await fetch("/api/time");
+        const { serverTime } = await res.json();
+        const end = Date.now();
+        const latency = (end - start) / 2; // Estima latência da rede
+        setServerOffset(serverTime - (end - latency));
+      } catch (e) {}
+    };
+    syncTime();
+  }, []);
 
   // Se initialBanners vier vazio por alguma falha do SSR, tenta carregar no client
   useEffect(() => {
@@ -76,7 +92,7 @@ export function BannerCarousel({ initialBanners }: { initialBanners: Banner[] })
     if (banners.length <= 1) return;
     
     const syncCarousel = () => {
-      const now = Date.now();
+      const now = Date.now() + serverOffset;
       const slideIndex = Math.floor(now / 5000) % banners.length;
       setCurrentSlide(slideIndex);
     };

@@ -37,7 +37,7 @@ export default function AdminGamesPage() {
       if (data && data.length > 0) {
         setGames(data);
         const origMap: Record<string, GameData> = {};
-        data.forEach(g => { origMap[g.id] = { ...g }; });
+        data.forEach((g: GameData) => { origMap[g.id] = { ...g }; });
         setOriginals(origMap);
       } else {
         setGames([]);

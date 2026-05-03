@@ -7,7 +7,9 @@ import { jwtVerify } from "jose";
 const ALLOWED_ORIGINS = [
   "http://localhost:3000",
   "http://localhost:3001",
-  "https://mozbet-production.vercel.app", // Substituir pelo domínio final real
+  "https://mozbet.online",
+  "https://www.mozbet.online",
+  "https://mozbet-test.vercel.app",
 ];
 
 export async function middleware(request: NextRequest) {
@@ -22,9 +24,9 @@ export async function middleware(request: NextRequest) {
     
     // Se for um pedido de outra origem e não estiver na lista permitida, nem for da vercel, bloqueia!
     if (origin && !ALLOWED_ORIGINS.includes(origin) && !isLocalhost && !isVercel) {
-      console.warn(`[SEGURANÇA] Bloqueio de Clone/API Request externo: ${origin}`);
+      console.warn(`[SEGURANÇA] Bloqueio de Clone/API Request externo: Origin=${origin} URL=${request.url}`);
       return new NextResponse(
-        JSON.stringify({ error: "Acesso à API bloqueado por política CORS estrita." }),
+        JSON.stringify({ error: "Acesso à API bloqueado por política CORS estrita.", origin }),
         { 
           status: 403, 
           headers: { "Content-Type": "application/json" } 

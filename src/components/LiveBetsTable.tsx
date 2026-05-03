@@ -49,7 +49,10 @@ export function LiveBetsTable() {
          const bet = payload.new;
          if (isMounted.current) {
            // Busca o nome e banner do jogo real da nossa lista local para ser rápido
-           const game = GAMES.find(g => g.id === bet.game_id) || { name: bet.game_id, banner: `/api/img/banner-${bet.game_id}` };
+                       const game = GAMES.find(g => g.id === bet.game_id) || { 
+              name: bet.game_id.toUpperCase(), 
+              banner: `https://objectstorage.ca-montreal-1.oraclecloud.com/n/ax44xafhjvwf/b/mozbet-assets/o/games/${bet.game_id}.webp` 
+            };
            
            const realBet = {
                game: game.name,

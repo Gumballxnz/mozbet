@@ -4,7 +4,7 @@ import crypto from "crypto";
 
 // Webhook da Resend — recebe notificações sobre emails enviados
 // Configurado em: https://resend.com/webhooks
-// URL: https://mozbet-test.vercel.app/api/webhooks/resend
+// URL: https://mozbet.online/api/webhooks/resend
 // Signing Secret guardado em RESEND_WEBHOOK_SECRET
 
 // Verificar assinatura do webhook para garantir que vem da Resend

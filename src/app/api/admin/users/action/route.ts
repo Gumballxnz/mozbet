@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
                  ? `<div style="font-family: sans-serif; padding: 20px;">
                      <h2>Promoção a Administrador 🎉</h2>
                      <p>Parabéns! A sua conta foi promovida a Administrador na plataforma MozBet pelo dono do projeto.</p>
-                     <p>Já tem os acessos necessários. Pode entrar no Painel de Controlo em <a href="https://mozbet-test.vercel.app/admin">mozbet-test.vercel.app/admin</a>.</p>
+                     <p>Já tem os acesos necessários. Pode entrar no Painel de Controlo em <a href="https://mozbet.online/admin">mozbet.online/admin</a>.</p>
                     </div>`
                  : `<div style="font-family: sans-serif; padding: 20px;">
                      <h2>Aviso de Privilégios ⚠️</h2>
@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
                    "Content-Type": "application/json"
                  },
                  body: JSON.stringify({
-                   from: "MozBet RH <onboarding@resend.dev>",
+                   from: "MozBet RH <suporte@mozbet.online>",
                    to: [targetUser.email],
                    subject: emailSubject,
                    html: emailHtml

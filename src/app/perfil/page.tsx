@@ -44,6 +44,7 @@ export default function PerfilPage() {
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [passwordMethod, setPasswordMethod] = useState<"sms" | "email">("email");
   const [passwordOtp, setPasswordOtp] = useState("");
+  const [newPassword, setNewPassword] = useState("");
   const [passwordStep, setPasswordStep] = useState<"choose" | "verify" | "done">("choose");
 
   if (!user) {
@@ -59,6 +60,9 @@ export default function PerfilPage() {
   const toUnlock = user.unlockedBalance || 0.00;
   const vipLevel = user.vipLevel || 1;
 
+  // LÓGICA DE MUDANÇAS REAIS
+  const hasChanges = (email !== (user.email || "")) || (selectedAvatar !== (user.avatar || fallbackAvatar));
+
   const handleSimulatedWithdraw = () => {
     toast.info("Processando levantamento...", {
       description: "Esta funcionalidade está em modo de simulação. O seu pedido foi registado com sucesso!",
@@ -66,7 +70,9 @@ export default function PerfilPage() {
     });
   };
 
-  const handleSave = async () => {
+  const handleSave = async (forceAvatar?: string) => {
+    const avatarToSave = forceAvatar || selectedAvatar;
+    
     // 1. Se o email mudou, precisamos de enviar e validar um OTP
     const isNewEmail = email && email.includes("@") && email !== (user?.email || "");
     
@@ -91,19 +97,13 @@ export default function PerfilPage() {
       return;
     }
 
-    // 2. Se já estamos a mostrar o OTP, validamos tudo
-    if (showOtpInput && !emailOtp) {
-      toast.error("Introduz o código de verificação.");
-      return;
-    }
-
     setIsSaving(true);
     try {
       const res = await fetch("/api/profile/update", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
-          avatar: selectedAvatar, 
+          avatar: avatarToSave, 
           email: isNewEmail ? email : undefined,
           otp: showOtpInput ? emailOtp : undefined 
         }),
@@ -112,11 +112,59 @@ export default function PerfilPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Falha ao salvar");
       
-      toast.success("Perfil atualizado com sucesso!");
+      toast.success(forceAvatar ? "Avatar atualizado!" : "Perfil atualizado com sucesso!");
       setShowAvatarPicker(false);
       setShowOtpInput(false);
       setIsEmailEditing(false);
       setTimeout(() => window.location.reload(), 800);
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleRequestPasswordOTP = async () => {
+    if (!user.email) {
+      toast.error("Precisas de registar um e-mail primeiro.");
+      return;
+    }
+    setIsSaving(true);
+    try {
+      const res = await fetch("/api/auth/password-otp", { method: "POST" });
+      if (!res.ok) {
+         const d = await res.json();
+         throw new Error(d.error || "Erro ao enviar código.");
+      }
+      toast.success("Código enviado via Resend!");
+      setPasswordStep("verify");
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handlePasswordResetVerify = async () => {
+    if (!passwordOtp || !newPassword) {
+      toast.error("Preencha todos os campos.");
+      return;
+    }
+    setIsSaving(true);
+    try {
+      const res = await fetch("/api/auth/password-update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ otp: passwordOtp, newPassword }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Erro ao atualizar senha.");
+      
+      toast.success("Palavra-passe atualizada!");
+      setShowPasswordModal(false);
+      setPasswordStep("choose");
+      setPasswordOtp("");
+      setNewPassword("");
     } catch (err: any) {
       toast.error(err.message);
     } finally {
@@ -204,7 +252,11 @@ export default function PerfilPage() {
           </div>
           <div className="mt-4 flex gap-2">
             <Button variant="ghost" className="flex-1 text-xs" onClick={() => setShowAvatarPicker(false)}>Cancelar</Button>
-            <Button className="flex-1 bg-primary text-black font-bold text-xs" onClick={handleSave} disabled={isSaving}>
+            <Button 
+               className="flex-1 bg-primary text-black font-bold text-xs" 
+               onClick={() => handleSave(selectedAvatar)} 
+               disabled={isSaving || selectedAvatar === (user.avatar || fallbackAvatar)}
+            >
               {isSaving ? "A guardar..." : "Confirmar"}
             </Button>
           </div>
@@ -290,7 +342,7 @@ export default function PerfilPage() {
                 value={email}
                 onChange={(e) => {
                   setEmail(e.target.value);
-                  if (showOtpInput) setShowOtpInput(false); // Reset se mudar o email após erro
+                  if (showOtpInput) setShowOtpInput(false);
                 }}
                 disabled={!isEmailEditing || showOtpInput}
                 placeholder="seu.email@exemplo.com"
@@ -319,8 +371,8 @@ export default function PerfilPage() {
                   </Button>
                   <Button 
                     className="h-12 bg-primary text-black font-bold text-xs px-6" 
-                    onClick={handleSave}
-                    disabled={isSaving}
+                    onClick={() => handleSave()}
+                    disabled={isSaving || (email === (user.email || ""))}
                   >
                     {isSaving ? "..." : (showOtpInput ? "CONFIRMAR" : "GUARDAR")}
                   </Button>
@@ -372,7 +424,7 @@ export default function PerfilPage() {
       </div>
 
       {/* CHECKBOX MARKETING (Apenas visível se o utilizador não tiver email ou estiver a editar um vazio) */}
-      {(!user.email || isEmailEditing) && (
+      {(!user.email || (isEmailEditing && !user.email)) && (
         <div 
            className="flex items-start gap-3 p-2 cursor-pointer group"
            onClick={() => setCommercialOptIn(!commercialOptIn)}
@@ -386,48 +438,67 @@ export default function PerfilPage() {
         </div>
       )}
 
-      {/* MODAL PALAVRA-PASSE (SIMPLIFICADO) */}
+      {/* MODAL PALAVRA-PASSE (REAL) */}
       {showPasswordModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in">
           <div className="bg-[#1a1b23] border border-white/10 rounded-3xl p-6 w-full max-w-sm space-y-6 shadow-2xl">
             <div className="space-y-1">
               <h3 className="font-black text-xl text-white">Nova Senha</h3>
-              <p className="text-xs text-muted-foreground">Escolha como deseja validar a alteração.</p>
+              <p className="text-xs text-muted-foreground">
+                {passwordStep === "choose" ? "Escolha o método de envio." : "Insira o código enviado para o seu e-mail."}
+              </p>
             </div>
             
-            <div className="space-y-3">
-              <Button 
-                variant="outline" 
-                className="w-full h-14 justify-start gap-4 border-white/5 bg-black/40 hover:bg-white/5 rounded-2xl"
-                onClick={() => setPasswordMethod("email")}
-              >
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${passwordMethod === "email" ? "bg-primary text-black" : "bg-white/5 text-gray-400"}`}>
-                  <Mail size={20} />
-                </div>
-                <div className="text-left">
-                  <p className="text-sm font-bold text-white">Via E-mail</p>
-                  <p className="text-[10px] text-muted-foreground">{user.email || "Não configurado"}</p>
-                </div>
-              </Button>
-
-              <Button 
-                variant="outline" 
-                className="w-full h-14 justify-start gap-4 border-white/5 bg-black/40 hover:bg-white/5 rounded-2xl"
-                onClick={() => setPasswordMethod("sms")}
-              >
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${passwordMethod === "sms" ? "bg-primary text-black" : "bg-white/5 text-gray-400"}`}>
-                  <Phone size={20} />
-                </div>
-                <div className="text-left">
-                  <p className="text-sm font-bold text-white">Via SMS</p>
-                  <p className="text-[10px] text-muted-foreground">+258 {user.phone}</p>
-                </div>
-              </Button>
-            </div>
+            {passwordStep === "choose" ? (
+              <div className="space-y-3">
+                <Button 
+                  variant="outline" 
+                  className="w-full h-14 justify-start gap-4 border-white/5 bg-black/40 hover:bg-white/5 rounded-2xl"
+                  onClick={handleRequestPasswordOTP}
+                  disabled={isSaving}
+                >
+                  <div className="w-10 h-10 rounded-xl bg-primary text-black flex items-center justify-center">
+                    <Mail size={20} />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-sm font-bold text-white">Via E-mail (Resend)</p>
+                    <p className="text-[10px] text-muted-foreground">{user.email || "Não configurado"}</p>
+                  </div>
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <Input 
+                  type="password"
+                  placeholder="Nova Senha"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="bg-black/40 border-white/10 h-12 rounded-xl text-white"
+                />
+                <Input 
+                  placeholder="Código OTP (6 dígitos)"
+                  value={passwordOtp}
+                  onChange={(e) => setPasswordOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  className="bg-black/40 border-primary/30 h-12 rounded-xl text-white text-center font-black tracking-widest"
+                />
+              </div>
+            )}
 
             <div className="flex gap-3 pt-2">
-              <Button variant="ghost" className="flex-1 h-12 font-bold" onClick={() => setShowPasswordModal(false)}>CANCELAR</Button>
-              <Button className="flex-1 h-12 bg-primary text-black font-black" onClick={() => toast.info("Código enviado!")}>ENVIAR</Button>
+              <Button variant="ghost" className="flex-1 h-12 font-bold" onClick={() => { setShowPasswordModal(false); setPasswordStep("choose"); }}>CANCELAR</Button>
+              {passwordStep === "choose" ? (
+                 <Button className="flex-1 h-12 bg-primary text-black font-black" onClick={handleRequestPasswordOTP} disabled={isSaving}>
+                   {isSaving ? "..." : "ENVIAR"}
+                 </Button>
+              ) : (
+                 <Button 
+                   className="flex-1 h-12 bg-primary text-black font-black" 
+                   onClick={handlePasswordResetVerify} 
+                   disabled={isSaving || !passwordOtp || !newPassword}
+                 >
+                   {isSaving ? "..." : "CONFIRMAR"}
+                 </Button>
+              )}
             </div>
           </div>
         </div>

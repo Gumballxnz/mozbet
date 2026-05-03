@@ -23,7 +23,8 @@ const AVATARS = [
 ];
 
 export default function PerfilPage() {
-  const { user, logout, balance, setDepositOpen } = useAppStore();
+  const { user, logout, setDepositOpen } = useAppStore();
+  const balance = user?.balance || 0;
   const router = useRouter();
   
   const fallbackAvatar = user?.id 

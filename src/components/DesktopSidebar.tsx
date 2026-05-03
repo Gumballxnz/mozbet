@@ -53,6 +53,12 @@ export function DesktopSidebar() {
         action: {
           label: "Depositar",
           onClick: () => useAppStore.getState().setDepositOpen(true),
+        },
+        actionButtonStyle: {
+          backgroundColor: "#00ff7f",
+          color: "#000",
+          fontWeight: "bold",
+          padding: "10px 20px",
         }
       });
       return;

@@ -77,6 +77,12 @@ export function GameCatalog() {
         action: {
           label: "Depositar",
           onClick: () => useAppStore.getState().setDepositOpen(true),
+        },
+        actionButtonStyle: {
+          backgroundColor: "#00ff7f",
+          color: "#000",
+          fontWeight: "bold",
+          padding: "8px 16px",
         }
       });
       return;

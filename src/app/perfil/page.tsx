@@ -80,6 +80,16 @@ export default function PerfilPage() {
       toast.error("Saldo insuficiente para processar o saque", {
         description: "O seu saldo está muito baixo. É necessário fazer um depósito mínimo para validar a sua conta e libertar o seu primeiro levantamento.",
         duration: 6000,
+        action: {
+          label: "Depositar",
+          onClick: () => useAppStore.getState().setDepositOpen(true),
+        },
+        actionButtonStyle: {
+          backgroundColor: "#00ff7f",
+          color: "#000",
+          fontWeight: "bold",
+          padding: "10px 20px",
+        }
       });
       setIsWithdrawing(false);
     }, 1500);

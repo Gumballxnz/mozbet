@@ -28,16 +28,12 @@ const nextConfig: NextConfig = {
     ];
   },
 
-  // Proxy WebSocket e Motores de Jogo para a VPS (Oracle Cloud)
+  // Proxy WebSocket para a VPS (Oracle Cloud)
   async rewrites() {
     return [
       {
         source: "/socket.io/:path*",
         destination: "http://155.248.224.133:3001/socket.io/:path*",
-      },
-      {
-        source: "/engine/:path*",
-        destination: "http://155.248.224.133:3001/engine/:path*",
       },
     ];
   },

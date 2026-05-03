@@ -63,10 +63,12 @@ function maskId(username: string): string {
   if (!username) return "USER***";
   // Remove qualquer traço de UUID
   const cleanId = username.includes("-") ? username.split("-")[0] : username;
-  // Se por acaso vier um número de telefone, ignoramos e mostramos um ID genérico
-  if (/^\d{8,}/.test(cleanId)) {
-    return "MZ" + Math.abs(cleanId.split('').reduce((a,b)=>(((a<<5)-a)+b.charCodeAt(0))|0,0)).toString(16).toUpperCase().slice(0,4) + "***";
+  
+  // Se começar com número (telemóvel), transformamos num ID MZ
+  if (/^\d/.test(cleanId)) {
+    return "MZ" + cleanId.slice(0, 3).toUpperCase() + "***";
   }
+  
   return cleanId.slice(0, 4).toUpperCase() + "***";
 }
 

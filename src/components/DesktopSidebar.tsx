@@ -49,7 +49,7 @@ export function DesktopSidebar() {
 
     if (!user?.isAdmin && (user?.balance || 0) <= 0) {
       toast.error("Saldo Insuficiente", {
-        description: "Você precisa fazer um depósito para entrar nos jogos.",
+        description: "Adicione saldo à sua conta para jogar.",
         action: {
           label: "Depositar",
           onClick: () => useAppStore.getState().setDepositOpen(true),

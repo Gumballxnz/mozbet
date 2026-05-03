@@ -6,6 +6,16 @@ import { supabase } from "@/lib/supabase";
 import { socket } from "@/lib/socket";
 import { GAMES } from "@/lib/games";
 
+// Mostrar apenas ID Mascarado (Sincronizado com o Chat)
+function maskId(username: string): string {
+  if (!username) return "USER***";
+  const cleanId = username.includes("-") ? username.split("-")[0] : username;
+  if (/^\d/.test(cleanId)) {
+    return "MZ" + cleanId.slice(0, 3).toUpperCase() + "***";
+  }
+  return cleanId.slice(0, 4).toUpperCase() + "***";
+}
+
 export function LiveBetsTable() {
   const [activities, setActivities] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<"all" | "high_rollers" | "biggest_wins">("all");
@@ -154,7 +164,7 @@ export function LiveBetsTable() {
                     <div className="flex items-center gap-1 md:gap-1.5">
                       <BadgeCheck size={12} className={`md:w-[14px] md:h-[14px] ${act.isLoss ? "text-muted-foreground" : "text-primary"}`} />
                       <span className="text-[10px] md:text-xs font-bold text-gray-300">
-                        {act.id}
+                        {maskId(act.id)}
                       </span>
                     </div>
                   </td>

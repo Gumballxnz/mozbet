@@ -55,7 +55,9 @@ const GAME_POOL = [
 // IDs Partilhados com a Tabela de Apostas para consistência
 const SHARED_FAKE_IDS = [
   "A8B2C4F1", "F9D3E2A0", "B7C1D9F4", "E4A2B5C1", "D1F8E3A2",
-  "C5B4A1F9", "8F2D1A3B", "3C9E4B1F", "2A5B8C1D", "1E7F3D2A"
+  "C5B4A1F9", "8F2D1A3B", "3C9E4B1F", "2A5B8C1D", "1E7F3D2A",
+  "9B1C3A5D", "7F2A4C1B", "5D8E1F2A", "3A6B9C2D", "1C4E7F9A",
+  "A1B2C3D4", "E5F6A7B8", "C9D0E1F2", "A3B4C5D6", "E7F8A9B0"
 ];
 
 // Mostrar apenas ID Mascarado (Privacidade total - NUNCA MOSTRAR NÚMEROS)

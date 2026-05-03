@@ -16,6 +16,20 @@ function maskId(username: string): string {
   return cleanId.slice(0, 4).toUpperCase() + "***";
 }
 
+// Sanitizar URLs de banners antigas ou quebradas
+function sanitizeBanner(icon: string, gameId?: string): string {
+  if (!icon || icon.includes('banner-fishinator') || (icon === 'banner-fishinator')) {
+    const game = GAMES.find(g => g.id === 'fishinator');
+    return game?.banner || 'https://objectstorage.ca-montreal-1.oraclecloud.com/n/ax44xafhjvwf/b/mozbet-assets/o/games/fishinator-1777832153235.png';
+  }
+  // Fallback geral para banners que vêm apenas com o nome
+  if (!icon.includes('http') && gameId) {
+     const game = GAMES.find(g => g.id === gameId);
+     if (game) return game.banner;
+  }
+  return icon;
+}
+
 export function LiveBetsTable() {
   const [activities, setActivities] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<"all" | "high_rollers" | "biggest_wins">("all");
@@ -27,17 +41,25 @@ export function LiveBetsTable() {
     // Solicitar o fluxo atual de apostas mal o componente estiver pronto
     socket.emit("request_live_bets");
 
-    socket.on("initial_live_bets", (history) => {
+    socket.on("initial_live_bets", (history: any[]) => {
       if (isMounted.current) {
-        setActivities(history);
+        const sanitized = history.map(bet => ({
+          ...bet,
+          gameIcon: sanitizeBanner(bet.gameIcon, bet.game?.toLowerCase())
+        }));
+        setActivities(sanitized);
       }
     });
 
     // Escutar o fluxo global contínuo
     socket.on("live_bet", (fakeBet) => {
       if (isMounted.current) {
+        const sanitized = {
+          ...fakeBet,
+          gameIcon: sanitizeBanner(fakeBet.gameIcon, fakeBet.game?.toLowerCase())
+        };
         setActivities(prev => {
-          const newArr = [fakeBet, ...prev];
+          const newArr = [sanitized, ...prev];
           return newArr.slice(0, 15);
         });
       }
@@ -56,7 +78,7 @@ export function LiveBetsTable() {
            
            const realBet = {
                game: game.name,
-               gameIcon: game.banner,
+               gameIcon: sanitizeBanner(game.banner, bet.game_id),
                id: bet.user_id.split('-')[0].toUpperCase(), // ID real formatado e anonimizado
                time: new Date(bet.created_at).toLocaleTimeString('pt-PT', {hour12: false}),
                betAmount: bet.amount,

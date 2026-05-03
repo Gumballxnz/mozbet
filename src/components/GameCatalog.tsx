@@ -7,6 +7,7 @@ import { useAppStore } from "@/lib/store";
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
+import { playSound } from "@/lib/sounds";
 
 export function GameCatalog() {
   const { t } = useTranslation();
@@ -72,6 +73,7 @@ export function GameCatalog() {
 
     // Regra de segurança: Usuário comum com saldo 0 não pode entrar nos jogos
     if (!user?.isAdmin && (user?.balance || 0) <= 0) {
+      playSound('error');
       toast.error("Saldo Insuficiente", {
         description: "Adicione saldo à sua conta para jogar.",
         action: {

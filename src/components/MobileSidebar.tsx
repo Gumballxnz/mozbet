@@ -82,20 +82,7 @@ export function MobileSidebar() {
           </button>
         </div>
 
-        {/* Perfil do Utilizador (se logado) */}
-        {isLoggedIn && user && (
-          <div className="p-4 border-b border-white/5">
-            <Link href="/perfil" className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                <User className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-sm font-bold text-white">+258 {user.phone}</p>
-                <p className="text-xs text-muted-foreground">Ver perfil</p>
-              </div>
-            </Link>
-          </div>
-        )}
+        {/* Perfil do Utilizador removido conforme solicitado */}
 
         {/* Botão Painel Admin — apenas para administradores */}
         {isLoggedIn && user?.isAdmin && (

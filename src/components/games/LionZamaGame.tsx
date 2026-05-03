@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { ArrowLeft, Maximize2, RotateCw, Trophy, Coins, Zap, ShieldCheck, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
-import { startBgMusic } from "@/lib/sounds";
+import { playSound } from "@/lib/sounds";
 
 interface LionZamaProps {
   balance: number;
@@ -51,7 +51,7 @@ const LionZamaGame = ({ balance, onUpdateBalance, onBack }: LionZamaProps) => {
 
     setIsSpinning(true);
     setWinningLine(null);
-    startBgMusic([392, 440, 493, 587, 493, 440], 200, 0.05);
+    playSound('notification');
 
     try {
       const res = await fetch("/api/game/slot/play", {
@@ -97,6 +97,7 @@ const LionZamaGame = ({ balance, onUpdateBalance, onBack }: LionZamaProps) => {
             setWinningLine(1);
             setLastWin(data.winAmount);
             onUpdateBalance(data.newBalance);
+            playSound('win');
             toast.success(`LION WIN! +${data.winAmount.toFixed(2)} MT`, {
               className: "bg-purple-600 text-white font-black border-2 border-fuchsia-400 shadow-[0_0_20px_rgba(168,85,247,0.5)]"
             });

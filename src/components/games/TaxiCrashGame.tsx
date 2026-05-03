@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { ArrowLeft, Maximize2, Menu, Minus, Plus } from "lucide-react";
 import { toast } from "sonner";
+import { playSound } from "@/lib/sounds";
 
 interface Props {
   balance: number;
@@ -27,6 +28,7 @@ const TaxiCrashGame = ({ balance, onUpdateBalance, onBack }: Props) => {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const startRound = useCallback(async () => {
+    playSound('notification');
     setPhase("waiting");
     setMultiplier(1.0);
     setCountdown(4);
@@ -88,6 +90,7 @@ const TaxiCrashGame = ({ balance, onUpdateBalance, onBack }: Props) => {
         const n = p + 0.01 + p * 0.012;
         if (n >= crashRef.current) {
           clearInterval(intervalRef.current!);
+          playSound('crash');
           setPhase("crashed");
           return crashRef.current;
         }
@@ -142,6 +145,7 @@ const TaxiCrashGame = ({ balance, onUpdateBalance, onBack }: Props) => {
       const data = await res.json();
       if (data.success) {
         onUpdateBalance(data.newBalance);
+        playSound('cashout');
         toast.success(`Retirada: ${(amt * currentMult).toFixed(2)} MZN!`);
       }
     } catch (e) {

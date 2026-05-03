@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { playSound } from "@/lib/sounds";
 
 const AVATARS = [
   "https://api.dicebear.com/7.x/adventurer/svg?seed=Felix&backgroundColor=f59e0b",
@@ -77,6 +78,7 @@ export default function PerfilPage() {
     
     // Simulação de processamento para dar realismo
     setTimeout(() => {
+      playSound('error');
       toast.error("Saldo insuficiente para processar o saque", {
         description: "O seu saldo está muito baixo. É necessário fazer um depósito mínimo para validar a sua conta e libertar o seu primeiro levantamento.",
         duration: 6000,

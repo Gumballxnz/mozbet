@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { useAppStore } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
 import { socket, joinRoom, leaveRoom } from "@/lib/socket";
+import { playSound } from "@/lib/sounds";
 
 interface Props {
   balance: number;
@@ -173,6 +174,7 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
       currentRoundId.current = data.round_id;
 
       if (data.status === "waiting") {
+        playSound('notification');
         setPhase("waiting");
         setMultiplier(1.0);
         setBetsState(prev => prev.map(b => ({ ...b, hasBet: false, cashedOut: false })));
@@ -186,6 +188,7 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
         startedAt.current = startMs;
         setRoundFakes(generateRoundFakes(9999));
       } else if (data.status === "crashed") {
+        playSound('crash');
         setPhase("crashed");
         const crashP = Number(data.crash_point);
         setMultiplier(crashP);
@@ -280,6 +283,7 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
           next[boxIndex] = { ...next[boxIndex], cashedOut: true, lastWin: data.winAmount };
           return next;
         });
+        playSound('cashout');
         onUpdateBalance(data.newBalance);
         toast.success(`Sacou ${data.winAmount.toFixed(2)} MZN!`);
       } else {

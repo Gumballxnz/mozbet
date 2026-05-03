@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { ArrowLeft, Volume2, Menu, Maximize2, Plane, Minus, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import { socket, joinRoom, leaveRoom } from "@/lib/socket";
+import { playSound } from "@/lib/sounds";
 
 interface Props {
   balance: number;
@@ -67,6 +68,7 @@ const PurpleCrashGame = ({ balance, onUpdateBalance, onBack }: Props) => {
       currentRoundId.current = data.round_id;
 
       if (data.status === "waiting") {
+        playSound('notification');
         setPhase("waiting");
         setMultiplier(1.0);
         setHasBet1(false);
@@ -79,6 +81,7 @@ const PurpleCrashGame = ({ balance, onUpdateBalance, onBack }: Props) => {
         setPhase("rising");
         startedAt.current = new Date(data.started_at).getTime();
       } else if (data.status === "crashed") {
+        playSound('crash');
         setPhase("crashed");
         setMultiplier(data.crash_point);
       }
@@ -153,6 +156,7 @@ const PurpleCrashGame = ({ balance, onUpdateBalance, onBack }: Props) => {
       const data = await res.json();
       if (data.success) {
         onUpdateBalance(data.newBalance);
+        playSound('cashout');
         toast.success(`Ganhou ${(amt * currentMult).toFixed(2)} MZN!`);
       } else {
         toast.error(data.error || "Erro no cashout");

@@ -7,6 +7,7 @@ import { useAppStore } from "@/lib/store";
 import { useState } from "react";
 import { GAMES } from "@/lib/games";
 import { toast } from "sonner";
+import { playSound } from "@/lib/sounds";
 
 export function MobileNavigation() {
   const pathname = usePathname();
@@ -22,6 +23,7 @@ export function MobileNavigation() {
     }
 
     if (!user?.isAdmin && (user?.balance || 0) <= 0) {
+      playSound('error');
       toast.error("Saldo Insuficiente", {
         description: "Adicione saldo à sua conta para jogar.",
         action: {

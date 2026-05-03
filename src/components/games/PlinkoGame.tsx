@@ -4,6 +4,7 @@ import { useState, useCallback } from "react";
 import { ArrowLeft, Maximize2, Menu, Minus, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { useAppStore } from "@/lib/store";
+import { playSound } from "@/lib/sounds";
 
 interface Props {
   balance: number;
@@ -77,12 +78,14 @@ const PlinkoGame = ({ balance, onUpdateBalance, onBack }: Props) => {
       
       const iv = setInterval(() => {
         setAnimStep(step);
+        playSound('notification');
         step++;
         if (step >= pins) {
           clearInterval(iv);
           setLastWin(win);
           setFinalSlot(fs);
           setDropping(false);
+          playSound('win');
           updateBalance(newBalance); // Saldo final após o ganho
         }
       }, 180);

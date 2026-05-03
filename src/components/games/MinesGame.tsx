@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { X, Diamond, Bomb, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { useAppStore } from "@/lib/store";
+import { playSound } from "@/lib/sounds";
 
 interface MinesGameProps {
   onClose: () => void;
@@ -118,6 +119,7 @@ const MinesGame = ({ onClose, balance, onBet }: MinesGameProps) => {
         setGrid(newGrid);
         setIsPlaying(false);
         setSessionId(null);
+        playSound('crash');
         toast.error("💣 BOMBA! Que azar, você perdeu esta rodada.");
       } else if (data.result === "safe") {
         // SEGURO!
@@ -128,6 +130,7 @@ const MinesGame = ({ onClose, balance, onBet }: MinesGameProps) => {
         setCurrentMultiplier(data.currentMultiplier);
         setNextMultiplier(data.nextMultiplier);
         setPotentialWin(data.potentialWin);
+        playSound('notification');
         toast.success(`💎 Seguro! ${data.currentMultiplier}x`);
       } else if (data.result === "all_clear") {
         // REVELOU TUDO! Vitória total
@@ -179,6 +182,7 @@ const MinesGame = ({ onClose, balance, onBet }: MinesGameProps) => {
       setIsPlaying(false);
       setSessionId(null);
       updateBalance(data.newBalance);
+      playSound('cashout');
       toast.success(`🎉 Sacou ${data.winnings.toFixed(2)} MT com ${data.multiplier}x!`);
     } catch (err: any) {
       toast.error(err.message || "Erro ao sacar");

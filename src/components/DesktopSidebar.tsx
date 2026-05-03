@@ -12,6 +12,7 @@ import { useAppStore } from "@/lib/store";
 import { useTranslation } from "@/hooks/useTranslation";
 import { GAMES } from "@/lib/games";
 import { toast } from "sonner";
+import { playSound } from "@/lib/sounds";
 import { Globe } from "lucide-react";
 
 export function DesktopSidebar() {
@@ -48,6 +49,7 @@ export function DesktopSidebar() {
     }
 
     if (!user?.isAdmin && (user?.balance || 0) <= 0) {
+      playSound('error');
       toast.error("Saldo Insuficiente", {
         description: "Adicione saldo à sua conta para jogar.",
         action: {

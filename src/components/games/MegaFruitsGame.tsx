@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { ArrowLeft, Maximize2, RotateCw, Trash2, Play, Volume2, Trophy, Coins } from "lucide-react";
 import { toast } from "sonner";
-import { startBgMusic } from "@/lib/sounds";
+import { playSound } from "@/lib/sounds";
 
 interface MegaFruitsProps {
   balance: number;
@@ -48,7 +48,7 @@ const MegaFruitsGame = ({ balance, onUpdateBalance, onBack }: MegaFruitsProps) =
 
     setIsSpinning(true);
     setWinningLine(null);
-    startBgMusic();
+    playSound('notification');
 
     try {
       const res = await fetch("/api/game/slot/play", {
@@ -94,6 +94,7 @@ const MegaFruitsGame = ({ balance, onUpdateBalance, onBack }: MegaFruitsProps) =
             setWinningLine(1);
             setLastWin(data.winAmount);
             onUpdateBalance(data.newBalance);
+            playSound('win');
             toast.success(`PARABÉNS! Você ganhou ${data.winAmount.toFixed(2)} MT!`, {
               icon: "🎰",
               className: "bg-yellow-500 text-black font-bold"

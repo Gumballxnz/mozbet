@@ -1,7 +1,6 @@
 
 import { NextResponse } from "next/server";
 import { verifyToken, supabaseAdmin } from "@/lib/auth-server";
-import { socket } from "@/lib/socket-server"; // Helper que vou criar para emitir via server
 
 const MOZ_SLANG = [
   "Este Aviator só me come o mola, fds! 😤",

@@ -8,6 +8,7 @@ import { formatMZN } from "@/lib/utils";
 import Link from "next/link";
 import { useMemo, useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import { playSound } from "@/lib/sounds";
 
 const AVATARS = [
   "https://api.dicebear.com/7.x/adventurer/svg?seed=Felix&backgroundColor=f59e0b",
@@ -52,6 +53,11 @@ export function MobileHeader() {
         // Verifica se há alguma notificação do user não lida OU alguma global não lida
         const hasUnreadPrivate = data.some((n: any) => !n.is_read && n.user_id === user.id);
         const hasUnreadGlobal = data.some((n: any) => n.user_id === null && !readGlobalIds.includes(n.id));
+        
+        // Tocar som se houver algo novo não lido
+        if ((hasUnreadPrivate || hasUnreadGlobal) && !hasUnread) {
+          playSound('notification');
+        }
         
         setHasUnread(hasUnreadPrivate || hasUnreadGlobal);
       } catch (err) {

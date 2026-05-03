@@ -148,28 +148,34 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
 
     loadHistory();
 
-    // Ouvir novas mensagens em TEMPO REAL (Global)
+    // 1. Ouvir mensagens via SOCKET.IO (Bots e anúncios da VPS)
+    const onSocketMessage = (newMessage: ChatMessage) => {
+      console.log("💬 SOCKET: Nova mensagem recebida!", newMessage);
+      setMessages((prev: ChatMessage[]) => {
+        if (prev.some(m => m.id === newMessage.id)) return prev;
+        return [...prev, newMessage].slice(-100);
+      });
+      if (isOpen) setTimeout(scrollToBottom, 100);
+    };
+
+    socket.on("receive_message", onSocketMessage);
+
+    // 2. Ouvir mensagens via SUPABASE (Mensagens reais de utilizadores)
     const channel = supabase.channel('global-chat-room')
       .on('postgres_changes', { 
         event: 'INSERT', 
         schema: 'public', 
         table: 'chat_messages' 
       }, (payload) => {
-        console.log("🚀 REALTIME: Nova mensagem recebida!", payload.new);
+        console.log("🚀 SUPABASE: Nova mensagem recebida!", payload.new);
         const newMessage = payload.new as ChatMessage;
         
-        // Atualizar o estado da store
         setMessages((prev: ChatMessage[]) => {
-          // Evitar duplicados
           if (prev.some(m => m.id === newMessage.id)) return prev;
-          const updated = [...prev, newMessage].slice(-100);
-          return updated;
+          return [...prev, newMessage].slice(-100);
         });
 
-        // Forçar scroll se o chat estiver aberto
-        if (isOpen) {
-          setTimeout(scrollToBottom, 100);
-        }
+        if (isOpen) setTimeout(scrollToBottom, 100);
       })
       .subscribe((status, err) => {
         console.log("📡 Realtime Status:", status);
@@ -177,6 +183,7 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
       });
 
     return () => {
+      socket.off("receive_message", onSocketMessage);
       supabase.removeChannel(channel);
     };
   }, [setMessages, scrollToBottom, isOpen]);

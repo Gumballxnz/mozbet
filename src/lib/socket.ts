@@ -8,9 +8,11 @@ const SOCKET_URL = process.env.NODE_ENV === "production" ? "" : "http://155.248.
 export const socket = io(SOCKET_URL, {
   autoConnect: true,
   reconnection: true,
-  reconnectionAttempts: Infinity,
-  reconnectionDelay: 1000,
-  transports: process.env.NODE_ENV === "production" ? ["polling"] : ["polling", "websocket"],
+  reconnectionAttempts: 10,
+  reconnectionDelay: 2000,
+  transports: ["polling", "websocket"],
+  withCredentials: true,
+  forceNew: true,
 });
 
 // Helper para entrar em salas

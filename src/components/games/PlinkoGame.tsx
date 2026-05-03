@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { ArrowLeft, Maximize2, Menu, Minus, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { useAppStore } from "@/lib/store";

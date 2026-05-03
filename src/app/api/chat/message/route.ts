@@ -1,84 +1,96 @@
-// API: Enviar mensagem para o Chat Global
-// POST /api/chat/message — { message }
 
-import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin, verifyToken } from "@/lib/auth-server";
+import { NextResponse } from "next/server";
+import { verifyToken, supabaseAdmin } from "@/lib/auth-server";
+import { socket } from "@/lib/socket-server"; // Helper que vou criar para emitir via server
 
-// Cache simples para rate limiting (IP / User)
-const rateLimitCache = new Map<string, number>();
+const MOZ_SLANG = [
+  "Este Aviator só me come o mola, fds! 😤",
+  "Saquei 500MT agora, o motor tá quente 🔥",
+  "Alguém aí já ganhou hoje? Ou só eu é que estou a ser comido?",
+  "Aviator voou cedo demais, bandidos!",
+  "Mines é pra quem tem coração, eu não tenho kkkk",
+  "Mozbet pagou! 2 minutos e o M-Pesa cantou 💸",
+  "Parem de chorar e apostem com cabeça",
+  "Esse gajo só ganha, deve ser feitiço 😂",
+  "Mines me deu 200MT agora, vou fugir antes que me comam",
+  "Aviator tá a pagar muito hoje pessoal, aproveitem!",
+  "Quem não arrisca não petisca, bora lá!",
+  "Já fiz meu dia no Subway Crash, tchau!",
+  "Tô a espera do meu saque, Mozbet não falha",
+  "Fiz 1000MT com 50MT, hoje o jantar é por minha conta 🍗",
+  "Alguém tem estratégia pro Earplane?",
+  "Perdi 200MT mas já recuperei 300MT no Taxi 🚕🔥"
+];
 
-// Filtro de palavras ofensivas (pode ser expandido no BD depois)
-const BANNED_WORDS = ["burla", "roubo", "ladrão", "foda", "puta", "scam"];
+const GAMES = ["aviator", "mines", "taxi-crash", "subway-crash", "earplane", "plinko"];
 
-function isMessageSafe(msg: string): boolean {
-  const lowerMsg = msg.toLowerCase();
-  return !BANNED_WORDS.some(word => lowerMsg.includes(word));
-}
-
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   try {
-    // 1. Verificar autenticação
-    const token = req.cookies.get("mozbet_session")?.value;
-    if (!token) {
-      return NextResponse.json({ error: "Faça login para participar no chat" }, { status: 401 });
-    }
+    const cookieHeader = req.headers.get("cookie");
+    const token = cookieHeader?.split("; ").find(r => r.startsWith("mozbet_session="))?.split("=")[1];
 
-    const payload = await verifyToken<{ id: string; phone: string }>(token);
-    if (!payload?.id) {
-      return NextResponse.json({ error: "Sessão inválida" }, { status: 401 });
-    }
-
-    // 2. Rate Limiting (Máx 1 mensagem a cada 3 segundos)
-    const now = Date.now();
-    const lastMsgTime = rateLimitCache.get(payload.id);
-    if (lastMsgTime && now - lastMsgTime < 3000) {
-      return NextResponse.json({ error: "Escreva mais devagar (aguarde 3 segundos)" }, { status: 429 });
-    }
-    rateLimitCache.set(payload.id, now);
-    
-    // Limpar cache para evitar vazamento de memória (máx 1000 entradas)
-    if (rateLimitCache.size > 1000) {
-      rateLimitCache.clear();
-    }
+    if (!token) return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+    const decoded = await verifyToken<{ id: string; phone: string }>(token);
+    if (!decoded) return NextResponse.json({ error: "Token inválido" }, { status: 401 });
 
     const { message } = await req.json();
+    if (!message) return NextResponse.json({ error: "Mensagem vazia" }, { status: 400 });
 
-    if (!message || typeof message !== "string" || message.trim().length === 0) {
-      return NextResponse.json({ error: "A mensagem não pode estar vazia" }, { status: 400 });
-    }
-
-    if (message.length > 150) {
-      return NextResponse.json({ error: "A mensagem excede o limite de 150 caracteres" }, { status: 400 });
-    }
-
-    // 3. Filtro de palavras proibidas
-    if (!isMessageSafe(message)) {
-      return NextResponse.json({ error: "A tua mensagem viola as regras da comunidade" }, { status: 400 });
-    }
-
-    // 4. Mascarar o nome do utilizador: Mostrar os primeiros 8 caracteres do ID
-    const maskedName = payload.id.split("-")[0].toUpperCase();
-
-    // 5. Guardar na BD (o Supabase Realtime vai transmitir para todos os clientes conectados)
-    const { data, error } = await supabaseAdmin
+    // 1. Salvar mensagem do utilizador real
+    const { data: userMsg, error: userErr } = await supabaseAdmin
       .from("chat_messages")
       .insert({
-        user_id: payload.id,
-        username: maskedName,
-        message: message.trim(),
-        type: "message",
+        user_id: decoded.id,
+        username: decoded.phone,
+        message: message,
+        type: "message"
       })
       .select()
       .single();
 
-    if (error) {
-      console.error("Erro BD:", error);
-      return NextResponse.json({ error: "Erro ao enviar mensagem" }, { status: 500 });
+    if (userErr) throw userErr;
+
+    // 2. Chance de 30% de um BOT responder com gíria moçambicana
+    if (Math.random() < 0.3) {
+      setTimeout(async () => {
+        const randomSlang = MOZ_SLANG[Math.floor(Math.random() * MOZ_SLANG.length)];
+        const fakeId = Math.random().toString(36).substring(2, 10).toUpperCase();
+        
+        await supabaseAdmin.from("chat_messages").insert({
+          user_id: `fake-${fakeId}`,
+          username: fakeId,
+          message: randomSlang,
+          type: "fake_user"
+        });
+      }, 2000);
     }
 
-    return NextResponse.json({ success: true, message: data });
-  } catch (error) {
-    console.error("Erro no chat:", error);
-    return NextResponse.json({ error: "Erro interno" }, { status: 500 });
+    // 3. Chance de 10% de gerar um anúncio de vitória GLOBAL
+    if (Math.random() < 0.15) {
+      setTimeout(async () => {
+        const game = GAMES[Math.floor(Math.random() * GAMES.length)];
+        const amount = Math.floor(Math.random() * 25000) + 200;
+        const mult = (Math.random() * 15 + 1.2).toFixed(2);
+        const fakeId = Math.random().toString(36).substring(2, 10).toUpperCase();
+
+        await supabaseAdmin.from("chat_messages").insert({
+          user_id: "system-bot",
+          username: "MOZBET BOT",
+          message: `${fakeId} ganhou ${amount} MT no ${game}!`,
+          type: "win_announcement",
+          metadata: {
+            username: fakeId,
+            amount: amount,
+            multiplier: mult,
+            game_id: game,
+            game_name: game.toUpperCase()
+          }
+        });
+      }, 5000);
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

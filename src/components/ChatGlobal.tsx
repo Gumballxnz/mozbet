@@ -62,9 +62,15 @@ const generateFakeUsername = () => {
   return SHARED_FAKE_IDS[Math.floor(Math.random() * SHARED_FAKE_IDS.length)];
 };
 
-// Mostrar ID parcialmente (ex: "A3F2***" — primeiros 4 + ***)
-function maskPlayerId(id: string): string {
-  return id.slice(0, 4) + "***";
+// Mostrar ID ou Telefone parcialmente (ex: "8421***" ou "A3F2***")
+function maskId(id: string): string {
+  if (!id) return "USER***";
+  // Se for um número de telemóvel (ex: 84...)
+  if (/^\d+$/.test(id)) {
+    return id.slice(0, 4) + "***";
+  }
+  // Se for um ID de UUID ou Fake
+  return id.split("-")[0].slice(0, 4).toUpperCase() + "***";
 }
 
 
@@ -107,18 +113,18 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
     };
   }, [setOnlineCount]);
 
-  // Sincronizar Mensagens apenas quando o chat está aberto
+  // Sincronizar Mensagens e Histórico via Supabase Realtime (Global)
   useEffect(() => {
     if (!isOpen) return;
 
-    // 1. Carregar Histórico Real das últimas 50 mensagens
+    // 1. Carregar Histórico IMEDIATAMENTE
     const loadHistory = async () => {
       try {
         const res = await fetch("/api/chat/history");
         const data = await res.json();
         if (data.history) {
           setMessages(data.history);
-          setTimeout(scrollToBottom, 100);
+          requestAnimationFrame(() => scrollToBottom());
         }
       } catch (err) {
         console.error("Erro ao carregar histórico:", err);
@@ -126,22 +132,26 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
     };
 
     loadHistory();
-    joinRoom("chat_global");
 
-    const handleMessage = (data: any) => {
-      const currentMsgs = useAppStore.getState().fakeChatMessages;
-      // Evitar duplicados se a mensagem for sua e já estiver na tela (optimistic)
-      if (currentMsgs.find(m => m.id === data.id)) return;
-      
-      setMessages([...currentMsgs, data].slice(-100));
-      setTimeout(scrollToBottom, 50);
-    };
-
-    socket.on("receive_message", handleMessage);
+    // 2. Ouvir novas mensagens em TEMPO REAL (Global)
+    const channel = supabase.channel('global-chat-room')
+      .on('postgres_changes', { 
+        event: 'INSERT', 
+        schema: 'public', 
+        table: 'chat_messages' 
+      }, (payload) => {
+        const newMessage = payload.new as ChatMessage;
+        setMessages(prev => {
+          if (prev.find(m => m.id === newMessage.id)) return prev;
+          const updated = [...prev, newMessage].slice(-100);
+          return updated;
+        });
+        setTimeout(scrollToBottom, 50);
+      })
+      .subscribe();
 
     return () => {
-      socket.off("receive_message", handleMessage);
-      leaveRoom("chat_global");
+      supabase.removeChannel(channel);
     };
   }, [isOpen, setMessages, scrollToBottom]);
 
@@ -178,20 +188,17 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
     setIsSending(true);
 
     try {
-      // 1. Salvar na BD via API
-      await fetch("/api/chat/message", {
+      // Salvar na BD via API — o Realtime encarrega-se de mostrar a todos
+      const res = await fetch("/api/chat/message", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: messageText }),
       });
 
-      // 2. Emitir via Socket para todos (incluindo você, mas o handleMessage ignora duplicados por ID)
-      socket.emit("send_message", optimisticMsg);
+      if (!res.ok) throw new Error("Erro ao enviar");
 
     } catch (err: any) {
       toast.error(err.message || "Erro ao enviar");
-      const msgs = useAppStore.getState().fakeChatMessages;
-      setMessages(msgs.filter(m => m.id !== optimisticMsg.id));
       setInput(messageText);
     } finally {
       setIsSending(false);
@@ -323,7 +330,7 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
                 </div>
                 <div className="flex-1 bg-secondary/30 rounded-2xl rounded-tl-none p-3 border border-border/50">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-bold text-primary">{m.username}</span>
+                    <span className="text-sm font-bold text-primary">{maskId(m.username)}</span>
                     <span className="text-[10px] text-muted-foreground">{timeStr}</span>
                   </div>
                   <p className="text-sm text-foreground/90 break-words">{m.message}</p>

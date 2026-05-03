@@ -99,10 +99,24 @@ export default function PerfilPage() {
   return (
     <div className="max-w-2xl mx-auto p-4 py-6 pb-24 space-y-8 animate-in fade-in duration-500">
       
+      {/* HEADER: BOTÃO VOLTAR E TÍTULO */}
+      <div className="flex items-center gap-4">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={() => router.push("/")}
+          className="bg-white/5 hover:bg-white/10 rounded-full w-10 h-10 border border-white/5 shrink-0"
+        >
+          <ChevronLeft className="w-6 h-6 text-white" />
+        </Button>
+        <h1 className="text-xl font-black text-white uppercase tracking-tight">Perfil</h1>
+      </div>
+
       {/* HEADER: AVATAR & VIP */}
       <div className="flex flex-col items-center space-y-4">
         <div className="relative">
-          <div className="w-28 h-28 rounded-full p-1 bg-gradient-to-tr from-primary via-emerald-400 to-primary shadow-[0_0_25px_rgba(0,255,127,0.3)] animate-pulse-slow">
+          {/* Anel de Brilho */}
+          <div className="w-24 h-24 rounded-full p-0.5 bg-gradient-to-tr from-primary via-emerald-400 to-primary shadow-[0_0_20px_rgba(0,255,127,0.3)]">
             <div className="w-full h-full rounded-full bg-[#0f1015] p-1">
               <img 
                 src={selectedAvatar} 
@@ -112,24 +126,25 @@ export default function PerfilPage() {
             </div>
           </div>
           
-          {/* Botão Editar Avatar */}
+          {/* Botão Editar Avatar (Lápis) */}
           <button 
             onClick={() => setShowAvatarPicker(!showAvatarPicker)}
-            className="absolute bottom-1 right-1 bg-primary text-black p-1.5 rounded-full border-2 border-[#0f1015] hover:scale-110 transition-transform shadow-lg"
+            className="absolute -bottom-1 -right-1 bg-primary text-black p-1.5 rounded-full border-2 border-[#0f1015] hover:scale-110 transition-transform shadow-lg z-10"
           >
-            <Pencil size={14} className="font-bold" />
+            <Pencil size={12} className="font-bold" />
           </button>
 
-          {/* Badge VIP */}
-          <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-primary text-black text-[10px] font-black px-3 py-1 rounded-full border-2 border-[#0f1015] flex items-center gap-1 shadow-lg">
-            <ShieldCheck size={10} />
+          {/* Badge VIP (Tamanho Ajustado) */}
+          <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-primary text-black text-[9px] font-black px-2.5 py-0.5 rounded-full border-2 border-[#0f1015] flex items-center gap-1 shadow-lg z-20">
             VIP {vipLevel}
           </div>
         </div>
 
-        <div className="text-center">
+        <div className="text-center space-y-1">
           <h2 className="text-2xl font-black text-white tracking-tight">{user.phone}</h2>
-          <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest opacity-60">ID: {shortId}</p>
+          <div className="bg-white/5 px-3 py-0.5 rounded-full inline-block">
+             <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest opacity-80">ID: {shortId}</p>
+          </div>
         </div>
       </div>
 

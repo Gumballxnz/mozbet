@@ -12,7 +12,10 @@ interface User {
   hasDeposited: boolean;
   createdAt: string;
   isAdmin?: boolean;
-  avatar?: string; // URL do avatar guardado no Supabase (não localStorage)
+  avatar?: string;
+  vipLevel?: number;
+  bonusBalance?: number;
+  unlockedBalance?: number;
 }
 
 interface AppState {

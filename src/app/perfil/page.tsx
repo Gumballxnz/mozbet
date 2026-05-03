@@ -51,10 +51,17 @@ export default function PerfilPage() {
   const shortId = user.id ? user.id.split("-")[0].toUpperCase() : "552223";
   const registerDate = user.createdAt ? new Date(user.createdAt).toLocaleDateString("pt-MZ") : "29/04/2026";
   
-  // Dados simulados que serão ligados ao DB na próxima fase
-  const bonusBalance = (user as any).bonus_balance || 0.00; 
-  const toUnlock = (user as any).unlocked_balance || 0.00;
-  const vipLevel = (user as any).vip_level || 1;
+  // DADOS REAIS DO BANCO DE DADOS
+  const bonusBalance = user.bonusBalance || 0.00; 
+  const toUnlock = user.unlockedBalance || 0.00;
+  const vipLevel = user.vipLevel || 1;
+
+  const handleSimulatedWithdraw = () => {
+    toast.info("Processando levantamento...", {
+      description: "Esta funcionalidade está em modo de simulação. O seu pedido foi registado com sucesso!",
+      duration: 5000,
+    });
+  };
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -160,6 +167,7 @@ export default function PerfilPage() {
         <div className="grid grid-cols-2 gap-3">
           <Button 
             variant="outline"
+            onClick={handleSimulatedWithdraw}
             className="h-12 bg-surface border-white/5 text-white font-bold rounded-xl hover:bg-white/5 flex items-center gap-2"
           >
             <ArrowUpCircle size={18} className="text-primary" />

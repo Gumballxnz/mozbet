@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { 
   Gamepad2, Flame, Heart, Rocket, 
   Target, Dices, Cherry, Swords,
@@ -13,19 +13,29 @@ import { GAMES } from "@/lib/games";
 
 export function DesktopSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { setSupportOpen, isLoggedIn, user } = useAppStore();
   const [collapsed, setCollapsed] = useState(false);
 
   // Esconder a sidebar em certas páginas
-  if (pathname.startsWith("/admin") || pathname.startsWith("/jogar")) return null;
+  if (pathname && (pathname.startsWith("/admin") || pathname.startsWith("/jogar"))) return null;
 
   // Links do menu — todos funcionais
   const menuItems = [
-    { href: "/", icon: Gamepad2, label: "Todos os Jogos", color: "text-primary" },
-    { href: "/?category=crash", icon: Flame, label: "Crash Games", color: "text-orange-500" },
-    { href: "/?category=casino", icon: Dices, label: "Casino", color: "text-blue-400" },
-    { href: "/?category=slots", icon: Cherry, label: "Slots", color: "text-pink-500" },
+    { id: "all", icon: Gamepad2, label: "Todos os Jogos", color: "text-primary" },
+    { id: "crash", icon: Flame, label: "Crash Games", color: "text-orange-500" },
+    { id: "casino", icon: Dices, label: "Casino", color: "text-blue-400" },
+    { id: "slots", icon: Cherry, label: "Slots", color: "text-pink-500" },
   ];
+
+  const handleMenuClick = (id: string) => {
+    if (id === "all") {
+      router.push("/");
+    } else {
+      router.push(`/?category=${id}`);
+    }
+  };
 
   // Jogos em destaque — links diretos para jogar
   const featuredGames = [
@@ -72,17 +82,20 @@ export function DesktopSidebar() {
           {!collapsed && <h3 className="px-2 text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Menu</h3>}
           <nav className="space-y-0.5">
             {menuItems.map((item) => {
-              const isActive = pathname === item.href || (item.href !== "/" && pathname.includes(item.href));
+              const activeCategory = searchParams.get("category") || "all";
+              const isActive = activeCategory === item.id;
               return (
-                <Link key={item.href} href={item.href}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
+                <button 
+                  key={item.id} 
+                  onClick={() => handleMenuClick(item.id)}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
                     isActive ? "bg-white/10 text-white" : "text-muted-foreground hover:bg-white/5 hover:text-white"
                   } ${collapsed ? "justify-center px-0" : ""}`}
                   title={collapsed ? item.label : undefined}
                 >
                   <item.icon className={`w-5 h-5 flex-shrink-0 ${item.color}`} />
                   {!collapsed && <span className="font-medium text-sm">{item.label}</span>}
-                </Link>
+                </button>
               );
             })}
           </nav>

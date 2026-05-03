@@ -82,7 +82,7 @@ export function GameCatalog() {
           backgroundColor: "#00ff7f",
           color: "#000",
           fontWeight: "bold",
-          padding: "8px 16px",
+          padding: "10px 20px",
         }
       });
       return;

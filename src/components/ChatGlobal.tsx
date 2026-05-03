@@ -141,7 +141,7 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
         table: 'chat_messages' 
       }, (payload) => {
         const newMessage = payload.new as ChatMessage;
-        setMessages(prev => {
+        setMessages((prev: ChatMessage[]) => {
           if (prev.find(m => m.id === newMessage.id)) return prev;
           const updated = [...prev, newMessage].slice(-100);
           return updated;

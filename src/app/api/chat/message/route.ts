@@ -35,12 +35,12 @@ export async function POST(req: Request) {
     const { message } = await req.json();
     if (!message) return NextResponse.json({ error: "Mensagem vazia" }, { status: 400 });
 
-    // 1. Salvar mensagem do utilizador real
+    // 1. Salvar mensagem do utilizador real (Usamos o ID, NUNCA o número de telefone)
     const { data: userMsg, error: userErr } = await supabaseAdmin
       .from("chat_messages")
       .insert({
         user_id: decoded.id,
-        username: decoded.phone,
+        username: decoded.id.split('-')[0].toUpperCase(), // Usar o ID, não o telefone
         message: message,
         type: "message"
       })
@@ -49,8 +49,8 @@ export async function POST(req: Request) {
 
     if (userErr) throw userErr;
 
-    // 2. Chance de 30% de um BOT responder com gíria moçambicana
-    if (Math.random() < 0.3) {
+    // 2. Chance de 50% de um BOT responder (Mais ativo)
+    if (Math.random() < 0.5) {
       setTimeout(async () => {
         const randomSlang = MOZ_SLANG[Math.floor(Math.random() * MOZ_SLANG.length)];
         const fakeId = Math.random().toString(36).substring(2, 10).toUpperCase();
@@ -61,15 +61,15 @@ export async function POST(req: Request) {
           message: randomSlang,
           type: "fake_user"
         });
-      }, 2000);
+      }, 1500);
     }
 
-    // 3. Chance de 10% de gerar um anúncio de vitória GLOBAL
-    if (Math.random() < 0.15) {
+    // 3. Chance de 30% de gerar um anúncio de vitória GLOBAL (Muito mais frequente)
+    if (Math.random() < 0.3) {
       setTimeout(async () => {
         const game = GAMES[Math.floor(Math.random() * GAMES.length)];
-        const amount = Math.floor(Math.random() * 25000) + 200;
-        const mult = (Math.random() * 15 + 1.2).toFixed(2);
+        const amount = Math.floor(Math.random() * 45000) + 150;
+        const mult = (Math.random() * 25 + 1.1).toFixed(2);
         const fakeId = Math.random().toString(36).substring(2, 10).toUpperCase();
 
         await supabaseAdmin.from("chat_messages").insert({
@@ -85,7 +85,7 @@ export async function POST(req: Request) {
             game_name: game.toUpperCase()
           }
         });
-      }, 5000);
+      }, 3000);
     }
 
     return NextResponse.json({ success: true });

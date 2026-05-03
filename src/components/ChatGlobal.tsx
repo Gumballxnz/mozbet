@@ -58,19 +58,31 @@ const SHARED_FAKE_IDS = [
   "C5B4A1F9", "8F2D1A3B", "3C9E4B1F", "2A5B8C1D", "1E7F3D2A"
 ];
 
-const generateFakeUsername = () => {
-  return SHARED_FAKE_IDS[Math.floor(Math.random() * SHARED_FAKE_IDS.length)];
-};
-
-// Mostrar ID ou Telefone parcialmente (ex: "8421***" ou "A3F2***")
-function maskId(id: string): string {
-  if (!id) return "USER***";
-  // Se for um número de telemóvel (ex: 84...)
-  if (/^\d+$/.test(id)) {
-    return id.slice(0, 4) + "***";
+// Mostrar apenas ID Mascarado (Privacidade total)
+function maskId(username: string): string {
+  if (!username) return "USER***";
+  // Se for um UUID ou ID longo, pegamos o primeiro bloco
+  const cleanId = username.includes("-") ? username.split("-")[0] : username;
+  // Se for número de telemóvel (detetado por dígitos), mascaramos
+  if (/^\d+$/.test(cleanId)) {
+    return cleanId.slice(0, 3) + "X" + cleanId.slice(-1) + "***";
   }
-  // Se for um ID de UUID ou Fake
-  return id.split("-")[0].slice(0, 4).toUpperCase() + "***";
+  return cleanId.slice(0, 4).toUpperCase() + "***";
+}
+
+// Lógica de Online Dinâmico (Simula picos de tráfego de casino)
+function getDynamicOnlineCount(): number {
+  const hour = new Date().getHours();
+  let base = 150;
+  
+  if (hour >= 0 && hour <= 4) base = 450; // Madrugada (Pico)
+  else if (hour > 4 && hour <= 10) base = 120; // Manhã (Baixo)
+  else if (hour > 10 && hour <= 18) base = 280; // Tarde (Médio)
+  else if (hour > 18 && hour <= 23) base = 580; // Noite (Pico Máximo)
+
+  // Variar +/- 15 de forma orgânica
+  const variation = Math.floor(Math.sin(Date.now() / 5000) * 15);
+  return base + variation;
 }
 
 
@@ -92,11 +104,14 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
     }
   }, []);
 
-  // Sincronizar o online_count INDEPENDENTE de o chat estar aberto
+  // Sincronizar o online_count Dinâmico
   useEffect(() => {
-    const handleOnline = (count: number) => {
-      setOnlineCount(count);
+    const updateCount = () => {
+      setOnlineCount(getDynamicOnlineCount());
     };
+
+    const interval = setInterval(updateCount, 5000);
+    updateCount();
 
     const onConnect = () => setIsConnected(true);
     const onDisconnect = () => setIsConnected(false);
@@ -104,27 +119,23 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
     setIsConnected(socket.connected);
     socket.on("connect", onConnect);
     socket.on("disconnect", onDisconnect);
-    socket.on("online_count", handleOnline);
 
     return () => {
       socket.off("connect", onConnect);
       socket.off("disconnect", onDisconnect);
-      socket.off("online_count", handleOnline);
+      clearInterval(interval);
     };
   }, [setOnlineCount]);
 
-  // Sincronizar Mensagens e Histórico via Supabase Realtime (Global)
+  // Carregar histórico ASSIM QUE O COMPONENTE MONTA (evita delay de 2s)
   useEffect(() => {
-    if (!isOpen) return;
-
-    // 1. Carregar Histórico IMEDIATAMENTE
     const loadHistory = async () => {
       try {
         const res = await fetch("/api/chat/history");
         const data = await res.json();
         if (data.history) {
           setMessages(data.history);
-          requestAnimationFrame(() => scrollToBottom());
+          if (isOpen) requestAnimationFrame(() => scrollToBottom());
         }
       } catch (err) {
         console.error("Erro ao carregar histórico:", err);
@@ -133,7 +144,7 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
 
     loadHistory();
 
-    // 2. Ouvir novas mensagens em TEMPO REAL (Global)
+    // Ouvir novas mensagens em TEMPO REAL (Global)
     const channel = supabase.channel('global-chat-room')
       .on('postgres_changes', { 
         event: 'INSERT', 
@@ -143,17 +154,16 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
         const newMessage = payload.new as ChatMessage;
         setMessages((prev: ChatMessage[]) => {
           if (prev.find(m => m.id === newMessage.id)) return prev;
-          const updated = [...prev, newMessage].slice(-100);
-          return updated;
+          return [...prev, newMessage].slice(-100);
         });
-        setTimeout(scrollToBottom, 50);
+        if (isOpen) setTimeout(scrollToBottom, 50);
       })
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [isOpen, setMessages, scrollToBottom]);
+  }, [setMessages, scrollToBottom, isOpen]);
 
 
 

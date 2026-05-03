@@ -39,7 +39,7 @@ export function BannerCarousel({ initialBanners }: { initialBanners: Banner[] })
     
     // Se o link for apenas o ID do jogo (ex: /aviator ou aviator), manda para /jogar/ID
     const gameId = link.startsWith('/') ? link.substring(1) : link;
-    const isSpecialPage = ['perfil', 'depositar', 'sacar', 'promocoes'].includes(gameId);
+    const isSpecialPage = ['perfil', 'depositar', 'sacar', 'promocoes', 'vip', 'ajuda', 'sobre'].includes(gameId);
     
     if (isSpecialPage) {
       router.push(link.startsWith('/') ? link : `/${link}`);

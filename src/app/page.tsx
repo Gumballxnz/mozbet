@@ -5,6 +5,9 @@ import { LiveBetsTable } from "@/components/LiveBetsTable";
 import { BannerCarousel } from "@/components/BannerCarousel";
 import { AuthRedirectHandler } from "@/components/AuthRedirectHandler";
 
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
+
 // Otimização Mobile: Code Splitting! O catálogo de jogos e suas dezenas de imagens 
 // não bloqueiam o carregamento inicial da página (First Contentful Paint)
 const GameCatalog = dynamic(() => import("@/components/GameCatalog").then(mod => mod.GameCatalog), {

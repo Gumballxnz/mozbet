@@ -80,6 +80,13 @@ export function GameCatalog() {
     if (activeFilter === "popular") return g.is_hot;
     if (activeFilter === "new") return g.is_new;
     return cat.includes(activeFilter);
+  }).sort((a, b) => {
+    // 1. Jogos HOT sempre primeiro (60% de prioridade visual)
+    if (a.is_hot && !b.is_hot) return -1;
+    if (!a.is_hot && b.is_hot) return 1;
+    
+    // 2. Ordem de sorteio manual do Admin
+    return (a.sort_order || 99) - (b.sort_order || 99);
   });
 
   const filters = [

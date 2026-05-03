@@ -14,14 +14,16 @@ export function LiveBetsTable() {
   useEffect(() => {
     isMounted.current = true;
     
-    // 1. Carregamento inicial (Histórico da VPS) - Resolve o problema do F5
+    // Solicitar o fluxo atual de apostas mal o componente estiver pronto
+    socket.emit("request_live_bets");
+
     socket.on("initial_live_bets", (history) => {
       if (isMounted.current) {
         setActivities(history);
       }
     });
 
-    // 2. Escutar apostas FAKE geradas globalmente pelo servidor Socket.IO
+    // Escutar o fluxo global contínuo
     socket.on("live_bet", (fakeBet) => {
       if (isMounted.current) {
         setActivities(prev => {

@@ -67,17 +67,56 @@ export default function PerfilPage() {
   };
 
   const handleSave = async () => {
+    // 1. Se o email mudou, precisamos de enviar e validar um OTP
+    const isNewEmail = email && email.includes("@") && email !== (user?.email || "");
+    
+    if (isNewEmail && !showOtpInput) {
+      setIsSaving(true);
+      try {
+        const res = await fetch("/api/profile/send-email-otp", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Erro ao pedir código.");
+        
+        toast.success("Código enviado para o novo e-mail!");
+        setShowOtpInput(true);
+      } catch (err: any) {
+        toast.error(err.message);
+      } finally {
+        setIsSaving(false);
+      }
+      return;
+    }
+
+    // 2. Se já estamos a mostrar o OTP, validamos tudo
+    if (showOtpInput && !emailOtp) {
+      toast.error("Introduz o código de verificação.");
+      return;
+    }
+
     setIsSaving(true);
     try {
       const res = await fetch("/api/profile/update", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ avatar: selectedAvatar, email }),
+        body: JSON.stringify({ 
+          avatar: selectedAvatar, 
+          email: isNewEmail ? email : undefined,
+          otp: showOtpInput ? emailOtp : undefined 
+        }),
       });
-      if (!res.ok) throw new Error("Falha ao salvar");
-      toast.success("Avatar atualizado!");
+      
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Falha ao salvar");
+      
+      toast.success("Perfil atualizado com sucesso!");
       setShowAvatarPicker(false);
-      setTimeout(() => window.location.reload(), 500);
+      setShowOtpInput(false);
+      setIsEmailEditing(false);
+      setTimeout(() => window.location.reload(), 800);
     } catch (err: any) {
       toast.error(err.message);
     } finally {
@@ -245,30 +284,63 @@ export default function PerfilPage() {
             <Mail size={14} className="text-primary" />
             E-mail Registado
           </label>
-          <div className="flex gap-2">
-            <Input 
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={!isEmailEditing}
-              placeholder="seu.email@exemplo.com"
-              className="bg-black/40 border-white/10 text-white font-medium h-12 rounded-xl disabled:opacity-80"
-            />
-            {!isEmailEditing ? (
-              <Button 
-                variant="outline" 
-                className="h-12 border-white/10 hover:bg-white/5 text-xs font-bold" 
-                onClick={() => setIsEmailEditing(true)}
-              >
-                ALTERAR
-              </Button>
-            ) : (
-              <Button 
-                className="h-12 bg-primary text-black font-bold text-xs" 
-                onClick={handleSave}
-                disabled={isSaving}
-              >
-                {isSaving ? "..." : "GUARDAR"}
-              </Button>
+          <div className="flex flex-col gap-3">
+            <div className="flex gap-2">
+              <Input 
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (showOtpInput) setShowOtpInput(false); // Reset se mudar o email após erro
+                }}
+                disabled={!isEmailEditing || showOtpInput}
+                placeholder="seu.email@exemplo.com"
+                className="bg-black/40 border-white/10 text-white font-medium h-12 rounded-xl disabled:opacity-80"
+              />
+              {!isEmailEditing ? (
+                <Button 
+                  variant="outline" 
+                  className="h-12 border-white/10 hover:bg-white/5 text-xs font-bold" 
+                  onClick={() => setIsEmailEditing(true)}
+                >
+                  ALTERAR
+                </Button>
+              ) : (
+                <Button 
+                  className="h-12 bg-primary text-black font-bold text-xs" 
+                  onClick={handleSave}
+                  disabled={isSaving}
+                >
+                  {isSaving ? "..." : (showOtpInput ? "CONFIRMAR" : "GUARDAR")}
+                </Button>
+              )}
+            </div>
+
+            {/* CAMPO DE CÓDIGO OTP (Visível após GUARDAR) */}
+            {showOtpInput && (
+              <div className="bg-primary/5 border border-primary/20 p-4 rounded-2xl space-y-3 animate-in slide-in-from-top-2 duration-300">
+                <div className="flex items-center gap-2 text-primary font-black text-[10px] uppercase tracking-widest">
+                  <ShieldCheck size={14} />
+                  Verificação de Segurança
+                </div>
+                <p className="text-[11px] text-muted-foreground leading-tight">
+                  Enviámos um código para <strong className="text-white">{email}</strong>. Introduz o código abaixo para validar o novo endereço.
+                </p>
+                <div className="flex gap-2">
+                  <Input 
+                    value={emailOtp}
+                    onChange={(e) => setEmailOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                    placeholder="000000"
+                    className="bg-black/60 border-primary/30 text-white font-black text-center text-lg tracking-[0.5em] h-12 rounded-xl"
+                  />
+                  <Button 
+                    variant="ghost" 
+                    className="text-[10px] font-bold text-muted-foreground hover:text-white"
+                    onClick={() => { setShowOtpInput(false); setEmailOtp(""); }}
+                  >
+                    CANCELAR
+                  </Button>
+                </div>
+              </div>
             )}
           </div>
         </div>

@@ -24,8 +24,17 @@ export async function POST(req: Request) {
 
     const { email, otp, commercialOptIn, avatar } = await req.json();
 
-    // Se email foi fornecido, verificar OTP obrigatório
-    if (email && email.includes("@")) {
+    // Buscar email atual do utilizador para comparar
+    const { data: currentUser } = await supabaseAdmin
+      .from("users")
+      .select("email")
+      .eq("id", decoded.id)
+      .single();
+
+    const isChangingEmail = email && email !== currentUser?.email;
+
+    // Se o email está a ser alterado, verificar OTP obrigatório
+    if (isChangingEmail) {
       if (!otp) {
         return NextResponse.json({ error: "Código de verificação em falta." }, { status: 400 });
       }

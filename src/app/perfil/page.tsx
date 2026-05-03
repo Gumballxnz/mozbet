@@ -138,6 +138,10 @@ export default function PerfilPage() {
   };
 
   const handleLogout = async () => {
+    const confirmLogout = window.confirm("Tens a certeza que queres sair da tua conta? Precisarás de fazer login novamente para jogar.");
+    
+    if (!confirmLogout) return;
+
     try {
       await fetch("/api/auth/logout", { method: "POST" });
       logout();

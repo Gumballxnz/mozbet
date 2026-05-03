@@ -17,6 +17,7 @@ const FishinatorGame = ({ onClose, balance, onBet }: FishinatorGameProps) => {
   const [multiplier, setMultiplier] = useState(1.0);
   const [isCrashed, setIsCrashed] = useState(false);
   const [targetCrash, setTargetCrash] = useState(0);
+  const [history, setHistory] = useState<number[]>([]);
 
   const fetchHistory = async () => {
     try {

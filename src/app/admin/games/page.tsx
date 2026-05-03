@@ -41,22 +41,8 @@ export default function AdminGamesPage() {
       data.forEach(g => { origMap[g.id] = { ...g }; });
       setOriginals(origMap);
     } else {
-      // Auto-populate do ficheiro hardcoded se BD vazia
-      const { GAMES } = await import("@/lib/games");
-      const dbGames: GameData[] = GAMES.map((g, i) => ({
-        id: g.id,
-        name: g.name,
-        banner_url: g.banner,
-        category: g.category,
-        rtp_display: g.pct || "97.5%",
-        is_hot: g.hot || false,
-        is_active: true,
-        sort_order: i + 1,
-      }));
-      setGames(dbGames);
-      const origMap: Record<string, GameData> = {};
-      dbGames.forEach(g => { origMap[g.id] = { ...g }; });
-      setOriginals(origMap);
+      setGames([]);
+      setOriginals({});
     }
     setLoading(false);
   };

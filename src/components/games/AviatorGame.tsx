@@ -294,7 +294,7 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
     <div className="fixed inset-0 z-50 flex flex-col lg:flex-row bg-[#0A0A0A] font-sans text-white">
       <div className="lg:hidden h-14 bg-[#1A1D27] flex items-center justify-between px-4 shrink-0 shadow-lg z-10 border-b border-white/5">
         <button onClick={onBack} className="text-gray-400 hover:text-white p-2 -ml-2"><ArrowLeft size={20} /></button>
-        <img src="/api/img/banner-aviator" alt="Aviator" className="h-6 opacity-80 mix-blend-screen" />
+        <span className="text-red-500 font-black italic text-xl tracking-tighter">Aviator</span>
       </div>
 
       {/* PAINEL ESQUERDO (Apostas Ronda - Desktop ou Tab) */}

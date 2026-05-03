@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useAppStore } from "@/lib/store";
 import { GAMES } from "@/lib/games";
+import { toast } from "sonner";
 
 export function DesktopSidebar() {
   const pathname = usePathname();
@@ -35,6 +36,26 @@ export function DesktopSidebar() {
     } else {
       router.push(`/?category=${id}`);
     }
+  };
+
+  const handleGameClick = (gameId: string) => {
+    if (!isLoggedIn) {
+      useAppStore.getState().openRegister();
+      return;
+    }
+
+    if (!user?.isAdmin && (user?.balance || 0) <= 0) {
+      toast.error("Saldo Insuficiente", {
+        description: "Você precisa fazer um depósito para entrar nos jogos.",
+        action: {
+          label: "Depositar",
+          onClick: () => useAppStore.getState().setDepositOpen(true),
+        }
+      });
+      return;
+    }
+
+    router.push(`/jogar/${gameId}`);
   };
 
   // Jogos em destaque — links diretos para jogar
@@ -106,13 +127,15 @@ export function DesktopSidebar() {
           {!collapsed && <h3 className="px-2 text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Destaques</h3>}
           <nav className="space-y-0.5">
             {featuredGames.map(({ game, icon: Icon, color }) => (
-              <Link key={game.id} href={`/jogar/${game.id}?mode=demo`}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-white/5 hover:text-white transition-colors ${collapsed ? "justify-center px-0" : ""}`}
+              <button 
+                key={game.id} 
+                onClick={() => handleGameClick(game.id)}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-white/5 hover:text-white transition-colors ${collapsed ? "justify-center px-0" : ""}`}
                 title={collapsed ? game.name : undefined}
               >
                 <Icon className={`w-5 h-5 flex-shrink-0 ${color}`} />
                 {!collapsed && <span className="font-medium text-sm">{game.name}</span>}
-              </Link>
+              </button>
             ))}
           </nav>
         </div>

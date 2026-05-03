@@ -28,18 +28,21 @@ export default function PlayGamePage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { isLoggedIn } = useAppStore();
+  const { isLoggedIn, user } = useAppStore();
   const router = useRouter();
   const resolvedParams = use(params);
   const gameId = resolvedParams.id;
 
-  // Proteção: Se não estiver logado, redirecionar para Home + popup registo
+  // Proteção: Se não estiver logado ou saldo for 0 (não admin), redirecionar
   useEffect(() => {
     if (!isLoggedIn) {
       useAppStore.getState().openRegister();
       router.push("/");
+    } else if (!user?.isAdmin && (user?.balance || 0) <= 0) {
+      // Bloqueio extra para acesso direto via URL
+      router.push("/");
     }
-  }, [isLoggedIn, router]);
+  }, [isLoggedIn, user, router]);
 
   if (!isLoggedIn) {
     return (

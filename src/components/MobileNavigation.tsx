@@ -6,13 +6,35 @@ import { Home, Search, Menu, X } from "lucide-react";
 import { useAppStore } from "@/lib/store";
 import { useState } from "react";
 import { GAMES } from "@/lib/games";
+import { toast } from "sonner";
 
 export function MobileNavigation() {
   const pathname = usePathname();
   const router = useRouter();
-  const { setMobileSidebarOpen } = useAppStore();
+  const { setMobileSidebarOpen, isLoggedIn, user } = useAppStore();
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+
+  const handleGameClick = (gameId: string) => {
+    if (!isLoggedIn) {
+      useAppStore.getState().openRegister();
+      return;
+    }
+
+    if (!user?.isAdmin && (user?.balance || 0) <= 0) {
+      toast.error("Saldo Insuficiente", {
+        description: "Você precisa fazer um depósito para entrar nos jogos.",
+        action: {
+          label: "Depositar",
+          onClick: () => useAppStore.getState().setDepositOpen(true),
+        }
+      });
+      return;
+    }
+
+    setSearchOpen(false);
+    router.push(`/jogar/${gameId}`);
+  };
 
   // Esconder a barra de navegação quando estiver a jogar ou no admin
   if (pathname.startsWith("/jogar/") || pathname.startsWith("/admin")) {
@@ -79,10 +101,7 @@ export function MobileNavigation() {
             {searchQuery && filteredGames.map(game => (
               <button 
                 key={game.id}
-                onClick={() => {
-                  setSearchOpen(false);
-                  router.push(`/jogar/${game.id}`);
-                }}
+                onClick={() => handleGameClick(game.id)}
                 className="w-full flex items-center gap-4 p-3 bg-white/5 hover:bg-white/10 rounded-xl text-left transition-colors"
               >
                 <div className="w-12 h-12 rounded-lg bg-white/10 overflow-hidden flex-shrink-0">

@@ -32,8 +32,8 @@ export function RegisterModal() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [agreeTerms, setAgreeTerms] = useState(false);
-  const [agreeMarketing, setAgreeMarketing] = useState(false);
+  const [agreeTerms, setAgreeTerms] = useState(true);
+  const [agreeMarketing, setAgreeMarketing] = useState(true);
   const [loading, setLoading] = useState(false);
 
   // OTP
@@ -71,8 +71,8 @@ export function RegisterModal() {
     setPhone("");
     setPassword("");
     setConfirmPassword("");
-    setAgreeTerms(false);
-    setAgreeMarketing(false);
+    setAgreeTerms(true);
+    setAgreeMarketing(true);
     setOtpValues(["", "", "", "", "", ""]);
     setResetToken("");
     setNewPassword("");

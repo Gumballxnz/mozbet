@@ -6,10 +6,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
+import { toast } from "sonner";
 
 export function GameCatalog() {
   const { t } = useTranslation();
-  const { isLoggedIn } = useAppStore();
+  const { isLoggedIn, user } = useAppStore();
   const router = useRouter();
   const searchParams = useSearchParams();
   const catalogRef = useRef<HTMLDivElement>(null);
@@ -68,6 +69,19 @@ export function GameCatalog() {
       useAppStore.getState().openRegister();
       return;
     }
+
+    // Regra de segurança: Usuário comum com saldo 0 não pode entrar nos jogos
+    if (!user?.isAdmin && (user?.balance || 0) <= 0) {
+      toast.error("Saldo Insuficiente", {
+        description: "Você precisa fazer um depósito para entrar nos jogos.",
+        action: {
+          label: "Depositar",
+          onClick: () => useAppStore.getState().setDepositOpen(true),
+        }
+      });
+      return;
+    }
+
     router.push(`/jogar/${gameId}?mode=real`);
   };
 

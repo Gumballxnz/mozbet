@@ -10,9 +10,8 @@ export const socket = io(SOCKET_URL, {
   reconnection: true,
   reconnectionAttempts: 10,
   reconnectionDelay: 2000,
-  transports: ["polling", "websocket"],
+  transports: ["polling"], // Forçado polling porque Vercel não suporta WS Rewrites
   withCredentials: true,
-  forceNew: true,
 });
 
 // Helper para entrar em salas

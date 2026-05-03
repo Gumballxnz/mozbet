@@ -57,28 +57,6 @@ export default async function Home() {
       {/* Carrossel Dinâmico Client-side hidratado com dados do Servidor */}
       <BannerCarousel initialBanners={initialBanners} />
 
-      {/* Destaques Rápidos (Rendeizado 100% no Servidor) */}
-      <section className="grid grid-cols-3 gap-2 px-3 py-4">
-        {[
-          { title: "Torneios", desc: "Prêmios Diários", icon: "🏆", bg: "from-amber-500/20 to-amber-600/5", border: "border-amber-500/20" },
-          { title: "VIP", desc: "Cashback 20%", icon: "💎", bg: "from-purple-500/20 to-purple-600/5", border: "border-purple-500/20" },
-          { title: "Indique", desc: "Ganhe 500 MT", icon: "🤝", bg: "from-emerald-500/20 to-emerald-600/5", border: "border-emerald-500/20" },
-        ].map((item, i) => (
-          <div key={i} className={`p-2 rounded-[16px] bg-gradient-to-br ${item.bg} border ${item.border} flex flex-col items-center justify-center text-center gap-1 active:scale-95 transition-transform`}>
-            <span className="text-xl drop-shadow-md">{item.icon}</span>
-            <div className="flex flex-col items-center">
-              <h3 className="font-extrabold text-[10px] text-foreground/90 whitespace-nowrap">{item.title}</h3>
-              <p className="text-[8px] font-bold text-muted-foreground whitespace-nowrap">{item.desc}</p>
-            </div>
-          </div>
-        ))}
-      </section>
-
-      {/* Divisor de Destaque */}
-      <div className="px-3 pb-2">
-        <div className="w-full h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-      </div>
-
       <GameCatalog />
       
       {/* Tabela de Apostas Ao Vivo */}

@@ -153,6 +153,7 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
         schema: 'public', 
         table: 'chat_messages' 
       }, (payload) => {
+        console.log("Mensagem em tempo real recebida:", payload.new);
         const newMessage = payload.new as ChatMessage;
         setMessages((prev: ChatMessage[]) => {
           if (prev.find(m => m.id === newMessage.id)) return prev;
@@ -160,7 +161,9 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
         });
         if (isOpen) setTimeout(scrollToBottom, 50);
       })
-      .subscribe();
+      .subscribe((status) => {
+        console.log("Status da subscrição Realtime:", status);
+      });
 
     return () => {
       supabase.removeChannel(channel);
@@ -324,7 +327,7 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
                   </div>
                   <div className="flex-1 bg-white/[0.04] rounded-2xl rounded-tl-none p-3 border border-white/[0.06]">
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm font-bold text-emerald-400">{m.username}</span>
+                      <span className="text-sm font-bold text-emerald-400">{maskId(m.username)}</span>
                       <span className="text-[10px] text-muted-foreground">{timeStr}</span>
                     </div>
                     <p className="text-sm text-foreground/90 break-words">{m.message}</p>

@@ -1,11 +1,11 @@
 "use client";
 
-import { X, Info, Send, BadgeCheck } from "lucide-react";
+import { X, Info, Send, BadgeCheck, Megaphone } from "lucide-react";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAppStore } from "@/lib/store";
 import { toast } from "sonner";
-import { socket, joinRoom, leaveRoom } from "@/lib/socket";
+import { socket } from "@/lib/socket";
 
 interface ChatGlobalProps {
   isOpen: boolean;
@@ -21,10 +21,9 @@ interface ChatMessage {
   type: "message" | "win_announcement" | "system" | "fake_user";
   metadata?: any;
   created_at: string;
-  avatar?: string;
 }
 
-// ===== AVATARES DO SITE (DiceBear Adventurer — mesmos do perfil) =====
+// ===== AVATARES DO SITE =====
 const SITE_AVATARS = [
   "https://api.dicebear.com/7.x/adventurer/svg?seed=Felix&backgroundColor=f59e0b",
   "https://api.dicebear.com/7.x/adventurer/svg?seed=Aneka&backgroundColor=10b981",
@@ -34,105 +33,58 @@ const SITE_AVATARS = [
   "https://api.dicebear.com/7.x/adventurer/svg?seed=Zoe&backgroundColor=ec4899",
 ];
 
-// Jogos do catálogo real do site
-const GAME_POOL = [
-  { id: "aviator", name: "Aviator" },
-  { id: "taxi-crash", name: "Taxi Crash" },
-  { id: "earplane", name: "Earplane" },
-  { id: "purple-crash", name: "Crash" },
-  { id: "subway-crash", name: "Subway Crash" },
-  { id: "augustus-crash", name: "Augustus Crash" },
-  { id: "chicken-highway", name: "Chicken Highway" },
-  { id: "mines", name: "Mines" },
-  { id: "plinko", name: "Plinko777" },
-  { id: "bottle-mania", name: "Bottle Mania" },
-  { id: "fishinator", name: "Fishinator" },
-  { id: "football-x", name: "Football X" },
-  { id: "lion-zama", name: "Lion Zama" },
-  { id: "mega-fruits", name: "Mega Fruits" },
-];
+// Extrair avatar da mensagem (pode vir no campo metadata.avatar)
+function getAvatar(m: ChatMessage): string {
+  return m.metadata?.avatar || SITE_AVATARS[0];
+}
 
-// IDs Partilhados com a Tabela de Apostas para consistência
-const SHARED_FAKE_IDS = [
-  "A8B2C4F1", "F9D3E2A0", "B7C1D9F4", "E4A2B5C1", "D1F8E3A2",
-  "C5B4A1F9", "8F2D1A3B", "3C9E4B1F", "2A5B8C1D", "1E7F3D2A",
-  "9B1C3A5D", "7F2A4C1B", "5D8E1F2A", "3A6B9C2D", "1C4E7F9A",
-  "A1B2C3D4", "E5F6A7B8", "C9D0E1F2", "A3B4C5D6", "E7F8A9B0"
-];
-
-// Mostrar apenas ID Mascarado (Privacidade total - NUNCA MOSTRAR NÚMEROS)
+// Mostrar apenas ID Mascarado (Privacidade total)
 function maskId(username: string): string {
   if (!username) return "USER***";
-  // Remove qualquer traço de UUID
   const cleanId = username.includes("-") ? username.split("-")[0] : username;
-  
-  // Se começar com número (telemóvel), transformamos num ID MZ
   if (/^\d/.test(cleanId)) {
     return "MZ" + cleanId.slice(0, 3).toUpperCase() + "***";
   }
-  
   return cleanId.slice(0, 4).toUpperCase() + "***";
 }
 
-// Lógica de Online Dinâmico (Simula picos de tráfego de casino)
+// Online count dinâmico baseado na hora (funciona sem VPS)
 function getDynamicOnlineCount(): number {
   const hour = new Date().getHours();
   let base = 150;
-  
-  if (hour >= 0 && hour <= 4) base = 450; // Madrugada (Pico)
-  else if (hour > 4 && hour <= 10) base = 120; // Manhã (Baixo)
-  else if (hour > 10 && hour <= 18) base = 280; // Tarde (Médio)
-  else if (hour > 18 && hour <= 23) base = 580; // Noite (Pico Máximo)
-
-  // Variar +/- 15 de forma orgânica
+  if (hour >= 0 && hour <= 4) base = 450;
+  else if (hour > 4 && hour <= 10) base = 120;
+  else if (hour > 10 && hour <= 18) base = 280;
+  else if (hour > 18 && hour <= 23) base = 580;
   const variation = Math.floor(Math.sin(Date.now() / 5000) * 15);
   return base + variation;
 }
-
-
-
-
 
 // ===== COMPONENTE PRINCIPAL =====
 export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalProps) {
   const { isLoggedIn, fakeChatMessages: messages, setFakeChatMessages: setMessages, onlineCount, setOnlineCount } = useAppStore();
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
-  const [isConnected, setIsConnected] = useState(socket.connected);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll function
+  // Auto-scroll
   const scrollToBottom = useCallback(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, []);
 
-  // Sincronizar o online_count Dinâmico
+  // Sincronizar online count
   useEffect(() => {
-    const updateCount = () => {
-      setOnlineCount(getDynamicOnlineCount());
-    };
-
+    const updateCount = () => setOnlineCount(getDynamicOnlineCount());
     const interval = setInterval(updateCount, 5000);
     updateCount();
-
-    const onConnect = () => setIsConnected(true);
-    const onDisconnect = () => setIsConnected(false);
-
-    setIsConnected(socket.connected);
-    socket.on("connect", onConnect);
-    socket.on("disconnect", onDisconnect);
-
-    return () => {
-      socket.off("connect", onConnect);
-      socket.off("disconnect", onDisconnect);
-      clearInterval(interval);
-    };
+    return () => clearInterval(interval);
   }, [setOnlineCount]);
 
-  // Carregar histórico ASSIM QUE O COMPONENTE MONTA (evita delay de 2s)
+  // Carregar histórico + ouvir Realtime (fonte PRINCIPAL de mensagens)
   useEffect(() => {
+    // 1. Carregar histórico do banco
     const loadHistory = async () => {
       try {
         const res = await fetch("/api/chat/history");
@@ -145,44 +97,37 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
         console.error("Erro ao carregar histórico:", err);
       }
     };
-
     loadHistory();
 
-    // 1. Ouvir mensagens via SOCKET.IO (Bots e anúncios da VPS)
-    const onSocketMessage = (newMessage: ChatMessage) => {
+    // 2. Ouvir mensagens via SUPABASE REALTIME (fonte principal — global para todos)
+    const channel = supabase.channel('global-chat-room')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'chat_messages'
+      }, (payload) => {
+        const newMessage = payload.new as ChatMessage;
+        setMessages((prev: ChatMessage[]) => {
+          if (prev.some(m => m.id === newMessage.id)) return prev;
+          return [...prev, newMessage].slice(-100);
+        });
+        if (isOpen) setTimeout(scrollToBottom, 100);
+      })
+      .subscribe((status, err) => {
+        if (err && !err.message?.includes("1000")) {
+          console.error("Erro Realtime:", err);
+        }
+      });
 
+    // 3. Socket.io como bónus opcional (se VPS estiver a emitir por esta via)
+    const onSocketMessage = (newMessage: ChatMessage) => {
       setMessages((prev: ChatMessage[]) => {
         if (prev.some(m => m.id === newMessage.id)) return prev;
         return [...prev, newMessage].slice(-100);
       });
       if (isOpen) setTimeout(scrollToBottom, 100);
     };
-
     socket.on("receive_message", onSocketMessage);
-
-    // 2. Ouvir mensagens via SUPABASE (Mensagens reais de utilizadores)
-    const channel = supabase.channel('global-chat-room')
-      .on('postgres_changes', { 
-        event: 'INSERT', 
-        schema: 'public', 
-        table: 'chat_messages' 
-      }, (payload) => {
-
-        const newMessage = payload.new as ChatMessage;
-        
-        setMessages((prev: ChatMessage[]) => {
-          if (prev.some(m => m.id === newMessage.id)) return prev;
-          return [...prev, newMessage].slice(-100);
-        });
-
-        if (isOpen) setTimeout(scrollToBottom, 100);
-      })
-      .subscribe((status, err) => {
-        // Silenciar erros de fechamento normal (código 1000)
-        if (err && !err.message?.includes("1000")) {
-          console.error("❌ Erro Realtime:", err);
-        }
-      });
 
     return () => {
       socket.off("receive_message", onSocketMessage);
@@ -190,47 +135,40 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
     };
   }, [setMessages, scrollToBottom, isOpen]);
 
-
-
   const handleSend = async () => {
     if (!isLoggedIn) {
       toast.error("Faz login para participar no chat");
       return;
     }
-    
     if (!input.trim() || isSending) return;
 
     const messageText = input.trim();
     const user = useAppStore.getState().user;
-    
+
     // OPTIMISTIC UI
     const optimisticMsg: ChatMessage = {
       id: `real-${Date.now()}`,
       user_id: user?.id || "unknown",
-      username: user?.id ? user.id.split("-")[0].toUpperCase() : "USER", // ID, NUNCA TELEFONE
+      username: user?.id ? user.id.split("-")[0].toUpperCase() : "USER",
       message: messageText,
       type: "message",
-      avatar: user?.avatar || SITE_AVATARS[0],
       created_at: new Date().toISOString(),
     };
-    
+
     const currentMsgs = useAppStore.getState().fakeChatMessages;
     setMessages([...currentMsgs, optimisticMsg].slice(-100));
     setTimeout(scrollToBottom, 50);
-    
+
     setInput("");
     setIsSending(true);
 
     try {
-      // Salvar na BD via API — o Realtime encarrega-se de mostrar a todos
       const res = await fetch("/api/chat/message", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: messageText }),
       });
-
       if (!res.ok) throw new Error("Erro ao enviar");
-
     } catch (err: any) {
       toast.error(err.message || "Erro ao enviar");
       setInput(messageText);
@@ -243,7 +181,6 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
 
   return (
     <div className="fixed inset-0 z-[100] flex justify-end" onClick={onClose}>
-      {/* Overlay semi-transparente apenas na metade esquerda */}
       <div className="absolute inset-0 bg-black/30" />
       <div
         className="surface-card w-[65%] sm:w-[55%] md:max-w-md h-full flex flex-col animate-slide-right relative z-10 shadow-2xl border-l border-white/5"
@@ -257,8 +194,8 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
             </div>
             <div>
               <h2 className="text-lg font-extrabold tracking-tight">Chat ao Vivo</h2>
-              <p className={`text-[10px] font-bold ${isConnected ? "text-primary" : "text-red-500"}`}>
-                {isConnected ? "🟢" : "🔴"} {isConnected ? `${onlineCount} online agora` : "Desconectado da VPS"}
+              <p className="text-[10px] font-bold text-primary">
+                🟢 {onlineCount} online agora
               </p>
             </div>
           </div>
@@ -286,8 +223,8 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
 
           {messages.map((m) => {
             const timeStr = new Date(m.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-            
-            // 1. ANÚNCIO DE VITÓRIA (WIN_ANNOUNCEMENT) — Card do BOT
+
+            // 1. ANÚNCIO DE VITÓRIA
             if (m.type === "win_announcement") {
               const meta = m.metadata || {};
               return (
@@ -306,7 +243,7 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
                       <div className="rounded-2xl p-4 mt-1" style={{ background: "linear-gradient(135deg, hsl(280 50% 25%), hsl(260 50% 20%))" }}>
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-2">
-                            <span className="text-sm font-extrabold text-white">{meta.username}</span>
+                            <span className="text-sm font-extrabold text-white">{meta.username || maskId(m.username)}</span>
                           </div>
                           <BadgeCheck size={20} className="text-primary" />
                         </div>
@@ -314,13 +251,13 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
                           <div>
                             <p className="text-[10px] font-bold tracking-wider text-white/60 mb-0.5">SACOU:</p>
                             <p className="text-2xl font-extrabold" style={{ color: "hsl(290 100% 70%)" }}>
-                              {meta.multiplier || `${(Math.random() * 8 + 1.5).toFixed(2)}`}x
+                              {meta.multiplier || "2.00"}x
                             </p>
                           </div>
                           <div>
                             <p className="text-[10px] font-bold tracking-wider text-white/60 mb-0.5">GANHO:</p>
                             <p className="text-2xl font-extrabold text-primary leading-tight">
-                              {Number(meta.amount).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                              {Number(meta.amount || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                             </p>
                             <p className="text-base font-extrabold text-primary leading-tight">MZN</p>
                           </div>
@@ -338,12 +275,33 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
               );
             }
 
-            // 2. MENSAGEM FAKE DE JOGADOR — Avatar DiceBear + ID parcial
+            // 2. MENSAGEM DE SISTEMA (Bónus, promoções, avisos)
+            if (m.type === "system") {
+              const meta = m.metadata || {};
+              return (
+                <div key={m.id} className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                  <div className="flex gap-2">
+                    <div className="w-9 h-9 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0">
+                      <Megaphone size={16} className="text-amber-400" />
+                    </div>
+                    <div className="flex-1 bg-gradient-to-r from-amber-500/10 to-orange-500/5 rounded-2xl rounded-tl-none p-3 border border-amber-500/20">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-sm font-extrabold text-amber-400">{meta.title || "📢 MOZBET"}</span>
+                        <span className="text-[10px] text-muted-foreground">{timeStr}</span>
+                      </div>
+                      <p className="text-sm text-foreground/90">{m.message}</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+
+            // 3. MENSAGEM FAKE DE JOGADOR
             if (m.type === "fake_user") {
               return (
                 <div key={m.id} className="flex gap-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
                   <div className="w-9 h-9 rounded-full overflow-hidden shrink-0 border border-white/10">
-                    <img src={m.avatar || SITE_AVATARS[0]} alt="" className="w-full h-full object-cover" />
+                    <img src={getAvatar(m)} alt="" className="w-full h-full object-cover" />
                   </div>
                   <div className="flex-1 bg-white/[0.04] rounded-2xl rounded-tl-none p-3 border border-white/[0.06]">
                     <div className="flex items-center justify-between mb-1">
@@ -356,11 +314,11 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
               );
             }
 
-            // 3. MENSAGEM REAL DO JOGADOR
+            // 4. MENSAGEM REAL DO JOGADOR
             return (
               <div key={m.id} className="flex gap-2">
                 <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center shrink-0 text-base overflow-hidden">
-                  <img src={SITE_AVATARS[0]} alt="" className="w-full h-full object-cover" />
+                  <img src={getAvatar(m)} alt="" className="w-full h-full object-cover" />
                 </div>
                 <div className="flex-1 bg-secondary/30 rounded-2xl rounded-tl-none p-3 border border-border/50">
                   <div className="flex items-center justify-between mb-1">
@@ -391,7 +349,7 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
                 {input.length}/150
               </span>
             </div>
-            <button 
+            <button
               onClick={handleSend}
               disabled={!isLoggedIn || !input.trim() || isSending}
               className="w-11 h-11 rounded-xl bg-primary text-primary-foreground flex items-center justify-center active:scale-95 transition-all disabled:opacity-50 disabled:active:scale-100"

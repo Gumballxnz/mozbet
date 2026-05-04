@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
     if (error) throw error;
 
     // 2. Buscar as apostas da rodada MAIS RECENTE para a aba "Anterior"
-    let lastRoundBets = [];
+    let lastRoundBets: any[] = [];
     if (rounds && rounds.length > 0) {
         const { data: bets } = await supabaseAdmin
             .from("bets")

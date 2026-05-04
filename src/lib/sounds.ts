@@ -26,5 +26,4 @@ export const playSound = (soundName: 'error' | 'notification' | 'win' | 'cashout
   } catch (e) {
     console.error("Erro ao reproduzir som:", e);
   }
-  }
 };

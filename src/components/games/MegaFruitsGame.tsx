@@ -82,7 +82,7 @@ const MegaFruitsGame = ({ balance, onUpdateBalance, onBack }: MegaFruitsProps) =
           requestAnimationFrame(animate);
         } else {
           // Final result from backend
-          let finalReels = Array(REELS_COUNT).fill(null).map(() => 
+          const finalReels = Array(REELS_COUNT).fill(null).map(() => 
             Array(ROWS_COUNT).fill(null).map(() => SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)].icon)
           );
 

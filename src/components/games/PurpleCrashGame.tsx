@@ -189,7 +189,7 @@ const PurpleCrashGame = ({ balance, onUpdateBalance, onBack }: Props) => {
   };
   const pp = planePos();
 
-  const BetPanel = ({ n }: { n: 1 | 2 }) => {
+  const renderBetPanel = (n: 1 | 2) => {
     const val = n === 1 ? bet1 : bet2;
     const setVal = n === 1 ? setBet1 : setBet2;
     const auto = n === 1 ? auto1 : auto2;
@@ -218,8 +218,8 @@ const PurpleCrashGame = ({ balance, onUpdateBalance, onBack }: Props) => {
             disabled={has}
             onChange={(e) => setVal(Number(e.target.value))}
             onBlur={(e) => {
-              const val = Number(e.target.value);
-              if (isNaN(val) || val < 1) setVal(1);
+              const v = Number(e.target.value);
+              if (isNaN(v) || v < 1) setVal(1);
             }}
             inputMode="numeric"
             className="flex-1 bg-transparent text-center text-white font-bold text-sm outline-none w-full"
@@ -287,8 +287,8 @@ const PurpleCrashGame = ({ balance, onUpdateBalance, onBack }: Props) => {
       </div>
 
       <div className="grid grid-cols-2 gap-2 px-3 mt-3">
-        <BetPanel n={1} />
-        <BetPanel n={2} />
+        {renderBetPanel(1)}
+        {renderBetPanel(2)}
       </div>
 
       <div className="px-3 pb-4 mt-3">
@@ -299,7 +299,7 @@ const PurpleCrashGame = ({ balance, onUpdateBalance, onBack }: Props) => {
           ))}
         </div>
         <div className="bg-[#0f3d3e] rounded-lg p-3 text-[10px] text-white/60 text-center">
-          Sem dados em "{statsTab}"
+          Sem dados em &quot;{statsTab}&quot;
         </div>
       </div>
 

@@ -84,7 +84,7 @@ const LionZamaGame = ({ balance, onUpdateBalance, onBack }: LionZamaProps) => {
           requestAnimationFrame(animate);
         } else {
           // Determine final reels based on backend result
-          let finalReels = Array(REELS_COUNT).fill(null).map(() => 
+          const finalReels = Array(REELS_COUNT).fill(null).map(() => 
             Array(ROWS_COUNT).fill(null).map(() => SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)])
           );
 

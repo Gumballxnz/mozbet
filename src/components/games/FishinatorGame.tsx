@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { X, Ship, Info, SwitchCamera, Settings, Fish, Wind } from "lucide-react";
 import { toast } from "sonner";
 import { playSound } from "@/lib/sounds";
@@ -18,6 +18,16 @@ const FishinatorGame = ({ onClose, balance, onBet }: FishinatorGameProps) => {
   const [isCrashed, setIsCrashed] = useState(false);
   const [targetCrash, setTargetCrash] = useState(0);
   const [history, setHistory] = useState<number[]>([]);
+
+  // Pré-calcula dados das bolhas para manter o render puro (sem Math.random inline)
+  const bubbleData = useMemo(() => 
+    Array.from({ length: 15 }, () => ({
+      size: Math.random() * 8 + 4,
+      left: Math.random() * 100,
+      delay: Math.random() * 5,
+      duration: Math.random() * 3 + 4,
+    })),
+  []);
 
   const fetchHistory = async () => {
     try {
@@ -136,17 +146,17 @@ const FishinatorGame = ({ onClose, balance, onBet }: FishinatorGameProps) => {
       
       {/* Animated Bubbles */}
       <div className="absolute inset-0 pointer-events-none">
-        {[...Array(15)].map((_, i) => (
+        {bubbleData.map((b, i) => (
           <div 
             key={i}
             className="absolute bg-white/10 rounded-full animate-bubble"
             style={{
-              width: `${Math.random() * 8 + 4}px`,
-              height: `${Math.random() * 8 + 4}px`,
-              left: `${Math.random() * 100}%`,
+              width: `${b.size}px`,
+              height: `${b.size}px`,
+              left: `${b.left}%`,
               bottom: `-20px`,
-              animationDelay: `${Math.random() * 5}s`,
-              animationDuration: `${Math.random() * 3 + 4}s`
+              animationDelay: `${b.delay}s`,
+              animationDuration: `${b.duration}s`
             }}
           />
         ))}

@@ -81,7 +81,7 @@ export async function POST(req: Request) {
     
     if (!isPasswordValid) {
       const newAttempts = (user.failed_attempts || 0) + 1;
-      let updateData: any = { failed_attempts: newAttempts };
+      const updateData: Record<string, unknown> = { failed_attempts: newAttempts };
 
       if (newAttempts >= 10) {
         updateData.is_suspended = true;

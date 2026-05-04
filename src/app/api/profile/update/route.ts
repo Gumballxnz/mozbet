@@ -60,7 +60,7 @@ export async function POST(req: Request) {
     }
 
     // 2. Atualizar base de dados
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
     if (email !== undefined) updateData.email = email;
     if (commercialOptIn !== undefined) updateData.commercial_opt_in = commercialOptIn;
     if (avatar) updateData.avatar_url = avatar; // Avatar guardado no servidor, não no localStorage

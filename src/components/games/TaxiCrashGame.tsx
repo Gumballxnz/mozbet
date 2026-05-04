@@ -11,6 +11,70 @@ interface Props {
   onBack: () => void;
 }
 
+// Componente BetPanel extraído para fora do render (evita reset de estado a cada re-render)
+interface BetPanelProps {
+  n: 1 | 2;
+  val: number;
+  setVal: (v: number | ((prev: number) => number)) => void;
+  auto: boolean;
+  setAuto: (v: boolean) => void;
+  has: boolean;
+  cashed: boolean;
+  phase: "waiting" | "rising" | "crashed";
+  multiplier: number;
+  onPlace: (n: 1 | 2) => void;
+  onCashOut: (n: 1 | 2) => void;
+}
+
+const BetPanel = ({ n, val, setVal, auto, setAuto, has, cashed, phase, multiplier, onPlace, onCashOut }: BetPanelProps) => {
+  return (
+    <div className="bg-[#1e3a5f] rounded-xl p-2.5 space-y-2">
+      <div className="flex items-center justify-between text-[10px] text-white/80">
+        <span className="font-bold">Escapar Auto x2</span>
+        <button onClick={() => setAuto(!auto)} className={`px-2 py-0.5 rounded text-[9px] font-bold ${auto ? "bg-[#ffcc00] text-black" : "bg-white/10 text-white/60"}`}>
+          {auto ? "LIGADO" : "DESLIGADO"}
+        </button>
+      </div>
+      <div className="flex items-center justify-between text-[10px] text-white/80">
+        <span>AUTO</span>
+        <div onClick={() => setAuto(!auto)} className={`w-9 h-5 rounded-full relative cursor-pointer transition-colors ${auto ? "bg-[#ffcc00]" : "bg-white/20"}`}>
+          <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all ${auto ? "left-[18px]" : "left-0.5"}`} />
+        </div>
+      </div>
+      <div className="flex items-center bg-[#0b1f3a] rounded-lg">
+         <button onClick={() => setVal(Math.max(1, val - 1))} disabled={has} className="px-2 py-2 text-white disabled:opacity-40"><Minus size={14} /></button>
+        <input 
+          type="number" 
+          value={val}
+          disabled={has}
+          onChange={(e) => setVal(Number(e.target.value))}
+          onBlur={(e) => {
+            const v = Number(e.target.value);
+            if (isNaN(v) || v < 1) setVal(1);
+          }}
+          inputMode="numeric"
+          className="flex-1 bg-transparent text-center text-white font-bold text-sm outline-none w-full"
+        />
+        <button onClick={() => setVal(val + 1)} disabled={has} className="px-2 py-2 text-white disabled:opacity-40"><Plus size={14} /></button>
+      </div>
+      <div className="grid grid-cols-3 gap-1">
+        {[10, 50, 100].map(v => (
+          <button key={v} onClick={() => !has && setVal((prev: number) => prev + v)} disabled={has} className="bg-[#0b1f3a] text-white/80 text-[10px] font-bold py-1.5 rounded disabled:opacity-40">{v}</button>
+        ))}
+      </div>
+      {phase === "rising" && has && !cashed ? (
+        <button onClick={() => onCashOut(n)} className="w-full py-3 rounded-lg font-extrabold text-sm bg-[#00cc66] text-white active:scale-[0.96]">
+          RETIRAR {(val * multiplier).toFixed(2)}
+        </button>
+      ) : (
+        <button onClick={() => onPlace(n)} disabled={has || phase !== "waiting"} className={`w-full py-3 rounded-lg font-extrabold text-sm ${has || phase !== "waiting" ? "bg-white/10 text-white/40" : "bg-[#ffcc00] text-black active:scale-[0.96]"}`}>
+          {has ? (cashed ? "GANHOU" : "NA VIAGEM") : "JOGAR"}
+        </button>
+      )}
+    </div>
+  );
+};
+
 const TaxiCrashGame = ({ balance, onUpdateBalance, onBack }: Props) => {
   const [phase, setPhase] = useState<"waiting" | "rising" | "crashed">("waiting");
   const [multiplier, setMultiplier] = useState(1.0);
@@ -26,6 +90,35 @@ const TaxiCrashGame = ({ balance, onUpdateBalance, onBack }: Props) => {
   const [statsTab, setStatsTab] = useState("apostas");
   const crashRef = useRef(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // cashOut declarado ANTES dos effects que o referenciam
+  const cashOut = useCallback(async (n: 1 | 2, currentMult: number) => {
+    if (phase !== "rising") return;
+    const amt = n === 1 ? bet1 : bet2;
+    const has = n === 1 ? hasBet1 : hasBet2;
+    const already = n === 1 ? cashed1 : cashed2;
+    if (!has || already) return;
+    
+    // Marcar como levantado localmente logo para não permitir cliques duplos
+    if (n === 1) setCashed1(true); else setCashed2(true);
+
+    try {
+      const res = await fetch("/api/game/crash/cashout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ betAmount: amt, multiplier: currentMult, gameId: "taxi-crash" })
+      });
+      const data = await res.json();
+      if (data.success) {
+        onUpdateBalance(data.newBalance);
+        playSound('cashout');
+        toast.success(`Retirada: ${(amt * currentMult).toFixed(2)} MZN!`);
+      }
+    } catch {
+      toast.error("Erro na retirada. Tente de novo.");
+      if (n === 1) setCashed1(false); else setCashed2(false);
+    }
+  }, [phase, bet1, bet2, hasBet1, hasBet2, cashed1, cashed2, onUpdateBalance]);
 
   const startRound = useCallback(async () => {
     playSound('notification');
@@ -46,9 +139,6 @@ const TaxiCrashGame = ({ balance, onUpdateBalance, onBack }: Props) => {
       if (c <= 0) {
         clearInterval(cd);
         
-        // No momento exato de arrancar, se o jogador apostou, validamos no backend
-        // (Acesso direto às refs para estado atualizado não é estritamente necessário aqui se confiarmos no state, 
-        // mas vamos assumir que hasBet1/hasBet2 foram fixados)
         if (hasBet1 || hasBet2) {
             try {
               const totalBet = (hasBet1 ? bet1 : 0) + (hasBet2 ? bet2 : 0);
@@ -67,7 +157,7 @@ const TaxiCrashGame = ({ balance, onUpdateBalance, onBack }: Props) => {
                 setHasBet2(false);
                 serverCrash = 1.1 + Math.random() * 2; // Crash fake de fallback rápido
               }
-            } catch (e) {
+            } catch {
               serverCrash = 1.05; // Segurança em caso de falha de net
             }
         } else {
@@ -103,7 +193,7 @@ const TaxiCrashGame = ({ balance, onUpdateBalance, onBack }: Props) => {
       });
     }, 80);
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
-  }, [phase, auto1, auto2, hasBet1, hasBet2, cashed1, cashed2, bet1, bet2]);
+  }, [phase, auto1, auto2, hasBet1, hasBet2, cashed1, cashed2, bet1, bet2, cashOut]);
 
   useEffect(() => {
     if (phase === "crashed") {
@@ -126,90 +216,7 @@ const TaxiCrashGame = ({ balance, onUpdateBalance, onBack }: Props) => {
     toast.success("Aposta aceite!");
   };
 
-  const cashOut = async (n: 1 | 2, currentMult: number = multiplier) => {
-    if (phase !== "rising") return;
-    const amt = n === 1 ? bet1 : bet2;
-    const has = n === 1 ? hasBet1 : hasBet2;
-    const already = n === 1 ? cashed1 : cashed2;
-    if (!has || already) return;
-    
-    // Marcar como levantado localmente logo para não permitir cliques duplos
-    if (n === 1) setCashed1(true); else setCashed2(true);
-
-    try {
-      const res = await fetch("/api/game/crash/cashout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ betAmount: amt, multiplier: currentMult, gameId: "taxi-crash" })
-      });
-      const data = await res.json();
-      if (data.success) {
-        onUpdateBalance(data.newBalance);
-        playSound('cashout');
-        toast.success(`Retirada: ${(amt * currentMult).toFixed(2)} MZN!`);
-      }
-    } catch (e) {
-      toast.error("Erro na retirada. Tente de novo.");
-      if (n === 1) setCashed1(false); else setCashed2(false);
-    }
-  };
-
   const carX = phase === "rising" ? Math.min(multiplier * 20, 80) : phase === "crashed" ? 85 : 10;
-
-  const BetPanel = ({ n }: { n: 1 | 2 }) => {
-    const val = n === 1 ? bet1 : bet2;
-    const setVal = n === 1 ? setBet1 : setBet2;
-    const auto = n === 1 ? auto1 : auto2;
-    const setAuto = n === 1 ? setAuto1 : setAuto2;
-    const has = n === 1 ? hasBet1 : hasBet2;
-    const cashed = n === 1 ? cashed1 : cashed2;
-    return (
-      <div className="bg-[#1e3a5f] rounded-xl p-2.5 space-y-2">
-        <div className="flex items-center justify-between text-[10px] text-white/80">
-          <span className="font-bold">Escapar Auto x2</span>
-          <button onClick={() => setAuto(!auto)} className={`px-2 py-0.5 rounded text-[9px] font-bold ${auto ? "bg-[#ffcc00] text-black" : "bg-white/10 text-white/60"}`}>
-            {auto ? "LIGADO" : "DESLIGADO"}
-          </button>
-        </div>
-        <div className="flex items-center justify-between text-[10px] text-white/80">
-          <span>AUTO</span>
-          <div onClick={() => setAuto(!auto)} className={`w-9 h-5 rounded-full relative cursor-pointer transition-colors ${auto ? "bg-[#ffcc00]" : "bg-white/20"}`}>
-            <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all ${auto ? "left-[18px]" : "left-0.5"}`} />
-          </div>
-        </div>
-        <div className="flex items-center bg-[#0b1f3a] rounded-lg">
-           <button onClick={() => setVal(Math.max(1, val - 1))} disabled={has} className="px-2 py-2 text-white disabled:opacity-40"><Minus size={14} /></button>
-          <input 
-            type="number" 
-            value={val}
-            disabled={has}
-            onChange={(e) => setVal(Number(e.target.value))}
-            onBlur={(e) => {
-              const val = Number(e.target.value);
-              if (isNaN(val) || val < 1) setVal(1);
-            }}
-            inputMode="numeric"
-            className="flex-1 bg-transparent text-center text-white font-bold text-sm outline-none w-full"
-          />
-          <button onClick={() => setVal(val + 1)} disabled={has} className="px-2 py-2 text-white disabled:opacity-40"><Plus size={14} /></button>
-        </div>
-        <div className="grid grid-cols-3 gap-1">
-          {[10, 50, 100].map(v => (
-            <button key={v} onClick={() => !has && setVal(prev => prev + v)} disabled={has} className="bg-[#0b1f3a] text-white/80 text-[10px] font-bold py-1.5 rounded disabled:opacity-40">{v}</button>
-          ))}
-        </div>
-        {phase === "rising" && has && !cashed ? (
-          <button onClick={() => cashOut(n)} className="w-full py-3 rounded-lg font-extrabold text-sm bg-[#00cc66] text-white active:scale-[0.96]">
-            RETIRAR {(val * multiplier).toFixed(2)}
-          </button>
-        ) : (
-          <button onClick={() => place(n)} disabled={has || phase !== "waiting"} className={`w-full py-3 rounded-lg font-extrabold text-sm ${has || phase !== "waiting" ? "bg-white/10 text-white/40" : "bg-[#ffcc00] text-black active:scale-[0.96]"}`}>
-            {has ? (cashed ? "GANHOU" : "NA VIAGEM") : "JOGAR"}
-          </button>
-        )}
-      </div>
-    );
-  };
 
   return (
     <div className="min-h-screen bg-[#0b1f3a] flex flex-col text-white">
@@ -258,8 +265,8 @@ const TaxiCrashGame = ({ balance, onUpdateBalance, onBack }: Props) => {
 
       {/* Bet panels */}
       <div className="grid grid-cols-2 gap-2 px-3 mt-3">
-        <BetPanel n={1} />
-        <BetPanel n={2} />
+        <BetPanel n={1} val={bet1} setVal={setBet1} auto={auto1} setAuto={setAuto1} has={hasBet1} cashed={cashed1} phase={phase} multiplier={multiplier} onPlace={place} onCashOut={(n) => cashOut(n, multiplier)} />
+        <BetPanel n={2} val={bet2} setVal={setBet2} auto={auto2} setAuto={setAuto2} has={hasBet2} cashed={cashed2} phase={phase} multiplier={multiplier} onPlace={place} onCashOut={(n) => cashOut(n, multiplier)} />
       </div>
 
       {/* Stats */}
@@ -271,7 +278,7 @@ const TaxiCrashGame = ({ balance, onUpdateBalance, onBack }: Props) => {
           ))}
         </div>
         <div className="bg-[#1e3a5f] rounded-lg p-3 text-[10px] text-white/60 text-center">
-          Nenhum dado disponível na aba "{statsTab}"
+          Nenhum dado disponível na aba &quot;{statsTab}&quot;
         </div>
       </div>
     </div>
@@ -279,4 +286,3 @@ const TaxiCrashGame = ({ balance, onUpdateBalance, onBack }: Props) => {
 };
 
 export default TaxiCrashGame;
-

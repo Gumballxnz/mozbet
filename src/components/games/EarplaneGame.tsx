@@ -29,7 +29,8 @@ const EarplaneGame = ({ balance, onUpdateBalance, onBack }: Props) => {
   const [hasBet2, setHasBet2] = useState(false);
   const [cashed1, setCashed1] = useState(false);
   const [cashed2, setCashed2] = useState(false);
-  const [online] = useState(212 + Math.floor(Math.random() * 50));
+  const onlineRef = useRef(212 + Math.floor(Math.random() * 50));
+  const online = onlineRef.current;
   
   const startedAt = useRef<number>(0);
   const currentRoundId = useRef<string | null>(null);
@@ -181,7 +182,7 @@ const EarplaneGame = ({ balance, onUpdateBalance, onBack }: Props) => {
   const planeX = phase === "rising" ? Math.min(multiplier * 15, 85) : 10;
   const planeY = phase === "rising" ? Math.max(75 - multiplier * 8, 15) : 75;
 
-  const BetPanel = ({ n }: { n: 1 | 2 }) => {
+  const renderBetPanel = (n: 1 | 2) => {
     const val = n === 1 ? bet1 : bet2;
     const setVal = n === 1 ? setBet1 : setBet2;
     const tab = n === 1 ? tab1 : tab2;
@@ -202,8 +203,8 @@ const EarplaneGame = ({ balance, onUpdateBalance, onBack }: Props) => {
             disabled={has}
             onChange={(e) => setVal(Number(e.target.value))}
             onBlur={(e) => {
-              const val = Number(e.target.value);
-              if (isNaN(val) || val < 1) setVal(1);
+              const v = Number(e.target.value);
+              if (isNaN(v) || v < 1) setVal(1);
             }}
             inputMode="numeric"
             className="flex-1 bg-transparent text-center text-white font-bold text-sm outline-none w-full"
@@ -288,8 +289,8 @@ const EarplaneGame = ({ balance, onUpdateBalance, onBack }: Props) => {
 
       {/* Panels */}
       <div className="grid grid-cols-2 gap-2 px-3 mt-3 pb-4">
-        <BetPanel n={1} />
-        <BetPanel n={2} />
+        {renderBetPanel(1)}
+        {renderBetPanel(2)}
       </div>
     </div>
   );

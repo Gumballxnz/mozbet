@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { ArrowLeft, User as UserIcon } from "lucide-react";
+import { ArrowLeft, User as UserIcon, HelpCircle, Settings, Menu, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 import { useAppStore } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
@@ -14,53 +14,69 @@ interface Props {
   onBack: () => void;
 }
 
-// Fakes para o painel de apostas do Spribe
-const FAKE_USERS = ["1***4", "6***4", "6***7", "s***8", "s***2", "j***3", "m***a"];
-function generateRoundFakes(roundMult: number) {
-  const fakes = [];
-  const count = 15 + Math.floor(Math.random() * 20); // 15 a 35 apostadores
-  for (let i = 0; i < count; i++) {
-    const bet = [10, 20, 50, 100, 200, 500, 1000, 2000, 5000][Math.floor(Math.random() * 9)];
-    const cashedAt = Math.random() < 0.3 ? 0 : Number((Math.random() * (roundMult - 1.01) + 1.01).toFixed(2));
-    fakes.push({
-      user: FAKE_USERS[Math.floor(Math.random() * FAKE_USERS.length)],
-      bet,
-      cashedAt: cashedAt > 0 ? cashedAt : null,
-      win: cashedAt > 0 ? Number((bet * cashedAt).toFixed(2)) : 0
-    });
+// Máscara de ID idêntica ao Lobby (MZ + 3 chars + ***)
+function maskUserId(username: string): string {
+  if (!username) return "USER***";
+  const cleanId = username.includes("-") ? username.split("-")[0] : username;
+  if (/^\d/.test(cleanId)) {
+    return "MZ" + cleanId.slice(0, 3).toUpperCase() + "***";
   }
-  return fakes.sort((a, b) => b.bet - a.bet);
+  return cleanId.slice(0, 4).toUpperCase() + "***";
 }
 
-// Componente da Caixa de Aposta Individual
+// Componente da Caixa de Aposta Individual (Estilo Spribe)
 const BetBox = ({ 
   phase, multiplier, balance, onBet, onCashout, 
   cashedOut, hasBet, lastWin, activeBetAmount 
 }: any) => {
   const [betAmount, setBetAmount] = useState(10);
   const presets = [32, 80, 160, 800];
+  const [isAuto, setIsAuto] = useState(false);
   
   return (
-    <div className="flex-1 bg-[#1A1D27] rounded-2xl border border-[#2A2F40] p-2 flex flex-col gap-2">
-      <div className="flex justify-between">
-        <div className="flex items-center gap-2 bg-[#101116] rounded-full px-4 py-1.5 border border-[#2A2F40]">
-          <span className="text-[11px] text-gray-500 font-bold uppercase tracking-wider">Aposta</span>
-        </div>
-        <div className="flex items-center gap-2 px-2 py-1">
-          <span className="text-[11px] text-gray-500 font-bold uppercase">Automático</span>
-        </div>
+    <div className="flex-1 bg-[#1A1D27] rounded-3xl border border-[#2A2F40] p-3 flex flex-col gap-3">
+      <div className="flex justify-center gap-4">
+        <button 
+          onClick={() => setIsAuto(false)}
+          className={`text-[10px] font-black uppercase tracking-widest px-4 py-1 rounded-full transition-colors ${!isAuto ? 'bg-[#2C3144] text-white' : 'text-gray-500 hover:text-gray-300'}`}
+        >
+          Aposta
+        </button>
+        <button 
+          onClick={() => setIsAuto(true)}
+          className={`text-[10px] font-black uppercase tracking-widest px-4 py-1 rounded-full transition-colors ${isAuto ? 'bg-[#2C3144] text-white' : 'text-gray-500 hover:text-gray-300'}`}
+        >
+          Automático
+        </button>
       </div>
       
-      <div className="flex gap-2">
+      <div className="flex gap-2 h-full min-h-[80px]">
         <div className="flex-[1.5] flex flex-col gap-1.5">
-          <div className="flex items-center bg-[#101116] rounded-xl border border-[#2A2F40] h-12 px-1">
-            <button onClick={() => { playSound('click'); setBetAmount(Math.max(10, betAmount - 10)); }} className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-white bg-[#272B3A] font-bold">−</button>
-            <input type="number" value={betAmount} onChange={(e) => setBetAmount(Math.max(10, Number(e.target.value)))} className="flex-1 w-0 text-center text-white font-bold text-lg bg-transparent outline-none" />
-            <button onClick={() => { playSound('click'); setBetAmount(betAmount + 10); }} className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-white bg-[#272B3A] font-bold">+</button>
+          <div className="flex items-center bg-[#101116] rounded-xl border border-[#2A2F40] h-10 px-1 relative overflow-hidden group">
+            <button 
+              onClick={() => { playSound('click'); setBetAmount(Math.max(1, betAmount - 1)); }} 
+              className="w-7 h-7 rounded-full flex items-center justify-center text-gray-400 hover:bg-[#2C3144] hover:text-white transition-all font-black text-lg"
+            >−</button>
+            <input 
+              type="number" 
+              value={betAmount} 
+              onChange={(e) => setBetAmount(Math.max(1, Number(e.target.value)))} 
+              className="flex-1 w-0 text-center text-white font-black text-base bg-transparent outline-none" 
+            />
+            <button 
+              onClick={() => { playSound('click'); setBetAmount(betAmount + 1); }} 
+              className="w-7 h-7 rounded-full flex items-center justify-center text-gray-400 hover:bg-[#2C3144] hover:text-white transition-all font-black text-lg"
+            >+</button>
           </div>
           <div className="grid grid-cols-2 gap-1.5">
             {presets.map(v => (
-              <button key={v} onClick={() => { playSound('click'); setBetAmount(v); }} className="bg-[#101116] border border-[#2A2F40] rounded-lg py-1 text-[11px] font-bold text-gray-400 hover:bg-[#272B3A] hover:text-white transition-colors">{v}</button>
+              <button 
+                key={v} 
+                onClick={() => { playSound('click'); setBetAmount(v); }} 
+                className="bg-[#101116] border border-[#2A2F40] rounded-lg py-1 text-[11px] font-black text-white/60 hover:bg-[#2C3144] hover:text-white transition-colors"
+              >
+                {v}
+              </button>
             ))}
           </div>
         </div>
@@ -70,11 +86,11 @@ const BetBox = ({
             <button 
               onClick={() => { playSound('click'); onBet(betAmount); }}
               disabled={phase !== "waiting"}
-              className={`w-full h-full rounded-2xl flex flex-col items-center justify-center border-b-[4px] transition-all
+              className={`w-full h-full rounded-2xl flex flex-col items-center justify-center border-b-[4px] shadow-lg active:translate-y-0.5 active:border-b-0 transition-all
                 ${phase === "waiting" ? 'bg-[#28A745] hover:bg-[#218838] border-[#1E7E34] text-white cursor-pointer' : 'bg-[#1e2330] border-[#131722] text-gray-500 cursor-not-allowed opacity-80'}`}
             >
-              <span className="text-xl font-black uppercase tracking-tight shadow-black/20 text-shadow-sm">Aposta</span>
-              {phase === "waiting" && <span className="text-sm font-bold opacity-90">{betAmount.toFixed(2)} MZN</span>}
+              <span className="text-xl font-black uppercase tracking-tight leading-none">Aposta</span>
+              {phase === "waiting" && <span className="text-[11px] font-bold opacity-90 mt-1">{betAmount.toFixed(2)} MZN</span>}
             </button>
           )}
 
@@ -82,17 +98,19 @@ const BetBox = ({
             <button 
               onClick={() => { playSound('click'); onCashout(); }}
               disabled={phase !== "rising"}
-              className="w-full h-full rounded-2xl flex flex-col items-center justify-center border-b-[4px] transition-all bg-[#D35400] hover:bg-[#E67E22] border-[#A04000] text-white"
+              className="w-full h-full rounded-2xl flex flex-col items-center justify-center border-b-[4px] shadow-lg active:translate-y-0.5 active:border-b-0 transition-all bg-[#D35400] hover:bg-[#E67E22] border-[#A04000] text-white"
             >
-              <span className="text-xl font-black uppercase tracking-tight shadow-black/20 text-shadow-sm">Sacar</span>
-              <span className="text-lg font-bold opacity-90">{(activeBetAmount * multiplier).toFixed(2)} MZN</span>
+              <span className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-1">Cancelar</span>
+              <span className="text-2xl font-black tracking-tight leading-none">{(activeBetAmount * multiplier).toFixed(2)}</span>
+              <span className="text-[10px] font-black uppercase tracking-widest opacity-80 mt-1">MZN</span>
             </button>
           )}
 
           {cashedOut && (
-            <div className="w-full h-full rounded-2xl flex flex-col items-center justify-center bg-[#28A745]/20 border-2 border-[#28A745]/50">
-              <span className="text-xs font-bold text-[#28A745] uppercase tracking-wider">Sacas-te</span>
-              <span className="text-xl font-black text-[#28A745]">+{lastWin.toFixed(2)} MZN</span>
+            <div className="w-full h-full rounded-2xl flex flex-col items-center justify-center bg-[#28A745]/15 border-2 border-[#28A745]/40 animate-in zoom-in duration-300">
+              <span className="text-[10px] font-black text-[#28A745] uppercase tracking-widest mb-1">Sacas-te</span>
+              <span className="text-2xl font-black text-[#28A745] leading-none">+{lastWin.toFixed(2)}</span>
+              <span className="text-[10px] font-black text-[#28A745] uppercase tracking-widest mt-1">MZN</span>
             </div>
           )}
         </div>
@@ -102,25 +120,28 @@ const BetBox = ({
 };
 
 const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
-  const { isLoggedIn } = useAppStore();
+  const { isLoggedIn, user } = useAppStore();
   const [phase, setPhase] = useState<"waiting" | "rising" | "crashed" | "loading">("loading");
   const [multiplier, setMultiplier] = useState(1.0);
   const [countdown, setCountdown] = useState(5);
   const [history, setHistory] = useState<number[]>([]);
+  const [activeTab, setActiveTab] = useState<'all' | 'prev' | 'top'>('all');
   
-  // Estado das apostas reias
+  // Estado das apostas reais
   const [betsState, setBetsState] = useState([
     { hasBet: false, cashedOut: false, lastWin: 0, betAmount: 10 },
     { hasBet: false, cashedOut: false, lastWin: 0, betAmount: 10 }
   ]);
 
-  // Lista da Esquerda
-  const [roundFakes, setRoundFakes] = useState<any[]>([]);
+  // Lista da Esquerda (Real + Fake)
+  const [roundBets, setRoundBets] = useState<any[]>([]);
+  const [topBets, setTopBets] = useState<any[]>([]);
+  const [prevBets, setPrevBets] = useState<any[]>([]);
 
   const currentRoundId = useRef<string | null>(null);
   const startedAt = useRef<number>(0);
   const animationRef = useRef<number>(0);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const isCrashedRef = useRef<boolean>(false);
   
   const fetchRoundState = useCallback(async () => {
     try {
@@ -131,26 +152,21 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
       const startMs = new Date(data.round.startedAt).getTime();
       const now = Date.now();
       
-      // Fix UTC Timeout Infinity: Se o startMs estiver incrivelmente atrasado (mais de 1 minuto), assumimos que o fuso horário falhou
-      if (Math.abs(startMs - now) > 60000 && data.round.status === "rising") {
-         startedAt.current = now - 5000; // Fake elapsed time seguro
-      } else {
-         startedAt.current = startMs;
-      }
+      startedAt.current = startMs;
 
       if (data.round.status === "waiting") {
         setPhase("waiting");
+        isCrashedRef.current = false;
         setMultiplier(1.0);
         setBetsState(prev => prev.map(b => ({ ...b, hasBet: false, cashedOut: false })));
         setCountdown(Math.max(1, Math.ceil((startMs - now) / 1000)));
-        setRoundFakes(generateRoundFakes(0));
       } else if (data.round.status === "crashed") {
         setPhase("crashed");
+        isCrashedRef.current = true;
         setMultiplier(data.round.crashPoint || 1.0);
-        setRoundFakes(generateRoundFakes(data.round.crashPoint || 1.0));
       } else {
         setPhase("rising");
-        setRoundFakes(generateRoundFakes(9999));
+        isCrashedRef.current = false;
       }
     } catch (err) {}
   }, []);
@@ -159,13 +175,47 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
     try {
       const res = await fetch("/api/game/history?game=aviator&limit=30");
       const data = await res.json();
-      if (data.history) setHistory(data.history.map((h: any) => h.crashPoint));
+      if (data.history) {
+        setHistory(data.history.map((h: any) => h.crashPoint));
+        // Popular a aba "Anterior" com a última rodada
+        const lastRound = data.history[0];
+        if (lastRound && lastRound.bets) {
+            setPrevBets(lastRound.bets.map((b: any) => ({
+                user: maskUserId(b.user_id),
+                bet: b.amount,
+                cashedAt: b.cashed_out_at,
+                win: b.win_amount || 0
+            })));
+        }
+      }
+    } catch (err) {}
+  }, []);
+
+  const fetchTopBets = useCallback(async () => {
+    try {
+        const { data } = await supabase
+            .from('game_history')
+            .select('*')
+            .eq('game_id', 'aviator')
+            .order('win_amount', { ascending: false })
+            .limit(20);
+        
+        if (data) {
+            setTopBets(data.map(b => ({
+                user: maskUserId(b.user_id),
+                bet: b.bet_amount,
+                cashedAt: b.crash_point,
+                win: b.win_amount || 0,
+                date: b.created_at
+            })));
+        }
     } catch (err) {}
   }, []);
 
   useEffect(() => {
     fetchRoundState();
     fetchHistory();
+    fetchTopBets();
     
     joinRoom("game_aviator");
 
@@ -174,30 +224,29 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
       currentRoundId.current = data.round_id;
 
       if (data.status === "waiting") {
-        playSound('notification');
         setPhase("waiting");
+        isCrashedRef.current = false;
         setMultiplier(1.0);
         setBetsState(prev => prev.map(b => ({ ...b, hasBet: false, cashedOut: false })));
         const startMs = new Date(data.started_at).getTime();
         setCountdown(Math.max(1, Math.ceil((startMs - Date.now()) / 1000)));
-        setRoundFakes(generateRoundFakes(0));
+        setRoundBets([]);
       } else if (data.status === "running") {
         setPhase("rising");
-        const startMs = new Date(data.started_at).getTime();
-        // Sincronização de tempo com o servidor
-        startedAt.current = startMs;
-        setRoundFakes(generateRoundFakes(9999));
+        isCrashedRef.current = false;
+        startedAt.current = new Date(data.started_at).getTime();
       } else if (data.status === "crashed") {
-        playSound('crash');
+        isCrashedRef.current = true;
         setPhase("crashed");
+        playSound('crash');
         const crashP = Number(data.crash_point);
         setMultiplier(crashP);
-        setRoundFakes(generateRoundFakes(crashP));
         
-        // Pequeno delay para garantir que o servidor salvou o resultado antes de buscarmos
-        setTimeout(fetchHistory, 1000);
+        setTimeout(() => {
+            fetchHistory();
+            fetchTopBets();
+        }, 1000);
         
-        // Força perdas para quem não sacou
         setBetsState(prev => prev.map(b => ({
           ...b, 
           hasBet: b.hasBet && !b.cashedOut ? false : b.hasBet
@@ -205,15 +254,42 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
       }
     };
 
+    const handleNewBet = (data: any) => {
+        if (data.game !== "aviator") return;
+        setRoundBets(prev => {
+            if (prev.some(b => b.user === maskUserId(data.user_id))) return prev;
+            return [{
+                user: maskUserId(data.user_id),
+                bet: data.amount,
+                cashedAt: null,
+                win: 0
+            }, ...prev].slice(0, 50);
+        });
+    };
+
+    const handleCashoutSync = (data: any) => {
+        if (data.game !== "aviator") return;
+        setRoundBets(prev => prev.map(b => {
+            if (b.user === maskUserId(data.user_id)) {
+                return { ...b, cashedAt: data.multiplier, win: data.win_amount };
+            }
+            return b;
+        }));
+    };
+
     socket.on("game_update", handleUpdate);
+    socket.on("game_bet", handleNewBet);
+    socket.on("game_cashout", handleCashoutSync);
 
     return () => {
       socket.off("game_update", handleUpdate);
+      socket.off("game_bet", handleNewBet);
+      socket.off("game_cashout", handleCashoutSync);
       leaveRoom("game_aviator");
     };
-  }, [fetchRoundState, fetchHistory]);
+  }, [fetchRoundState, fetchHistory, fetchTopBets]);
 
-  // Loop do Multiplicador
+  // Loop do Multiplicador (COM TRAVA DE SEGURANÇA)
   useEffect(() => {
     if (phase === "waiting") {
       const timer = setInterval(() => setCountdown((c) => (c <= 1 ? 0 : c - 1)), 1000);
@@ -221,8 +297,13 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
     }
     if (phase === "rising") {
       const updateMultiplier = () => {
+        if (isCrashedRef.current) {
+            cancelAnimationFrame(animationRef.current);
+            return;
+        }
+
         let elapsedMs = Date.now() - startedAt.current;
-        if (elapsedMs < 0 || elapsedMs > 500000) elapsedMs = 0; // Fix Infinity
+        if (elapsedMs < 0) elapsedMs = 0;
 
         if (elapsedMs > 0) {
           const calcMult = Math.min(Math.max(1.0, 1.0 * Math.exp(0.00006 * elapsedMs)), 50000);
@@ -268,7 +349,7 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
   };
 
   const handleCashout = async (boxIndex: number) => {
-    if (phase !== "rising") return;
+    if (phase !== "rising" || isCrashedRef.current) return;
     const box = betsState[boxIndex];
     if (!box.hasBet || box.cashedOut) return;
     
@@ -291,7 +372,6 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
         });
         playSound('cashout');
         onUpdateBalance(data.newBalance);
-        toast.success(`Sacou ${data.winAmount.toFixed(2)} MZN!`);
       } else {
         toast.error(data.error || "Erro no cashout");
       }
@@ -300,118 +380,158 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex flex-col lg:flex-row bg-[#0A0A0A] font-sans text-white">
-      <div className="lg:hidden h-14 bg-[#1A1D27] flex items-center justify-between px-4 shrink-0 shadow-lg z-10 border-b border-white/5">
-        <button onClick={onBack} className="text-gray-400 hover:text-white p-2 -ml-2"><ArrowLeft size={20} /></button>
-        <span className="text-red-500 font-black italic text-xl tracking-tighter">Aviator</span>
-      </div>
-
-      {/* PAINEL ESQUERDO (Apostas Ronda - Desktop ou Tab) */}
-      <div className="hidden lg:flex w-[320px] bg-[#14161E] border-r border-[#2A2F40] flex-col shrink-0 z-20">
-        <div className="h-14 flex items-center gap-3 px-4 bg-[#1A1D27] border-b border-[#2A2F40]">
-           <button onClick={onBack} className="text-gray-400 hover:text-white"><ArrowLeft size={20} /></button>
-           <span className="text-red-500 font-black italic text-xl tracking-tighter">Aviator</span>
-        </div>
-        
-        <div className="flex bg-[#101116] p-2 gap-1">
-          <button className="flex-1 bg-[#1A1D27] text-white text-xs font-bold py-2 rounded-full border border-white/5">Apostas</button>
-          <button className="flex-1 text-gray-400 text-xs font-bold py-2 hover:bg-white/5 rounded-full transition-colors">Anterior</button>
-          <button className="flex-1 text-gray-400 text-xs font-bold py-2 hover:bg-white/5 rounded-full transition-colors">Topo</button>
-        </div>
-
-        <div className="px-4 py-3 bg-[#1A1D27] border-b border-black flex justify-between items-center">
-          <span className="text-xs text-gray-400 font-bold">{roundFakes.length} Apostas</span>
-        </div>
-
+  const renderBetsList = () => {
+      const list = activeTab === 'all' ? roundBets : (activeTab === 'prev' ? prevBets : topBets);
+      
+      return (
         <div className="flex-1 overflow-y-auto bg-[#101116] no-scrollbar">
-          <div className="grid grid-cols-3 text-[10px] uppercase font-bold text-gray-500 p-2 pl-4 sticky top-0 bg-[#101116]/90 backdrop-blur">
+          <div className="grid grid-cols-[1fr_auto_auto] gap-4 px-4 py-2 text-[10px] uppercase font-black text-white/30 sticky top-0 bg-[#101116]/95 backdrop-blur z-10">
             <span>Jogador</span>
-            <span className="text-center">Aposta MZN</span>
-            <span className="text-right">Prémio MZN</span>
+            <span className="w-20 text-center">Aposta</span>
+            <span className="w-24 text-right">Ganho</span>
           </div>
-          <div className="divide-y divide-[#1A1D27]">
-            {roundFakes.map((f, i) => (
-              <div key={i} className={`grid grid-cols-3 items-center p-2 pl-4 text-xs ${f.cashedAt ? 'bg-emerald-500/5' : ''}`}>
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-full bg-[#1A1D27] flex items-center justify-center border border-white/10 shrink-0">
-                    <UserIcon size={12} className="text-gray-500" />
+          <div className="flex flex-col">
+            {list.length === 0 && (
+                <div className="py-20 text-center text-[10px] font-bold text-white/10 uppercase tracking-widest">Sem Apostas</div>
+            )}
+            {list.map((f, i) => (
+              <div key={i} className={`grid grid-cols-[1fr_auto_auto] gap-4 items-center px-4 py-2 border-b border-white/[0.02] ${f.cashedAt ? 'bg-[#28A745]/5' : ''}`}>
+                <div className="flex items-center gap-2 overflow-hidden">
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center border shrink-0 ${f.cashedAt ? 'bg-[#28A745]/10 border-[#28A745]/20' : 'bg-white/5 border-white/5'}`}>
+                    <UserIcon size={12} className={f.cashedAt ? 'text-[#28A745]' : 'text-gray-600'} />
                   </div>
-                  <span className="text-gray-300 font-medium truncate">{f.user}</span>
+                  <span className={`text-[11px] font-black truncate ${f.cashedAt ? 'text-white' : 'text-white/60'}`}>{f.user}</span>
                 </div>
-                <div className="text-center font-mono-data text-gray-400">{f.bet.toFixed(2)}</div>
-                <div className="text-right flex justify-end gap-2 items-center">
-                  {f.cashedAt && <span className="bg-emerald-500/20 text-emerald-500 px-1.5 py-0.5 rounded text-[10px] font-bold">{f.cashedAt}x</span>}
-                  <span className={f.win > 0 ? "text-emerald-500 font-bold" : "text-gray-600"}>{f.win > 0 ? f.win.toFixed(2) : "-"}</span>
+                <div className="w-20 text-center font-mono-data text-[11px] font-bold text-white/80">{Number(f.bet).toFixed(2)}</div>
+                <div className="w-24 flex justify-end gap-2 items-center">
+                  {f.cashedAt && <span className="bg-[#28A745]/15 text-[#28A745] px-1.5 py-0.5 rounded text-[9px] font-black">{f.cashedAt.toFixed(2)}x</span>}
+                  <span className={`text-[11px] font-black ${f.win > 0 ? "text-[#28A745]" : "text-white/20"}`}>{f.win > 0 ? f.win.toFixed(2) : "-"}</span>
                 </div>
               </div>
             ))}
           </div>
         </div>
+      );
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col lg:flex-row bg-[#101116] font-sans text-white overflow-hidden">
+      {/* HEADER MOBILE */}
+      <div className="lg:hidden h-14 bg-[#1A1D27] flex items-center justify-between px-4 shrink-0 shadow-lg z-30 border-b border-white/5">
+        <button onClick={onBack} className="text-gray-400 hover:text-white p-2 -ml-2"><ArrowLeft size={20} /></button>
+        <span className="text-red-500 font-black italic text-xl tracking-tighter">Aviator</span>
+        <div className="flex gap-4 items-center">
+            <span className="text-primary font-black text-sm">{balance.toFixed(2)} MZN</span>
+            <Menu className="text-gray-400" size={20} />
+        </div>
       </div>
 
-      {/* ÁREA CENTRAL E DIREITA */}
-      <div className="flex-1 flex flex-col bg-[#101116]">
-        <div className="hidden lg:flex h-14 bg-[#1A1D27] justify-end items-center px-6 border-b border-[#2A2F40]">
+      {/* PAINEL ESQUERDO (Apostas Ronda) */}
+      <div className="flex flex-col h-[40%] lg:h-full lg:w-[320px] bg-[#14161E] border-r border-[#2A2F40] shrink-0 z-20">
+        <div className="hidden lg:flex h-14 items-center gap-3 px-4 bg-[#1A1D27] border-b border-[#2A2F40]">
+           <button onClick={onBack} className="text-gray-400 hover:text-white"><ArrowLeft size={20} /></button>
+           <span className="text-red-500 font-black italic text-xl tracking-tighter">Aviator</span>
+        </div>
+        
+        <div className="flex bg-[#101116] p-2 gap-1">
+          <button onClick={() => setActiveTab('all')} className={`flex-1 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'all' ? 'bg-[#2C3144] text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}>Tudo</button>
+          <button onClick={() => setActiveTab('prev')} className={`flex-1 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'prev' ? 'bg-[#2C3144] text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}>Anterior</button>
+          <button onClick={() => setActiveTab('top')} className={`flex-1 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'top' ? 'bg-[#2C3144] text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}>Topo</button>
         </div>
 
-        {/* HISTÓRICO DE RONDAS */}
-        <div className="h-9 flex items-center px-2 bg-[#14161E] border-b border-[#2A2F40] shrink-0 overflow-x-auto no-scrollbar">
-          <div className="flex gap-1 min-w-max">
+        {activeTab === 'all' && (
+            <div className="px-4 py-2 bg-[#1A1D27]/50 border-b border-black flex justify-between items-center">
+                <span className="text-[10px] text-gray-500 font-black uppercase tracking-widest">{roundBets.length} Apostas</span>
+                <div className="h-1 w-20 bg-white/5 rounded-full overflow-hidden">
+                    <div className="h-full bg-[#28A745] transition-all duration-1000" style={{ width: `${Math.min(100, (roundBets.length / 50) * 100)}%` }} />
+                </div>
+            </div>
+        )}
+
+        {renderBetsList()}
+
+        <div className="p-3 bg-[#1A1D27] border-t border-white/5 flex justify-between items-center text-[9px] font-bold text-gray-500 uppercase tracking-widest">
+            <div className="flex items-center gap-1">
+                <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                <span>Provably Fair</span>
+            </div>
+            <span>Powered by MOZBET</span>
+        </div>
+      </div>
+
+      {/* ÁREA CENTRAL */}
+      <div className="flex-1 flex flex-col bg-[#000000] relative">
+        
+        {/* HEADER DESKTOP */}
+        <div className="hidden lg:flex h-14 bg-[#1A1D27] justify-end items-center px-6 border-b border-[#2A2F40] gap-4">
+            <div className="flex items-center gap-2 bg-[#101116] px-4 py-1.5 rounded-full border border-white/5">
+                <span className="text-primary font-black text-sm tracking-tight">{balance.toFixed(2)} MZN</span>
+            </div>
+            <button className="text-gray-400 hover:text-white"><HelpCircle size={20} /></button>
+            <button className="text-gray-400 hover:text-white"><Settings size={20} /></button>
+            <button className="text-gray-400 hover:text-white"><Menu size={20} /></button>
+        </div>
+
+        {/* HISTÓRICO NO TOPO (Estilo Spribe) */}
+        <div className="h-8 flex items-center px-4 bg-[#14161E] border-b border-[#2A2F40] shrink-0 overflow-x-auto no-scrollbar relative">
+          <div className="flex gap-1.5 min-w-max">
             {history.map((m, i) => {
-               // Cores do histórico igual Spribe
-               let col = "text-[#A117F2] bg-[#A117F2]/10 border-[#A117F2]/20"; // roxo normal
-               if (m < 2.0) col = "text-[#3498DB] bg-[#3498DB]/10 border-[#3498DB]/20"; // azul para baixos
-               if (m >= 10.0) col = "text-[#E91E63] bg-[#E91E63]/10 border-[#E91E63]/20"; // rosa para gigantes
+               let col = "text-[#913EF8] border-[#913EF8]/20 bg-[#913EF8]/5"; 
+               if (m < 2.0) col = "text-[#3498DB] border-[#3498DB]/20 bg-[#3498DB]/5"; 
+               if (m >= 10.0) col = "text-[#C017B4] border-[#C017B4]/20 bg-[#C017B4]/5"; 
                
                return (
-                 <span key={i} className={`text-[11px] font-extrabold px-2.5 py-0.5 rounded-full border ${col}`}>
+                 <span key={i} className={`text-[10px] font-black px-2 py-0.5 rounded-full border cursor-pointer hover:bg-white/5 transition-colors ${col}`}>
                    {m.toFixed(2)}x
                  </span>
                )
             })}
           </div>
+          <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-[#14161E] to-transparent pointer-events-none" />
         </div>
 
         {/* TELA CENTRAL DO JOGO */}
-        <div className="flex-1 flex flex-col p-2 lg:p-4 gap-2 lg:gap-4 overflow-hidden">
+        <div className="flex-1 flex flex-col p-2 lg:p-6 gap-2 lg:gap-6 overflow-hidden">
           
-          {/* O CANVAS E O MULTIPLICADOR */}
-          <div className="flex-1 relative bg-black rounded-3xl overflow-hidden border border-[#2A2F40] shadow-inner shadow-black flex items-center justify-center">
+          <div className="flex-1 relative bg-[#101116] rounded-[2.5rem] overflow-hidden border border-[#2A2F40] shadow-2xl flex items-center justify-center">
             
-            {/* EFEITO DE LUZ DE FUNDO (Raios spribe) */}
-            <div className="absolute inset-0 opacity-20 pointer-events-none" style={{
-               background: "radial-gradient(circle at 10% 90%, rgba(52, 152, 219, 0.4) 0%, transparent 60%)"
-            }} />
+            {/* EFEITO DE FUNDO DINÂMICO */}
+            <div className="absolute inset-0 opacity-40 pointer-events-none">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(229,57,53,0.1),transparent_70%)]" />
+                <div className="absolute inset-0 animate-pulse bg-[radial-gradient(circle_at_50%_50%,rgba(52,152,219,0.05),transparent_80%)]" />
+            </div>
             
-            {/* O próprio Canvas foi omitido para dar lugar à Animação Visual CSS para melhor performance / look Spribe */}
             <div className="absolute inset-0 flex flex-col items-center justify-center z-10 pointer-events-none p-4">
               {phase === "loading" && (
-                <div className="w-12 h-12 border-4 border-red-600/30 border-t-red-600 rounded-full animate-spin" />
+                <div className="w-16 h-16 border-4 border-red-600/20 border-t-red-600 rounded-full animate-spin" />
               )}
 
               {phase === "waiting" && (
-                <div className="flex flex-col items-center gap-1 animate-in fade-in">
-                  <div className="text-red-600 font-extrabold text-3xl mb-2">✈️</div>
-                  <div className="text-white text-lg tracking-widest font-normal">A AGUARDAR NOVA RONDADA</div>
-                  <div className="text-gray-400 mt-2 font-mono">00:0{countdown}</div>
-                  <div className="w-48 h-1.5 bg-white/10 rounded-full mt-2 overflow-hidden">
-                     <div className="h-full bg-red-600 transition-all duration-1000 ease-linear" style={{ width: `${(countdown/5)*100}%` }} />
+                <div className="flex flex-col items-center gap-2 animate-in fade-in zoom-in duration-500">
+                  <div className="w-20 h-20 bg-red-600/10 rounded-full flex items-center justify-center border border-red-600/20 mb-2">
+                     <span className="text-4xl animate-bounce">✈️</span>
+                  </div>
+                  <div className="text-white text-lg lg:text-xl font-black uppercase tracking-widest text-shadow-lg">A aguardar nova ronda</div>
+                  <div className="text-gray-400 font-black text-2xl lg:text-4xl mt-2 flex items-baseline gap-1">
+                     <span className="animate-pulse">00:{countdown < 10 ? `0${countdown}` : countdown}</span>
+                  </div>
+                  <div className="w-64 h-2 bg-white/5 rounded-full mt-4 p-0.5 border border-white/5 overflow-hidden">
+                     <div className="h-full bg-red-600 rounded-full transition-all duration-1000 ease-linear shadow-[0_0_15px_rgba(229,57,53,0.5)]" style={{ width: `${(countdown/5)*100}%` }} />
                   </div>
                 </div>
               )}
 
               {phase === "rising" && (
-                <div className="flex flex-col items-center justify-center animate-in zoom-in duration-300">
-                  <span className="font-black text-white drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]" style={{ fontSize: "clamp(60px, 12vw, 120px)", lineHeight: 1 }}>
-                    {multiplier.toFixed(2)}<span className="text-[0.7em]">x</span>
+                <div className="flex flex-col items-center justify-center relative w-full h-full">
+                  <span className="font-black text-white drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)] z-20" style={{ fontSize: "clamp(70px, 15vw, 160px)", lineHeight: 1 }}>
+                    {multiplier.toFixed(2)}<span className="text-[0.6em] ml-1">x</span>
                   </span>
                   
-                  {/* Avião CSS Animado em vez de canvas para ser idêntico e leve */}
-                  <div className="absolute left-[10%] bottom-[20%] w-[80%] h-[60%] pointer-events-none overflow-hidden">
-                     <svg viewBox="0 0 100 100" className="w-full h-full preserve-3d" preserveAspectRatio="none">
-                        <path d="M0 100 Q 40 100 90 20" fill="transparent" stroke="#E53935" strokeWidth="1.5" />
-                        <path d="M0 100 Q 40 100 90 20 L 90 100 Z" fill="url(#grad)" />
+                  {/* ANIMAÇÃO DO AVIÃO E CURVA */}
+                  <div className="absolute inset-0 pointer-events-none overflow-hidden p-10 lg:p-20">
+                     <svg viewBox="0 0 100 100" className="w-full h-full" preserveAspectRatio="none">
+                        <path d={`M 5 95 Q 40 95 90 ${Math.max(10, 95 - (multiplier - 1) * 20)}`} fill="transparent" stroke="#E53935" strokeWidth="2.5" strokeLinecap="round" className="drop-shadow-[0_0_10px_rgba(229,57,53,0.8)]" />
+                        <path d={`M 5 95 Q 40 95 90 ${Math.max(10, 95 - (multiplier - 1) * 20)} L 90 95 Z`} fill="url(#grad)" />
                         <defs>
                           <linearGradient id="grad" x1="0" y1="1" x2="0" y2="0">
                             <stop offset="0%" stopColor="rgba(229, 57, 53, 0)" />
@@ -419,17 +539,27 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
                           </linearGradient>
                         </defs>
                      </svg>
-                     <div className="absolute w-12 h-12 text-3xl origin-center" style={{ left: '85%', top: '10%', transform: 'rotate(-25deg)' }}>✈️</div>
+                     <div 
+                        className="absolute w-20 h-20 text-5xl flex items-center justify-center drop-shadow-2xl transition-all duration-300 ease-out" 
+                        style={{ 
+                            left: '85%', 
+                            top: `${Math.max(5, 85 - (multiplier - 1) * 20)}%`, 
+                            transform: `translate(-50%, -50%) rotate(${-20 - (multiplier-1)*2}deg)` 
+                        }}
+                     >
+                        <span className="animate-pulse">✈️</span>
+                        <div className="absolute inset-0 bg-red-600/20 blur-2xl rounded-full -z-10 animate-pulse" />
+                     </div>
                   </div>
                 </div>
               )}
 
               {phase === "crashed" && (
-                <div className="flex flex-col items-center gap-2 animate-in fade-in zoom-in-95">
-                  <span className="text-[#E53935] font-extrabold text-2xl lg:text-4xl uppercase tracking-tighter drop-shadow-md bg-black/60 px-6 py-2 rounded-xl">
-                    Fugiu!
-                  </span>
-                  <span className="font-black text-[#E53935]" style={{ fontSize: "clamp(50px, 10vw, 90px)", lineHeight: 1 }}>
+                <div className="flex flex-col items-center gap-2 animate-in fade-in zoom-in-95 duration-200">
+                  <div className="bg-[#E53935] text-white font-black text-xl lg:text-3xl uppercase tracking-tighter px-10 py-3 rounded-2xl shadow-2xl rotate-[-2deg]">
+                    FUGIU PARA LONGE!
+                  </div>
+                  <span className="font-black text-[#E53935] drop-shadow-[0_5px_15px_rgba(229,57,53,0.4)]" style={{ fontSize: "clamp(60px, 12vw, 110px)", lineHeight: 1 }}>
                     {multiplier.toFixed(2)}x
                   </span>
                 </div>
@@ -437,8 +567,8 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
             </div>
           </div>
 
-          {/* DOIS PAINEIS DE APOSTAS */}
-          <div className="flex flex-col md:flex-row gap-2 lg:gap-4 shrink-0 h-auto md:h-[130px]">
+          {/* PAINEIS DE APOSTAS (Responsividade PC) */}
+          <div className="flex flex-col md:flex-row gap-3 lg:gap-6 shrink-0 h-auto md:h-[160px]">
              <BetBox 
                phase={phase} multiplier={multiplier} balance={balance} 
                onBet={(amt: number) => handleBet(0, amt)} onCashout={() => handleCashout(0)} 
@@ -451,6 +581,12 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
              />
           </div>
         </div>
+
+        {/* CHAT OVERLAY (Floating Button) */}
+        <button className="fixed bottom-6 right-6 w-14 h-14 bg-red-600 rounded-full flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all z-40 lg:hidden">
+            <MessageSquare className="text-white" />
+            <span className="absolute -top-1 -right-1 w-5 h-5 bg-white text-red-600 rounded-full text-[10px] font-black flex items-center justify-center border-2 border-red-600">3</span>
+        </button>
       </div>
     </div>
   );

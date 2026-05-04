@@ -1,7 +1,6 @@
 "use client";
 
 import { use, useEffect, useState, Suspense, lazy } from "react";
-import { startBgMusic, stopBgMusic } from "@/lib/sounds";
 
 // Lazy loading para garantir que o cliente só descarrega O jogo específico.
 const AviatorGame = lazy(() => import("@/components/games/AviatorGame"));
@@ -43,12 +42,8 @@ export default function GameEnginePage({
     
     window.addEventListener('message', handleMessage);
     
-    // Iniciar música de fundo ao carregar qualquer jogo
-    startBgMusic();
-    
     return () => {
       window.removeEventListener('message', handleMessage);
-      stopBgMusic();
     };
   }, []);
 

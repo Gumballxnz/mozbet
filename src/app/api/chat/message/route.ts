@@ -32,7 +32,7 @@ export async function POST(req: Request) {
     const decoded = await verifyToken<{ id: string; phone: string }>(token);
     if (!decoded) return NextResponse.json({ error: "Token inválido" }, { status: 401 });
 
-    const { message } = await req.json();
+    const { message, avatar } = await req.json();
     if (!message) return NextResponse.json({ error: "Mensagem vazia" }, { status: 400 });
 
     // 1. Salvar mensagem do utilizador real (Usamos o ID, NUNCA o número de telefone)
@@ -42,7 +42,8 @@ export async function POST(req: Request) {
         user_id: decoded.id,
         username: decoded.id.split('-')[0].toUpperCase(), // Usar o ID, não o telefone
         message: message,
-        type: "message"
+        type: "message",
+        metadata: avatar ? { avatar } : {}
       })
       .select()
       .single();

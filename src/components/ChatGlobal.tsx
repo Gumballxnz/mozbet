@@ -158,20 +158,6 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
     const messageText = input.trim();
     const user = useAppStore.getState().user;
 
-    // OPTIMISTIC UI
-    const optimisticMsg: ChatMessage = {
-      id: `real-${Date.now()}`,
-      user_id: user?.id || "unknown",
-      username: user?.id ? user.id.split("-")[0].toUpperCase() : "USER",
-      message: messageText,
-      type: "message",
-      created_at: new Date().toISOString(),
-    };
-
-    const currentMsgs = useAppStore.getState().fakeChatMessages;
-    setMessages([...currentMsgs, optimisticMsg].slice(-100));
-    setTimeout(scrollToBottom, 50);
-
     setInput("");
     setIsSending(true);
 
@@ -179,7 +165,7 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
       const res = await fetch("/api/chat/message", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: messageText }),
+        body: JSON.stringify({ message: messageText, avatar: user?.avatar }),
       });
       if (!res.ok) throw new Error("Erro ao enviar");
     } catch (err: any) {

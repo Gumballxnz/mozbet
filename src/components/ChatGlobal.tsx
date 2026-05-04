@@ -21,6 +21,7 @@ interface ChatMessage {
   type: "message" | "win_announcement" | "system" | "fake_user";
   metadata?: any;
   created_at: string;
+  avatar?: string;
 }
 
 // ===== AVATARES DO SITE =====

@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { ArrowLeft, Volume2, Menu, Maximize2, Plane, Minus, Plus, X } from "lucide-react";
 import { toast } from "sonner";
-import { socket, joinRoom, leaveRoom } from "@/lib/socket";
+import { useGameEngine } from "@/hooks/useGameEngine";
+import { playSound } from "@/lib/sounds";
 import { playSound } from "@/lib/sounds";
 
 interface Props {
@@ -11,9 +12,9 @@ interface Props {
 }
 
 const PurpleCrashGame = ({ balance, onUpdateBalance, onBack }: Props) => {
-  const [phase, setPhase] = useState<"waiting" | "rising" | "crashed">("waiting");
-  const [multiplier, setMultiplier] = useState(1.0);
-  const [countdown, setCountdown] = useState(5);
+  
+  
+  
   const [bet1, setBet1] = useState(5);
   const [bet2, setBet2] = useState(5);
   const [auto1, setAuto1] = useState(false);
@@ -26,89 +27,15 @@ const PurpleCrashGame = ({ balance, onUpdateBalance, onBack }: Props) => {
   const [statsTab, setStatsTab] = useState("apostas");
   const [lang, setLang] = useState("PT");
   
-  const startedAt = useRef<number>(0);
-  const currentRoundId = useRef<string | null>(null);
+  
+  const { phase, multiplier, countdown, roundId: currentRoundIdRef, startedAt, multiplierRef } = useGameEngine("crash");
+  const currentRoundId = { current: currentRoundIdRef };
 
-  const fetchRoundState = useCallback(async () => {
-    try {
-      const res = await fetch("/api/game/round?game=crash");
-      const data = await res.json();
-      if (!data.round) return;
-      currentRoundId.current = data.round.id;
-      const startMs = new Date(data.round.startedAt).getTime();
-      const now = Date.now();
-      
-      if (Math.abs(startMs - now) > 60000 && data.round.status === "rising") {
-         startedAt.current = now - 5000;
-      } else {
-         startedAt.current = startMs;
-      }
+  
 
-      if (data.round.status === "waiting") {
-        setPhase("waiting");
-        setMultiplier(1.0);
-        setHasBet1(false); setHasBet2(false);
-        setCashed1(false); setCashed2(false);
-        setCountdown(Math.max(1, Math.ceil((startMs - now) / 1000)));
-      } else if (data.round.status === "crashed") {
-        setPhase("crashed");
-        setMultiplier(data.round.crashPoint || 1.0);
-      } else {
-        setPhase("rising");
-      }
-    } catch (err) {}
-  }, []);
+  
 
-  useEffect(() => {
-    fetchRoundState();
-    joinRoom("game_crash");
-
-    const handleUpdate = (data: any) => {
-      if (data.game !== "crash") return;
-      currentRoundId.current = data.round_id;
-
-      if (data.status === "waiting") {
-        playSound('notification');
-        setPhase("waiting");
-        setMultiplier(1.0);
-        setHasBet1(false);
-        setHasBet2(false);
-        setCashed1(false);
-        setCashed2(false);
-        const startMs = new Date(data.started_at).getTime();
-        setCountdown(Math.max(1, Math.ceil((startMs - Date.now()) / 1000)));
-      } else if (data.status === "running") {
-        setPhase("rising");
-        startedAt.current = new Date(data.started_at).getTime();
-      } else if (data.status === "crashed") {
-        playSound('crash');
-        setPhase("crashed");
-        setMultiplier(data.crash_point);
-      }
-    };
-
-    socket.on("game_update", handleUpdate);
-    return () => {
-      socket.off("game_update", handleUpdate);
-      leaveRoom("game_crash");
-    };
-  }, [fetchRoundState]);
-
-  // Loop do Multiplicador (Sincronizado)
-  useEffect(() => {
-    if (phase !== "rising") return;
-    const interval = setInterval(() => {
-      const elapsed = Date.now() - startedAt.current;
-      const m = Math.exp(0.00006 * elapsed);
-      const val = parseFloat(m.toFixed(2));
-      setMultiplier(val);
-      
-      // Auto cashout se ligado
-      if (auto1 && hasBet1 && !cashed1 && val >= 2) cashOut(1, val);
-      if (auto2 && hasBet2 && !cashed2 && val >= 2) cashOut(2, val);
-    }, 50);
-    return () => clearInterval(interval);
-  }, [phase, auto1, auto2, hasBet1, hasBet2, cashed1, cashed2]);
+  
 
 
   const place = async (n: 1 | 2) => {
@@ -281,7 +208,7 @@ const PurpleCrashGame = ({ balance, onUpdateBalance, onBack }: Props) => {
           {phase === "waiting" ? (
             <p className="text-5xl font-extrabold font-mono">{countdown}s</p>
           ) : (
-            <p className={`text-5xl font-extrabold font-mono ${phase === "crashed" ? "text-red-400" : "text-white"} drop-shadow-lg`}>X{multiplier.toFixed(2)}</p>
+            <p className={`text-5xl font-extrabold font-mono ${phase === "crashed" ? "text-red-400" : "text-white"} drop-shadow-lg`}>{multiplier.toFixed(2).replace(\'.\', \',\')}x</p>
           )}
         </div>
       </div>

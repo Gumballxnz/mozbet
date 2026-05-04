@@ -7,6 +7,7 @@ import { useAppStore } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
 import { socket, joinRoom, leaveRoom } from "@/lib/socket";
 import { playSound } from "@/lib/sounds";
+import { useGameEngine } from "@/hooks/useGameEngine";
 
 interface Props {
   balance: number;
@@ -121,9 +122,7 @@ const BetBox = ({
 
 const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
   const { isLoggedIn, user } = useAppStore();
-  const [phase, setPhase] = useState<"waiting" | "rising" | "crashed" | "loading">("loading");
-  const [multiplier, setMultiplier] = useState(1.0);
-  const [countdown, setCountdown] = useState(5);
+  const { phase, multiplier, countdown, roundId, startedAt, multiplierRef } = useGameEngine("aviator");
   const [history, setHistory] = useState<number[]>([]);
   const [activeTab, setActiveTab] = useState<'all' | 'prev' | 'top'>('all');
   
@@ -138,38 +137,25 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
   const [topBets, setTopBets] = useState<any[]>([]);
   const [prevBets, setPrevBets] = useState<any[]>([]);
 
-  const currentRoundId = useRef<string | null>(null);
-  const startedAt = useRef<number>(0);
-  const animationRef = useRef<number>(0);
-  const isCrashedRef = useRef<boolean>(false);
+  const { phase, multiplier, countdown, roundId, startedAt, multiplierRef } = useGameEngine("aviator");
   
-  const fetchRoundState = useCallback(async () => {
-    try {
-      const res = await fetch("/api/game/round?game=aviator");
-      const data = await res.json();
-      if (!data.round) return;
-      currentRoundId.current = data.round.id;
-      const startMs = new Date(data.round.startedAt).getTime();
-      const now = Date.now();
-      
-      startedAt.current = startMs;
-
-      if (data.round.status === "waiting") {
-        setPhase("waiting");
-        isCrashedRef.current = false;
-        setMultiplier(1.0);
-        setBetsState(prev => prev.map(b => ({ ...b, hasBet: false, cashedOut: false })));
-        setCountdown(Math.max(1, Math.ceil((startMs - now) / 1000)));
-      } else if (data.round.status === "crashed") {
-        setPhase("crashed");
-        isCrashedRef.current = true;
-        setMultiplier(data.round.crashPoint || 1.0);
-      } else {
-        setPhase("rising");
-        isCrashedRef.current = false;
-      }
-    } catch (err) {}
-  }, []);
+  // Quando a fase muda, ajustamos os estados das apostas para refletir o ciclo
+  useEffect(() => {
+    if (phase === "waiting") {
+      setBetsState(prev => prev.map(b => ({ ...b, hasBet: false, cashedOut: false })));
+      setRoundBets([]);
+    } else if (phase === "crashed") {
+      setBetsState(prev => prev.map(b => ({
+        ...b,
+        hasBet: false,
+        cashedOut: b.cashedOut // Mantém se sacou, senão perde
+      })));
+      setTimeout(() => {
+        fetchHistory();
+        fetchTopBets();
+      }, 1000);
+    }
+  }, [phase]);
 
   const fetchHistory = useCallback(async () => {
     try {
@@ -177,7 +163,6 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
       const data = await res.json();
       if (data.history) {
         setHistory(data.history.map((h: any) => h.crashPoint));
-        // Popular a aba "Anterior" com a última rodada
         const lastRound = data.history[0];
         if (lastRound && lastRound.bets) {
             setPrevBets(lastRound.bets.map((b: any) => ({
@@ -213,49 +198,12 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
   }, []);
 
   useEffect(() => {
-    fetchRoundState();
     fetchHistory();
     fetchTopBets();
-    
-    joinRoom("game_aviator");
-
-    const handleUpdate = (data: any) => {
-      if (data.game !== "aviator") return;
-      currentRoundId.current = data.round_id;
-
-      if (data.status === "waiting") {
-        setPhase("waiting");
-        isCrashedRef.current = false;
-        setMultiplier(1.0);
-        setBetsState(prev => prev.map(b => ({ ...b, hasBet: false, cashedOut: false })));
-        const startMs = new Date(data.started_at).getTime();
-        setCountdown(Math.max(1, Math.ceil((startMs - Date.now()) / 1000)));
-        setRoundBets([]);
-      } else if (data.status === "running") {
-        setPhase("rising");
-        isCrashedRef.current = false;
-        startedAt.current = new Date(data.started_at).getTime();
-      } else if (data.status === "crashed") {
-        isCrashedRef.current = true;
-        setPhase("crashed");
-        playSound('crash');
-        const crashP = Number(data.crash_point);
-        setMultiplier(crashP);
-        
-        setTimeout(() => {
-            fetchHistory();
-            fetchTopBets();
-        }, 1000);
-        
-        setBetsState(prev => prev.map(b => ({
-          ...b, 
-          hasBet: b.hasBet && !b.cashedOut ? false : b.hasBet
-        })));
-      }
-    };
-
-    const handleNewBet = (data: any) => {
-        if (data.game !== "aviator") return;
+  }, [fetchHistory, fetchTopBets]);
+    const channel = supabase.channel(`game_aviator_bets`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'bets', filter: `game_id=eq.aviator` }, (payload) => {
+        const data = payload.new as any;
         setRoundBets(prev => {
             if (prev.some(b => b.user === maskUserId(data.user_id))) return prev;
             return [{
@@ -265,56 +213,24 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
                 win: 0
             }, ...prev].slice(0, 50);
         });
-    };
-
-    const handleCashoutSync = (data: any) => {
-        if (data.game !== "aviator") return;
-        setRoundBets(prev => prev.map(b => {
-            if (b.user === maskUserId(data.user_id)) {
-                return { ...b, cashedAt: data.multiplier, win: data.win_amount };
-            }
-            return b;
-        }));
-    };
-
-    socket.on("game_update", handleUpdate);
-    socket.on("game_bet", handleNewBet);
-    socket.on("game_cashout", handleCashoutSync);
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'bets', filter: `game_id=eq.aviator` }, (payload) => {
+        const data = payload.new as any;
+        if (data.status === 'won') {
+          setRoundBets(prev => prev.map(b => {
+              if (b.user === maskUserId(data.user_id)) {
+                  return { ...b, cashedAt: data.crash_point, win: data.win_amount };
+              }
+              return b;
+          }));
+        }
+      })
+      .subscribe();
 
     return () => {
-      socket.off("game_update", handleUpdate);
-      socket.off("game_bet", handleNewBet);
-      socket.off("game_cashout", handleCashoutSync);
-      leaveRoom("game_aviator");
+      supabase.removeChannel(channel);
     };
-  }, [fetchRoundState, fetchHistory, fetchTopBets]);
-
-  // Loop do Multiplicador (COM TRAVA DE SEGURANÇA)
-  useEffect(() => {
-    if (phase === "waiting") {
-      const timer = setInterval(() => setCountdown((c) => (c <= 1 ? 0 : c - 1)), 1000);
-      return () => clearInterval(timer);
-    }
-    if (phase === "rising") {
-      const updateMultiplier = () => {
-        if (isCrashedRef.current) {
-            cancelAnimationFrame(animationRef.current);
-            return;
-        }
-
-        let elapsedMs = Date.now() - startedAt.current;
-        if (elapsedMs < 0) elapsedMs = 0;
-
-        if (elapsedMs > 0) {
-          const calcMult = Math.min(Math.max(1.0, 1.0 * Math.exp(0.00006 * elapsedMs)), 50000);
-          setMultiplier(parseFloat(calcMult.toFixed(2)));
-        }
-        animationRef.current = requestAnimationFrame(updateMultiplier);
-      };
-      animationRef.current = requestAnimationFrame(updateMultiplier);
-      return () => cancelAnimationFrame(animationRef.current);
-    }
-  }, [phase]);
+  }, [fetchHistory, fetchTopBets]);
 
   const handleBet = async (boxIndex: number, amount: number) => {
     if (!isLoggedIn) { toast.error("Faça login para apostar!"); return; }

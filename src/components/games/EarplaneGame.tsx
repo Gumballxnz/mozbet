@@ -2,7 +2,8 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { ArrowLeft, Menu, MessageCircle, Plane, Users, Minus, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { playSound } from "@/lib/sounds";
-import { socket, joinRoom, leaveRoom } from "@/lib/socket";
+import { useGameEngine } from "@/hooks/useGameEngine";
+import { playSound } from "@/lib/sounds";
 
 interface Props {
   balance: number;
@@ -18,8 +19,8 @@ const historyColor = (m: number) => {
 
 const EarplaneGame = ({ balance, onUpdateBalance, onBack }: Props) => {
   const [phase, setPhase] = useState<"waiting" | "rising" | "crashed">("waiting");
-  const [multiplier, setMultiplier] = useState(1.0);
-  const [countdown, setCountdown] = useState(5);
+  
+  
   const [history, setHistory] = useState<number[]>([1.45, 2.8, 1.1, 5.2, 1.92, 15.4, 1.23, 3.5]);
   const [bet1, setBet1] = useState(10);
   const [bet2, setBet2] = useState(10);
@@ -32,8 +33,9 @@ const EarplaneGame = ({ balance, onUpdateBalance, onBack }: Props) => {
   const onlineRef = useRef(212 + Math.floor(Math.random() * 50));
   const online = onlineRef.current;
   
-  const startedAt = useRef<number>(0);
-  const currentRoundId = useRef<string | null>(null);
+  
+  const { phase, multiplier, countdown, roundId: currentRoundIdRef, startedAt, multiplierRef } = useGameEngine("earplane");
+  const currentRoundId = { current: currentRoundIdRef };
 
   const fetchHistory = useCallback(async () => {
     try {
@@ -43,36 +45,7 @@ const EarplaneGame = ({ balance, onUpdateBalance, onBack }: Props) => {
     } catch (err) {}
   }, []);
 
-  const fetchRoundState = useCallback(async () => {
-    try {
-      const res = await fetch("/api/game/round?game=earplane");
-      const data = await res.json();
-      if (!data.round) return;
-      currentRoundId.current = data.round.id;
-      const startMs = new Date(data.round.startedAt).getTime();
-      const now = Date.now();
-      
-      // Fix UTC Timeout: Se o startMs estiver muito atrasado, sincroniza com o 'now'
-      if (Math.abs(startMs - now) > 60000 && data.round.status === "running") {
-         startedAt.current = now - 5000;
-      } else {
-         startedAt.current = startMs;
-      }
-
-      if (data.round.status === "waiting") {
-        setPhase("waiting");
-        setMultiplier(1.0);
-        setHasBet1(false); setHasBet2(false);
-        setCashed1(false); setCashed2(false);
-        setCountdown(Math.max(1, Math.ceil((startMs - now) / 1000)));
-      } else if (data.round.status === "crashed") {
-        setPhase("crashed");
-        setMultiplier(data.round.crashPoint || 1.0);
-      } else {
-        setPhase("rising");
-      }
-    } catch (err) {}
-  }, []);
+  
 
   useEffect(() => {
     fetchRoundState();
@@ -111,16 +84,7 @@ const EarplaneGame = ({ balance, onUpdateBalance, onBack }: Props) => {
     };
   }, [fetchHistory, fetchRoundState]);
 
-  // Loop do Multiplicador (Local mas sincronizado com StartedAt do servidor)
-  useEffect(() => {
-    if (phase !== "rising") return;
-    const interval = setInterval(() => {
-      const elapsed = Date.now() - startedAt.current;
-      const m = Math.exp(0.00006 * elapsed);
-      setMultiplier(parseFloat(m.toFixed(2)));
-    }, 50);
-    return () => clearInterval(interval);
-  }, [phase]);
+  
 
   const place = async (n: 1 | 2) => {
     const amt = n === 1 ? bet1 : bet2;

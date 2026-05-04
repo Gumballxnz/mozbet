@@ -33,9 +33,21 @@ const SITE_AVATARS = [
   "https://api.dicebear.com/7.x/adventurer/svg?seed=Zoe&backgroundColor=ec4899",
 ];
 
-// Extrair avatar da mensagem (pode vir no campo metadata.avatar)
+// Função de hash simples para distribuir avatares consistentemente
+function getConsistentAvatar(userId: string): string {
+  if (!userId) return SITE_AVATARS[0];
+  let hash = 0;
+  for (let i = 0; i < userId.length; i++) {
+    hash = userId.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return SITE_AVATARS[Math.abs(hash) % SITE_AVATARS.length];
+}
+
+// Extrair avatar da mensagem
 function getAvatar(m: ChatMessage): string {
-  return m.metadata?.avatar || SITE_AVATARS[0];
+  if (m.avatar) return m.avatar;
+  if (m.metadata?.avatar) return m.metadata.avatar;
+  return getConsistentAvatar(m.user_id || m.username);
 }
 
 // Mostrar apenas ID Mascarado (Privacidade total)
@@ -114,8 +126,8 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
         if (isOpen) setTimeout(scrollToBottom, 100);
       })
       .subscribe((status, err) => {
-        if (err && !err.message?.includes("1000")) {
-          console.error("Erro Realtime:", err);
+        if (err && !err.message?.includes("1000") && !err.message?.includes("closed before")) {
+          // Apenas loga erros reais, ignora aborts de fechamento
         }
       });
 

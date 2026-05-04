@@ -91,7 +91,7 @@ export function GameCatalog() {
       return;
     }
 
-    router.push(`/jogar/${gameId}?mode=real`);
+    router.push(`/jogar/${gameId}`);
   };
 
   const filteredGames = games.filter(g => {

@@ -55,7 +55,7 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
         <ChatGlobal 
           isOpen={chatOpen} 
           onClose={() => setChatOpen(false)} 
-          onPlayGame={(id) => { setChatOpen(false); router.push(`/jogar/${id}?mode=real`); }}
+          onPlayGame={(id) => { setChatOpen(false); router.push(`/jogar/${id}`); }}
         />
         <MobileSidebar />
         <Toaster theme="dark" position="top-center" richColors />

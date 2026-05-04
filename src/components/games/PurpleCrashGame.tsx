@@ -3,7 +3,6 @@ import { ArrowLeft, Volume2, Menu, Maximize2, Plane, Minus, Plus, X } from "luci
 import { toast } from "sonner";
 import { useGameEngine } from "@/hooks/useGameEngine";
 import { playSound } from "@/lib/sounds";
-import { playSound } from "@/lib/sounds";
 
 interface Props {
   balance: number;
@@ -208,7 +207,7 @@ const PurpleCrashGame = ({ balance, onUpdateBalance, onBack }: Props) => {
           {phase === "waiting" ? (
             <p className="text-5xl font-extrabold font-mono">{countdown}s</p>
           ) : (
-            <p className={`text-5xl font-extrabold font-mono ${phase === "crashed" ? "text-red-400" : "text-white"} drop-shadow-lg`}>{multiplier.toFixed(2).replace(\'.\', \',\')}x</p>
+            <p className={`text-5xl font-extrabold font-mono ${phase === "crashed" ? "text-red-400" : "text-white"} drop-shadow-lg`}>{multiplier.toFixed(2).replace('.', ',')}x</p>
           )}
         </div>
       </div>

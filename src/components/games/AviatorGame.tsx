@@ -137,7 +137,7 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
   const [topBets, setTopBets] = useState<any[]>([]);
   const [prevBets, setPrevBets] = useState<any[]>([]);
 
-  const { phase, multiplier, countdown, roundId, startedAt, multiplierRef } = useGameEngine("aviator");
+  
   
   // Quando a fase muda, ajustamos os estados das apostas para refletir o ciclo
   useEffect(() => {
@@ -200,7 +200,7 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
   useEffect(() => {
     fetchHistory();
     fetchTopBets();
-  }, [fetchHistory, fetchTopBets]);
+    
     const channel = supabase.channel(`game_aviator_bets`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'bets', filter: `game_id=eq.aviator` }, (payload) => {
         const data = payload.new as any;
@@ -265,7 +265,7 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
   };
 
   const handleCashout = async (boxIndex: number) => {
-    if (phase !== "rising" || isCrashedRef.current) return;
+    if (phase !== "rising" ) return;
     const box = betsState[boxIndex];
     if (!box.hasBet || box.cashedOut) return;
     

@@ -61,7 +61,7 @@ export default function PlayGamePage({
   }
 
   // Modo real SEMPRE — sem demo
-  const engineUrl = `/engine/${gameId}?mode=real`;
+  const engineUrl = `/engine/${gameId}`;
 
   return (
     <div className="w-full max-w-[1400px] mx-auto pt-2 pb-8 px-0 sm:px-4">

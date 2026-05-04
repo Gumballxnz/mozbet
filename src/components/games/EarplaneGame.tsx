@@ -3,7 +3,6 @@ import { ArrowLeft, Menu, MessageCircle, Plane, Users, Minus, Plus } from "lucid
 import { toast } from "sonner";
 import { playSound } from "@/lib/sounds";
 import { useGameEngine } from "@/hooks/useGameEngine";
-import { playSound } from "@/lib/sounds";
 
 interface Props {
   balance: number;
@@ -18,9 +17,6 @@ const historyColor = (m: number) => {
 };
 
 const EarplaneGame = ({ balance, onUpdateBalance, onBack }: Props) => {
-  const [phase, setPhase] = useState<"waiting" | "rising" | "crashed">("waiting");
-  
-  
   const [history, setHistory] = useState<number[]>([1.45, 2.8, 1.1, 5.2, 1.92, 15.4, 1.23, 3.5]);
   const [bet1, setBet1] = useState(10);
   const [bet2, setBet2] = useState(10);
@@ -48,41 +44,8 @@ const EarplaneGame = ({ balance, onUpdateBalance, onBack }: Props) => {
   
 
   useEffect(() => {
-    fetchRoundState();
     fetchHistory();
-    joinRoom("game_earplane");
-
-    const handleUpdate = (data: any) => {
-      if (data.game !== "earplane") return;
-      currentRoundId.current = data.round_id;
-
-      if (data.status === "waiting") {
-        setPhase("waiting");
-        setMultiplier(1.0);
-        setHasBet1(false);
-        setHasBet2(false);
-        setCashed1(false);
-        setCashed2(false);
-        const startMs = new Date(data.started_at).getTime();
-        playSound('notification');
-        setCountdown(Math.max(1, Math.ceil((startMs - Date.now()) / 1000)));
-      } else if (data.status === "running") {
-        setPhase("rising");
-        startedAt.current = new Date(data.started_at).getTime();
-      } else if (data.status === "crashed") {
-        playSound('crash');
-        setPhase("crashed");
-        setMultiplier(data.crash_point);
-        fetchHistory();
-      }
-    };
-
-    socket.on("game_update", handleUpdate);
-    return () => {
-      socket.off("game_update", handleUpdate);
-      leaveRoom("game_earplane");
-    };
-  }, [fetchHistory, fetchRoundState]);
+  }, [fetchHistory]);
 
   
 

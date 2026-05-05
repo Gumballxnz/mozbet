@@ -179,9 +179,10 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
   const fetchTopBets = useCallback(async () => {
     try {
         const { data } = await supabase
-            .from('game_history')
+            .from('bets')
             .select('*')
             .eq('game_id', 'aviator')
+            .eq('status', 'won')
             .order('win_amount', { ascending: false })
             .limit(20);
         
@@ -189,7 +190,7 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
             setTopBets(data.map(b => ({
                 user: maskUserId(b.user_id),
                 bet: b.bet_amount,
-                cashedAt: b.crash_point,
+                cashedAt: b.cashed_out_at,
                 win: b.win_amount || 0,
                 date: b.created_at
             })));

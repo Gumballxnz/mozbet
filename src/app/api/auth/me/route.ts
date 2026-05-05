@@ -12,13 +12,13 @@ export async function GET(req: Request) {
     const token = sessionCookie?.split("=")[1];
 
     if (!token) {
-      return NextResponse.json({ user: null }, { status: 401 });
+      return NextResponse.json({ user: null }, { status: 200 });
     }
 
     // 2. Verificar e decodificar o JWT
     const decoded = await verifyToken<{ id: string; phone: string }>(token);
     if (!decoded) {
-      return NextResponse.json({ user: null }, { status: 401 });
+      return NextResponse.json({ user: null }, { status: 200 });
     }
 
     // 3. Buscar os dados mais recentes do usuário no banco (ex: saldo atualizado)
@@ -29,7 +29,7 @@ export async function GET(req: Request) {
       .single();
 
     if (error || !user) {
-      return NextResponse.json({ user: null }, { status: 401 });
+      return NextResponse.json({ user: null }, { status: 200 });
     }
 
     // 4. Se a conta foi desativada pelo admin

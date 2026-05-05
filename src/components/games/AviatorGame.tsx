@@ -319,7 +319,7 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
       {/* HEADER MOBILE */}
       <div className="lg:hidden h-14 bg-[#141516] flex items-center justify-between px-4 shrink-0 shadow-lg z-30 border-b border-white/5">
         <button onClick={onBack} className="text-gray-400 hover:text-white p-2 -ml-2"><ArrowLeft size={20} /></button>
-        <span className="text-red-500 font-black italic text-xl tracking-tighter"> { e.currentTarget.style.display="none" }} /><span className="text-red-500 font-black italic text-xl tracking-tighter ml-2">Aviator</span></span >
+        <span className="text-red-500 font-black italic text-xl tracking-tighter">Aviator</span>
         <div className="flex gap-4 items-center">
             <span className="text-primary font-black text-sm">{balance.toFixed(2)} MZN</span>
             <Menu className="text-gray-400" size={20} />
@@ -330,7 +330,7 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
       <div className="flex flex-col h-[40%] lg:h-full lg:w-[320px] bg-[#14161E] border-r border-[#2A2F40] shrink-0 z-20">
         <div className="hidden lg:flex h-14 items-center gap-3 px-4 bg-[#141516] border-b border-[#2A2F40]">
            <button onClick={onBack} className="text-gray-400 hover:text-white"><ArrowLeft size={20} /></button>
-           <span className="text-red-500 font-black italic text-xl tracking-tighter"> { e.currentTarget.style.display="none" }} /><span className="text-red-500 font-black italic text-xl tracking-tighter ml-2">Aviator</span></span >
+           <span className="text-red-500 font-black italic text-xl tracking-tighter">Aviator</span>
         </div>
         
         <div className="flex bg-[#000000] p-2 gap-1">

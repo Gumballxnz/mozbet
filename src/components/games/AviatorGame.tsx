@@ -396,10 +396,16 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
           
           <div className="flex-1 relative bg-[#000000] rounded-[2.5rem] overflow-hidden border border-[#2A2F40] shadow-2xl flex items-center justify-center">
             
-            {/* EFEITO DE FUNDO DINÂMICO */}
-            <div className="absolute inset-0 opacity-40 pointer-events-none">
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(229,57,53,0.1),transparent_70%)]" />
-                <div className="absolute inset-0 animate-pulse bg-[radial-gradient(circle_at_50%_50%,rgba(52,152,219,0.05),transparent_80%)]" />
+            {/* EFEITO DE FUNDO DINÂMICO SUNBURST */}
+            <div className="absolute inset-0 opacity-15 pointer-events-none overflow-hidden flex items-center justify-center">
+                <div 
+                   className="absolute w-[200%] h-[200%] animate-spin" 
+                   style={{ 
+                     background: "repeating-conic-gradient(from 0deg, transparent 0deg 15deg, rgba(255,255,255,0.15) 15deg 30deg)",
+                     animationDuration: "100s"
+                   }} 
+                />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(229,57,53,0.1),#000000_80%)]" />
             </div>
             
             <div className="absolute inset-0 flex flex-col items-center justify-center z-10 pointer-events-none p-4">
@@ -424,33 +430,63 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
 
               {phase === "rising" && (
                 <div className="flex flex-col items-center justify-center relative w-full h-full">
-                  <span className="font-black text-white drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)] z-20" style={{ fontSize: "clamp(70px, 15vw, 160px)", lineHeight: 1 }}>
+                  <span className="absolute font-black text-white drop-shadow-[0_10px_20px_rgba(0,0,0,0.9)] z-20" style={{ fontSize: "clamp(60px, 12vw, 120px)", lineHeight: 1 }}>
                     {multiplier.toFixed(2)}x
                   </span>
                   
-                  {/* ANIMAÇÃO DO AVIÃO E CURVA */}
-                  <div className="absolute inset-0 pointer-events-none overflow-hidden p-10 lg:p-20">
-                     <svg viewBox="0 0 100 100" className="w-full h-full" preserveAspectRatio="none">
-                        <path d={`M 5 95 Q 40 95 90 ${Math.max(10, 95 - (multiplier - 1) * 20)}`} fill="transparent" stroke="#E53935" strokeWidth="3.5" strokeLinecap="round" className="drop-shadow-[0_0_10px_rgba(229,57,53,0.8)]" />
-                        <path d={`M 5 95 Q 40 95 90 ${Math.max(10, 95 - (multiplier - 1) * 20)} L 90 95 Z`} fill="url(#grad)" />
-                        <defs>
-                          <linearGradient id="grad" x1="0" y1="1" x2="0" y2="0">
-                            <stop offset="0%" stopColor="rgba(229, 57, 53, 0)" />
-                            <stop offset="100%" stopColor="rgba(229, 57, 53, 0.4)" />
-                          </linearGradient>
-                        </defs>
-                     </svg>
-                     <div 
-                        className="absolute w-20 h-20 text-5xl flex items-center justify-center drop-shadow-2xl transition-all duration-300 ease-out" 
-                        style={{ 
-                            left: '85%', 
-                            top: `${Math.max(5, 85 - (multiplier - 1) * 20)}%`, 
-                            transform: `translate(-50%, -50%) rotate(${-20 - (multiplier-1)*2}deg)` 
-                        }}
-                     >
-                        <div className="w-16 h-16 animate-pulse"><svg width="1em" height="1em" viewBox="0 0 512 512" className="fill-red-600 w-full h-full drop-shadow-[0_5px_15px_rgba(229,57,53,0.8)]"><path d="M492.3 227.1L277.5 131.6l-50.6-96c-4.4-8.3-12.8-13.6-22.1-13.6-11.8 0-21.3 9.6-21.3 21.3 0 2.8 1.1 5.5 3.2 7.5L257.6 127 124.9 67.5c-4.3-1.9-9.1-2.4-13.7-1.3L42.5 83c-9.6 2.4-16.1 11.2-16.1 21.1 0 7.8 4.2 14.8 11.2 18L130 166.4l-48.8 49-65.7-10.4c-3.1-.5-6.3.1-8.9 1.7-4.8 2.9-7.1 8.6-5.5 13.9l19.5 64.9c2 6.7 8.1 11.3 15.1 11.3 1 0 2-.1 3-.3l189.6-39.6c4.6-1 9.4-.6 13.8 1l185.3 69.1c11.3 4.2 23.9-1.5 28.1-12.8 2.6-6.9 1.5-14.7-2.9-20.5-5.9-7.9-14.9-12.3-24.6-12.3z"/></svg></div>
-                        <div className="absolute inset-0 bg-red-600/20 blur-2xl rounded-full -z-10 animate-pulse" />
-                     </div>
+                  {/* ANIMAÇÃO DO AVIÃO E CURVA — ESTILO SPRIBE */}
+                  <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                    {(() => {
+                      // Curva exponencial: começa rasteira e sobe cada vez mais
+                      const logVal = Math.log(multiplier) / Math.log(20); // 0..1 satura em 20x
+                      const curveT = Math.min(logVal, 0.95);
+
+                      // Ponto final da curva: X fixo na direita, Y sobe com o multiplicador
+                      const endX = 90;
+                      const endY = Math.max(5, 92 - curveT * 85);
+
+                      // Ponto de controlo da curva cúbica: puxa para baixo no início, sobe ao fim
+                      const cp1X = 40;
+                      const cp1Y = 92; // controlo inicial rente ao chão
+                      const cp2X = endX - 10;
+                      const cp2Y = endY + (92 - endY) * 0.1;
+
+                      const d = `M 5 92 C ${cp1X} ${cp1Y}, ${cp2X} ${cp2Y}, ${endX} ${endY}`;
+                      const fill = `M 5 92 C ${cp1X} ${cp1Y}, ${cp2X} ${cp2Y}, ${endX} ${endY} L ${endX} 92 Z`;
+
+                      // Ângulo do avião na ponta da curva
+                      const angle = -Math.min(curveT * 65, 65);
+
+                      return (
+                        <svg viewBox="0 0 100 100" className="w-full h-full" preserveAspectRatio="none">
+                          <defs>
+                            <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor="rgba(229, 57, 53, 0.35)" />
+                              <stop offset="100%" stopColor="rgba(229, 57, 53, 0.0)" />
+                            </linearGradient>
+                          </defs>
+                          {/* Área preenchida sob a curva */}
+                          <path d={fill} fill="url(#grad)" />
+                          {/* Linha da curva */}
+                          <path
+                            d={d}
+                            fill="none"
+                            stroke="#E53935"
+                            strokeWidth="2.5"
+                            strokeLinecap="round"
+                            style={{ filter: "drop-shadow(0 0 6px rgba(229,57,53,0.8))" }}
+                          />
+                          {/* Avião na ponta — posição em % do viewBox */}
+                          <g transform={`translate(${endX}, ${endY}) rotate(${angle})`}>
+                            <path
+                              d="M0,-3 L8,0 L0,3 L1,0 Z"
+                              fill="#E53935"
+                              style={{ filter: "drop-shadow(0 0 4px rgba(229,57,53,1))" }}
+                            />
+                          </g>
+                        </svg>
+                      );
+                    })()}
                   </div>
                 </div>
               )}

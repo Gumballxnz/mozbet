@@ -89,7 +89,6 @@ export function GamePlayer({
             size="icon" 
             className="bg-black/60 hover:bg-black/80 backdrop-blur-md border border-white/20 text-white rounded-md pointer-events-auto h-8 w-8 sm:h-10 sm:w-10 transition-all shadow-xl"
             onClick={toggleFullscreen}
-            title={t("fullscreen")}
           >
             {isFullscreen ? <Minimize className="w-4 h-4 sm:w-5 sm:h-5" /> : <Maximize className="w-4 h-4 sm:w-5 sm:h-5" />}
           </Button>
@@ -102,7 +101,6 @@ export function GamePlayer({
               if (document.fullscreenElement) document.exitFullscreen();
               router.back();
             }}
-            title={t("close")}
           >
             <span className="font-bold text-lg leading-none">×</span>
           </Button>

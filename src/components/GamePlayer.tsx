@@ -82,39 +82,30 @@ export function GamePlayer({
 
   return (
     <div className="relative w-full h-full flex flex-col bg-black text-white">
-      {/* Game Header Overlay */}
-      <div className="absolute top-0 left-0 right-0 p-2 sm:p-4 z-10 flex items-center justify-between pointer-events-none">
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="bg-black/40 backdrop-blur-md border border-white/10 text-white rounded-full pointer-events-auto hover:bg-black/60"
-          onClick={() => {
-            if (document.fullscreenElement) document.exitFullscreen();
-            router.back();
-          }}
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </Button>
-
-        <div className="flex items-center gap-2 pointer-events-auto">
+      {/* Game Header Overlay - Apenas Sair e Tela Cheia no Canto Superior Direito */}
+      <div className="absolute top-2 right-2 sm:top-4 sm:right-4 z-50 flex items-center gap-2 pointer-events-none">
           <Button 
             variant="ghost" 
             size="icon" 
-            className="bg-black/40 backdrop-blur-md border border-white/10 text-white rounded-full hidden sm:flex hover:bg-black/60"
-            onClick={() => setSoundEnabled(!soundEnabled)}
-          >
-            {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-          </Button>
-
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="bg-black/40 backdrop-blur-md border border-white/10 text-white rounded-full hidden sm:flex hover:bg-black/60"
+            className="bg-black/60 hover:bg-black/80 backdrop-blur-md border border-white/20 text-white rounded-md pointer-events-auto h-8 w-8 sm:h-10 sm:w-10 transition-all shadow-xl"
             onClick={toggleFullscreen}
+            title={t("fullscreen")}
           >
-            {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+            {isFullscreen ? <Minimize className="w-4 h-4 sm:w-5 sm:h-5" /> : <Maximize className="w-4 h-4 sm:w-5 sm:h-5" />}
           </Button>
-        </div>
+
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="bg-red-600/80 hover:bg-red-600 backdrop-blur-md border border-red-500/50 text-white rounded-md pointer-events-auto h-8 w-8 sm:h-10 sm:w-10 transition-all shadow-xl"
+            onClick={() => {
+              if (document.fullscreenElement) document.exitFullscreen();
+              router.back();
+            }}
+            title={t("close")}
+          >
+            <span className="font-bold text-lg leading-none">×</span>
+          </Button>
       </div>
 
       {/* Loading Skeleton da Tela de Jogo */}

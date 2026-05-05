@@ -124,6 +124,7 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
   const { isLoggedIn, user } = useAppStore();
   const { phase, multiplier, countdown, roundId, startedAt, multiplierRef } = useGameEngine("aviator");
   const [history, setHistory] = useState<number[]>([]);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'all' | 'prev' | 'top'>('all');
   
   // Estado das apostas reais

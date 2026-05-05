@@ -35,17 +35,17 @@ const BetBox = ({
   const [isAuto, setIsAuto] = useState(false);
   
   return (
-    <div className="flex-1 bg-[#1A1D27] rounded-3xl border border-[#2A2F40] p-3 flex flex-col gap-3">
+    <div className="flex-1 bg-[#141516] rounded-3xl border border-[#2A2F40] p-3 flex flex-col gap-3">
       <div className="flex justify-center gap-4">
         <button 
           onClick={() => setIsAuto(false)}
-          className={`text-[10px] font-black uppercase tracking-widest px-4 py-1 rounded-full transition-colors ${!isAuto ? 'bg-[#2C3144] text-white' : 'text-gray-500 hover:text-gray-300'}`}
+          className={`text-[10px] font-black uppercase tracking-widest px-4 py-1 rounded-full transition-colors ${!isAuto ? 'bg-[#2A2B2E] text-white' : 'text-gray-500 hover:text-gray-300'}`}
         >
           Aposta
         </button>
         <button 
           onClick={() => setIsAuto(true)}
-          className={`text-[10px] font-black uppercase tracking-widest px-4 py-1 rounded-full transition-colors ${isAuto ? 'bg-[#2C3144] text-white' : 'text-gray-500 hover:text-gray-300'}`}
+          className={`text-[10px] font-black uppercase tracking-widest px-4 py-1 rounded-full transition-colors ${isAuto ? 'bg-[#2A2B2E] text-white' : 'text-gray-500 hover:text-gray-300'}`}
         >
           Automático
         </button>
@@ -53,10 +53,10 @@ const BetBox = ({
       
       <div className="flex gap-2 h-full min-h-[80px]">
         <div className="flex-[1.5] flex flex-col gap-1.5">
-          <div className="flex items-center bg-[#101116] rounded-xl border border-[#2A2F40] h-10 px-1 relative overflow-hidden group">
+          <div className="flex items-center bg-[#000000] rounded-xl border border-[#2A2F40] h-10 px-1 relative overflow-hidden group">
             <button 
               onClick={() => { playSound('click'); setBetAmount(Math.max(1, betAmount - 1)); }} 
-              className="w-7 h-7 rounded-full flex items-center justify-center text-gray-400 hover:bg-[#2C3144] hover:text-white transition-all font-black text-lg"
+              className="w-7 h-7 rounded-full flex items-center justify-center text-gray-400 hover:bg-[#2A2B2E] hover:text-white transition-all font-black text-lg"
             >−</button>
             <input 
               type="number" 
@@ -66,7 +66,7 @@ const BetBox = ({
             />
             <button 
               onClick={() => { playSound('click'); setBetAmount(betAmount + 1); }} 
-              className="w-7 h-7 rounded-full flex items-center justify-center text-gray-400 hover:bg-[#2C3144] hover:text-white transition-all font-black text-lg"
+              className="w-7 h-7 rounded-full flex items-center justify-center text-gray-400 hover:bg-[#2A2B2E] hover:text-white transition-all font-black text-lg"
             >+</button>
           </div>
           <div className="grid grid-cols-2 gap-1.5">
@@ -74,7 +74,7 @@ const BetBox = ({
               <button 
                 key={v} 
                 onClick={() => { playSound('click'); setBetAmount(v); }} 
-                className="bg-[#101116] border border-[#2A2F40] rounded-lg py-1 text-[11px] font-black text-white/60 hover:bg-[#2C3144] hover:text-white transition-colors"
+                className="bg-[#000000] border border-[#2A2F40] rounded-lg py-1 text-[11px] font-black text-white/60 hover:bg-[#2A2B2E] hover:text-white transition-colors"
               >
                 {v}
               </button>
@@ -90,7 +90,7 @@ const BetBox = ({
               className={`w-full h-full rounded-2xl flex flex-col items-center justify-center border-b-[4px] shadow-lg active:translate-y-0.5 active:border-b-0 transition-all
                 ${phase === "waiting" ? 'bg-[#28A745] hover:bg-[#218838] border-[#1E7E34] text-white cursor-pointer' : 'bg-[#1e2330] border-[#131722] text-gray-500 cursor-not-allowed opacity-80'}`}
             >
-              <span className="text-xl font-black uppercase tracking-tight leading-none">Aposta</span>
+              <span className="text-xl font-black uppercase tracking-tight leading-none">BET</span>
               {phase === "waiting" && <span className="text-[11px] font-bold opacity-90 mt-1">{betAmount.toFixed(2)} MZN</span>}
             </button>
           )}
@@ -99,9 +99,9 @@ const BetBox = ({
             <button 
               onClick={() => { playSound('click'); onCashout(); }}
               disabled={phase !== "rising"}
-              className="w-full h-full rounded-2xl flex flex-col items-center justify-center border-b-[4px] shadow-lg active:translate-y-0.5 active:border-b-0 transition-all bg-[#D35400] hover:bg-[#E67E22] border-[#A04000] text-white"
+              className="w-full h-full rounded-2xl flex flex-col items-center justify-center border-b-[4px] shadow-lg active:translate-y-0.5 active:border-b-0 transition-all bg-[#FF9800] hover:bg-[#F57C00] border-[#E65100] text-white"
             >
-              <span className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-1">Cancelar</span>
+              <span className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-1">CASH OUT</span>
               <span className="text-2xl font-black tracking-tight leading-none">{(activeBetAmount * multiplier).toFixed(2)}</span>
               <span className="text-[10px] font-black uppercase tracking-widest opacity-80 mt-1">MZN</span>
             </button>
@@ -300,10 +300,10 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
       const list = activeTab === 'all' ? roundBets : (activeTab === 'prev' ? prevBets : topBets);
       
       return (
-        <div className="flex-1 overflow-y-auto bg-[#101116] no-scrollbar">
-          <div className="grid grid-cols-[1fr_auto_auto] gap-4 px-4 py-2 text-[10px] uppercase font-black text-white/30 sticky top-0 bg-[#101116]/95 backdrop-blur z-10">
+        <div className="flex-1 overflow-y-auto bg-[#000000] no-scrollbar">
+          <div className="grid grid-cols-[1fr_auto_auto] gap-4 px-4 py-2 text-[10px] uppercase font-black text-white/30 sticky top-0 bg-[#000000]/95 backdrop-blur z-10">
             <span>Jogador</span>
-            <span className="w-20 text-center">Aposta</span>
+            <span className="w-20 text-center">BET</span>
             <span className="w-24 text-right">Ganho</span>
           </div>
           <div className="flex flex-col">
@@ -331,11 +331,11 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col lg:flex-row bg-[#101116] font-sans text-white overflow-hidden">
+    <div className="fixed inset-0 z-50 flex flex-col lg:flex-row bg-[#000000] font-sans text-white overflow-hidden">
       {/* HEADER MOBILE */}
-      <div className="lg:hidden h-14 bg-[#1A1D27] flex items-center justify-between px-4 shrink-0 shadow-lg z-30 border-b border-white/5">
+      <div className="lg:hidden h-14 bg-[#141516] flex items-center justify-between px-4 shrink-0 shadow-lg z-30 border-b border-white/5">
         <button onClick={onBack} className="text-gray-400 hover:text-white p-2 -ml-2"><ArrowLeft size={20} /></button>
-        <span className="text-red-500 font-black italic text-xl tracking-tighter">Aviator</span>
+        <span className="text-red-500 font-black italic text-xl tracking-tighter"><img src="/games/aviator-logo.svg" alt="Aviator" className="h-6" onError={(e) => { e.currentTarget.style.display="none" }} /><span className="text-red-500 font-black italic text-xl tracking-tighter ml-2">Aviator</span></span >
         <div className="flex gap-4 items-center">
             <span className="text-primary font-black text-sm">{balance.toFixed(2)} MZN</span>
             <Menu className="text-gray-400" size={20} />
@@ -344,19 +344,19 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
 
       {/* PAINEL ESQUERDO (Apostas Ronda) */}
       <div className="flex flex-col h-[40%] lg:h-full lg:w-[320px] bg-[#14161E] border-r border-[#2A2F40] shrink-0 z-20">
-        <div className="hidden lg:flex h-14 items-center gap-3 px-4 bg-[#1A1D27] border-b border-[#2A2F40]">
+        <div className="hidden lg:flex h-14 items-center gap-3 px-4 bg-[#141516] border-b border-[#2A2F40]">
            <button onClick={onBack} className="text-gray-400 hover:text-white"><ArrowLeft size={20} /></button>
-           <span className="text-red-500 font-black italic text-xl tracking-tighter">Aviator</span>
+           <span className="text-red-500 font-black italic text-xl tracking-tighter"><img src="/games/aviator-logo.svg" alt="Aviator" className="h-6" onError={(e) => { e.currentTarget.style.display="none" }} /><span className="text-red-500 font-black italic text-xl tracking-tighter ml-2">Aviator</span></span >
         </div>
         
-        <div className="flex bg-[#101116] p-2 gap-1">
-          <button onClick={() => setActiveTab('all')} className={`flex-1 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'all' ? 'bg-[#2C3144] text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}>Tudo</button>
-          <button onClick={() => setActiveTab('prev')} className={`flex-1 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'prev' ? 'bg-[#2C3144] text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}>Anterior</button>
-          <button onClick={() => setActiveTab('top')} className={`flex-1 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'top' ? 'bg-[#2C3144] text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}>Topo</button>
+        <div className="flex bg-[#000000] p-2 gap-1">
+          <button onClick={() => setActiveTab('all')} className={`flex-1 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'all' ? 'bg-[#2A2B2E] text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}>Tudo</button>
+          <button onClick={() => setActiveTab('prev')} className={`flex-1 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'prev' ? 'bg-[#2A2B2E] text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}>Anterior</button>
+          <button onClick={() => setActiveTab('top')} className={`flex-1 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'top' ? 'bg-[#2A2B2E] text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}>Topo</button>
         </div>
 
         {activeTab === 'all' && (
-            <div className="px-4 py-2 bg-[#1A1D27]/50 border-b border-black flex justify-between items-center">
+            <div className="px-4 py-2 bg-[#141516]/50 border-b border-black flex justify-between items-center">
                 <span className="text-[10px] text-gray-500 font-black uppercase tracking-widest">{roundBets.length} Apostas</span>
                 <div className="h-1 w-20 bg-white/5 rounded-full overflow-hidden">
                     <div className="h-full bg-[#28A745] transition-all duration-1000" style={{ width: `${Math.min(100, (roundBets.length / 50) * 100)}%` }} />
@@ -366,7 +366,7 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
 
         {renderBetsList()}
 
-        <div className="p-3 bg-[#1A1D27] border-t border-white/5 flex justify-between items-center text-[9px] font-bold text-gray-500 uppercase tracking-widest">
+        <div className="p-3 bg-[#141516] border-t border-white/5 flex justify-between items-center text-[9px] font-bold text-gray-500 uppercase tracking-widest">
             <div className="flex items-center gap-1">
                 <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
                 <span>Provably Fair</span>
@@ -379,8 +379,8 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
       <div className="flex-1 flex flex-col bg-[#000000] relative">
         
         {/* HEADER DESKTOP */}
-        <div className="hidden lg:flex h-14 bg-[#1A1D27] justify-end items-center px-6 border-b border-[#2A2F40] gap-4">
-            <div className="flex items-center gap-2 bg-[#101116] px-4 py-1.5 rounded-full border border-white/5">
+        <div className="hidden lg:flex h-14 bg-[#141516] justify-end items-center px-6 border-b border-[#2A2F40] gap-4">
+            <div className="flex items-center gap-2 bg-[#000000] px-4 py-1.5 rounded-full border border-white/5">
                 <span className="text-primary font-black text-sm tracking-tight">{balance.toFixed(2)} MZN</span>
             </div>
             <button className="text-gray-400 hover:text-white"><HelpCircle size={20} /></button>
@@ -409,7 +409,7 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
         {/* TELA CENTRAL DO JOGO */}
         <div className="flex-1 flex flex-col p-2 lg:p-6 gap-2 lg:gap-6 overflow-hidden">
           
-          <div className="flex-1 relative bg-[#101116] rounded-[2.5rem] overflow-hidden border border-[#2A2F40] shadow-2xl flex items-center justify-center">
+          <div className="flex-1 relative bg-[#000000] rounded-[2.5rem] overflow-hidden border border-[#2A2F40] shadow-2xl flex items-center justify-center">
             
             {/* EFEITO DE FUNDO DINÂMICO */}
             <div className="absolute inset-0 opacity-40 pointer-events-none">
@@ -425,9 +425,9 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
               {phase === "waiting" && (
                 <div className="flex flex-col items-center gap-2 animate-in fade-in zoom-in duration-500">
                   <div className="w-20 h-20 bg-red-600/10 rounded-full flex items-center justify-center border border-red-600/20 mb-2">
-                     <span className="text-4xl animate-bounce">✈️</span>
+                     <div className="w-10 h-10 animate-bounce"><svg width="1em" height="1em" viewBox="0 0 512 512" className="fill-red-600 w-full h-full drop-shadow-[0_5px_15px_rgba(229,57,53,0.8)]"><path d="M492.3 227.1L277.5 131.6l-50.6-96c-4.4-8.3-12.8-13.6-22.1-13.6-11.8 0-21.3 9.6-21.3 21.3 0 2.8 1.1 5.5 3.2 7.5L257.6 127 124.9 67.5c-4.3-1.9-9.1-2.4-13.7-1.3L42.5 83c-9.6 2.4-16.1 11.2-16.1 21.1 0 7.8 4.2 14.8 11.2 18L130 166.4l-48.8 49-65.7-10.4c-3.1-.5-6.3.1-8.9 1.7-4.8 2.9-7.1 8.6-5.5 13.9l19.5 64.9c2 6.7 8.1 11.3 15.1 11.3 1 0 2-.1 3-.3l189.6-39.6c4.6-1 9.4-.6 13.8 1l185.3 69.1c11.3 4.2 23.9-1.5 28.1-12.8 2.6-6.9 1.5-14.7-2.9-20.5-5.9-7.9-14.9-12.3-24.6-12.3z"/></svg></div>
                   </div>
-                  <div className="text-white text-lg lg:text-xl font-black uppercase tracking-widest text-shadow-lg">A aguardar nova ronda</div>
+                  <div className="text-white text-lg lg:text-xl font-black uppercase tracking-widest text-shadow-lg">WAITING FOR NEXT ROUND</div>
                   <div className="text-gray-400 font-black text-2xl lg:text-4xl mt-2 flex items-baseline gap-1">
                      <span className="animate-pulse">00:{countdown < 10 ? `0${countdown}` : countdown}</span>
                   </div>
@@ -440,13 +440,13 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
               {phase === "rising" && (
                 <div className="flex flex-col items-center justify-center relative w-full h-full">
                   <span className="font-black text-white drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)] z-20" style={{ fontSize: "clamp(70px, 15vw, 160px)", lineHeight: 1 }}>
-                    {multiplier.toFixed(2)}<span className="text-[0.6em] ml-1">x</span>
+                    {multiplier.toFixed(2)}x
                   </span>
                   
                   {/* ANIMAÇÃO DO AVIÃO E CURVA */}
                   <div className="absolute inset-0 pointer-events-none overflow-hidden p-10 lg:p-20">
                      <svg viewBox="0 0 100 100" className="w-full h-full" preserveAspectRatio="none">
-                        <path d={`M 5 95 Q 40 95 90 ${Math.max(10, 95 - (multiplier - 1) * 20)}`} fill="transparent" stroke="#E53935" strokeWidth="2.5" strokeLinecap="round" className="drop-shadow-[0_0_10px_rgba(229,57,53,0.8)]" />
+                        <path d={`M 5 95 Q 40 95 90 ${Math.max(10, 95 - (multiplier - 1) * 20)}`} fill="transparent" stroke="#E53935" strokeWidth="3.5" strokeLinecap="round" className="drop-shadow-[0_0_10px_rgba(229,57,53,0.8)]" />
                         <path d={`M 5 95 Q 40 95 90 ${Math.max(10, 95 - (multiplier - 1) * 20)} L 90 95 Z`} fill="url(#grad)" />
                         <defs>
                           <linearGradient id="grad" x1="0" y1="1" x2="0" y2="0">
@@ -463,7 +463,7 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
                             transform: `translate(-50%, -50%) rotate(${-20 - (multiplier-1)*2}deg)` 
                         }}
                      >
-                        <span className="animate-pulse">✈️</span>
+                        <div className="w-16 h-16 animate-pulse"><svg width="1em" height="1em" viewBox="0 0 512 512" className="fill-red-600 w-full h-full drop-shadow-[0_5px_15px_rgba(229,57,53,0.8)]"><path d="M492.3 227.1L277.5 131.6l-50.6-96c-4.4-8.3-12.8-13.6-22.1-13.6-11.8 0-21.3 9.6-21.3 21.3 0 2.8 1.1 5.5 3.2 7.5L257.6 127 124.9 67.5c-4.3-1.9-9.1-2.4-13.7-1.3L42.5 83c-9.6 2.4-16.1 11.2-16.1 21.1 0 7.8 4.2 14.8 11.2 18L130 166.4l-48.8 49-65.7-10.4c-3.1-.5-6.3.1-8.9 1.7-4.8 2.9-7.1 8.6-5.5 13.9l19.5 64.9c2 6.7 8.1 11.3 15.1 11.3 1 0 2-.1 3-.3l189.6-39.6c4.6-1 9.4-.6 13.8 1l185.3 69.1c11.3 4.2 23.9-1.5 28.1-12.8 2.6-6.9 1.5-14.7-2.9-20.5-5.9-7.9-14.9-12.3-24.6-12.3z"/></svg></div>
                         <div className="absolute inset-0 bg-red-600/20 blur-2xl rounded-full -z-10 animate-pulse" />
                      </div>
                   </div>

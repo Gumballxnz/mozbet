@@ -23,10 +23,12 @@ interface UserData {
   total_withdrawn?: number;
 }
 
-export function AdminUsersTable({ initialUsers, currentUserRole }: { initialUsers: UserData[], currentUserRole: string }) {
+export function AdminUsersTable({ initialUsers, currentUserRole, totalCount = 0 }: { initialUsers: UserData[], currentUserRole: string, totalCount?: number }) {
   const [users, setUsers] = useState<UserData[]>(initialUsers);
   const [search, setSearch] = useState("");
   const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
+  const [page, setPage] = useState(1);
+  const [loadingMore, setLoadingMore] = useState(false);
   
   // Modais de envio de comunicação
   const [globalModalOpen, setGlobalModalOpen] = useState(false);
@@ -60,9 +62,26 @@ export function AdminUsersTable({ initialUsers, currentUserRole }: { initialUser
       supabase.removeChannel(channel);
     };
   }, [selectedUser]);
+  const loadMore = async () => {
+    setLoadingMore(true);
+    const nextPage = page + 1;
+    const start = (nextPage - 1) * 30;
+    const end = start + 29;
+    
+    const { data } = await supabase
+      .from("users")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .range(start, end);
+
+    if (data && data.length > 0) {
+      setUsers(prev => [...prev, ...(data as UserData[])]);
+      setPage(nextPage);
+    }
+    setLoadingMore(false);
+  };
 
   const filteredUsers = users.filter(u => u.phone.includes(search) || (u.id.includes(search)) || (u.email && u.email.includes(search)));
-
   const handleAction = async (action: 'ban' | 'suspend' | 'activate' | 'delete' | 'promote' | 'demote', userId: string) => {
     try {
       if (action === 'delete') {
@@ -225,6 +244,9 @@ export function AdminUsersTable({ initialUsers, currentUserRole }: { initialUser
         <div>
           <h1 className="text-3xl font-bold text-white">Gestão de Clientes</h1>
           <p className="text-muted-foreground">Monitorize em tempo real, efetue bloqueios e dispare comunicações.</p>
+          <div className="mt-2 inline-flex items-center px-3 py-1 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-400 text-xs font-bold tracking-wider uppercase">
+            Total de Registos: {totalCount}
+          </div>
         </div>
         
         <div className="flex w-full sm:w-auto items-center gap-3">
@@ -317,6 +339,19 @@ export function AdminUsersTable({ initialUsers, currentUserRole }: { initialUser
             </tbody>
           </table>
         </div>
+        
+        {users.length < totalCount && (
+          <div className="p-4 border-t border-[#2A2F40] flex justify-center bg-[#0B0C10]">
+            <Button 
+              onClick={loadMore} 
+              disabled={loadingMore}
+              variant="outline"
+              className="border-[#2A2F40] text-gray-400 hover:text-white hover:bg-[#1A1D27] min-w-[200px]"
+            >
+              {loadingMore ? "A carregar..." : `Ver próximos utilizadores (${users.length} de ${totalCount})`}
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* MODAL DE CRM COMPLETO DO UTILIZADOR */}

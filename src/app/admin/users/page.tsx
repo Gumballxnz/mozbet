@@ -19,10 +19,11 @@ export default async function AdminUsersPage() {
     }
   }
 
-  const { data: users } = await supabaseAdmin
+  const { data: users, count } = await supabaseAdmin
     .from("users")
-    .select("*")
-    .order("created_at", { ascending: false });
+    .select("*", { count: "exact" })
+    .order("created_at", { ascending: false })
+    .limit(30);
 
   const { data: authData } = await supabaseAdmin.auth.admin.listUsers();
   
@@ -36,6 +37,6 @@ export default async function AdminUsersPage() {
   });
 
   return (
-    <AdminUsersTable initialUsers={mappedUsers} currentUserRole={currentUserRole} />
+    <AdminUsersTable initialUsers={mappedUsers} currentUserRole={currentUserRole} totalCount={count || 0} />
   );
 }

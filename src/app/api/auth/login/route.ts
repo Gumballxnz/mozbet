@@ -56,7 +56,7 @@ export async function POST(req: Request) {
     // 2. Buscar usuário com colunas de segurança
     const { data: user, error: dbError } = await supabaseAdmin
       .from("users")
-      .select("id, phone, email, password_hash, balance, has_deposited, created_at, is_active, is_admin, is_suspended, failed_attempts, lockout_until")
+      .select("id, phone, email, password_hash, balance, has_deposited, created_at, is_active, is_admin, is_suspended, failed_attempts, lockout_until, avatar_url, vip_level, bonus_balance, unlocked_balance")
       .eq("phone", cleanPhone)
       .single();
 
@@ -134,6 +134,10 @@ export async function POST(req: Request) {
           hasDeposited: user.has_deposited,
           createdAt: user.created_at,
           isAdmin: user.is_admin,
+          avatar: user.avatar_url || null,
+          vipLevel: user.vip_level || 1,
+          bonusBalance: Number(user.bonus_balance || 0),
+          unlockedBalance: Number(user.unlocked_balance || 0),
         },
       },
       { status: 200 }

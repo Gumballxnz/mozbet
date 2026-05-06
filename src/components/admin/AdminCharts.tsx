@@ -264,7 +264,7 @@ export function AdminCharts({ depositsRaw: initialDeposits, usersRaw: initialUse
           </div>
           
           <div className="h-[350px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minHeight={350} minWidth={100}>
               <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorDepositos" x1="0" y1="0" x2="0" y2="1">
@@ -308,7 +308,7 @@ export function AdminCharts({ depositsRaw: initialDeposits, usersRaw: initialUse
           </div>
           
           <div className="h-[350px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minHeight={350} minWidth={100}>
               <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorUsuarios" x1="0" y1="0" x2="0" y2="1">

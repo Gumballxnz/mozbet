@@ -39,7 +39,7 @@ export async function POST(req: Request) {
 
     if (!isValidPhone(phone)) {
       return NextResponse.json(
-        { error: "Número inválido. Use 9 dígitos (começando com 84/85/86/87)" },
+        { error: "Número inválido. Use 9 dígitos (prefixos: 82/83/84/85/86/87/88)" },
         { status: 400 }
       );
     }

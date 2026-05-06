@@ -15,7 +15,7 @@ export function formatMZN(value: number): string {
 }
 
 // Validar número de telefone moçambicano
-export const VALID_PREFIXES = ["84", "85", "86", "87"];
+export const VALID_PREFIXES = ["82", "83", "84", "85", "86", "87", "88"];
 
 export function isValidPhone(phone: string): boolean {
   const digits = phone.replace(/\D/g, "");

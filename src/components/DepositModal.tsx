@@ -15,6 +15,7 @@ import { useTranslation } from "@/hooks/useTranslation";
 import { useAppStore } from "@/lib/store";
 import { toast } from "sonner";
 import { formatMZN } from "@/lib/utils";
+import { EMOLA_LOGO, MPESA_LOGO } from "@/lib/logos";
 
 const AMOUNTS = [10, 50, 100, 500, 1000, 5000];
 
@@ -141,7 +142,7 @@ export function DepositModal() {
               }}
               className={`flex items-center justify-center p-1 rounded-md transition-all cursor-pointer bg-white ${paymentInfo.method === 'emola' ? 'border-2 border-green-500 ring-2 ring-green-500/30 opacity-100 scale-105 z-10 shadow-[0_0_15px_rgba(34,197,94,0.3)]' : 'border border-gray-300 opacity-60 grayscale hover:grayscale-0 hover:opacity-100'}`}
             >
-              <img src="/assets/emolalogo.png" alt="E-Mola" className="h-12 w-auto object-contain" />
+              <img src={EMOLA_LOGO} alt="E-Mola" className="h-12 w-auto object-contain" />
             </div>
 
             {/* M-PESA BUTTON */}
@@ -153,7 +154,7 @@ export function DepositModal() {
               }}
               className={`flex items-center justify-center p-1 rounded-md transition-all cursor-pointer bg-white ${paymentInfo.method === 'mpesa' ? 'border-2 border-green-500 ring-2 ring-green-500/30 opacity-100 scale-105 z-10 shadow-[0_0_15px_rgba(34,197,94,0.3)]' : 'border border-gray-300 opacity-60 grayscale hover:grayscale-0 hover:opacity-100'}`}
             >
-              <img src="/assets/mpesalogo.png" alt="M-Pesa" className="h-12 w-auto object-contain" />
+              <img src={MPESA_LOGO} alt="M-Pesa" className="h-12 w-auto object-contain" />
             </div>
 
           </div>

@@ -7,6 +7,7 @@ import { ArrowDownLeft, ArrowUpRight, CheckCircle2, Clock, XCircle, Search } fro
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { getLatestTransactions, getMoreTransactions } from "@/app/admin/transactions/actions";
 
 interface Transaction {
   id: string;
@@ -34,7 +35,6 @@ export function AdminTransactionsTable({ initialTransactions, initialTotalCount 
     // Isso ignora o bloqueio do RLS porque usa o supabaseAdmin no backend
     const interval = setInterval(async () => {
       try {
-        const { getLatestTransactions } = await import("@/app/admin/transactions/actions");
         const latest = await getLatestTransactions();
         if (latest && latest.length > 0) {
           // Atualiza apenas os novos (os primeiros 30) e preserva o resto
@@ -58,7 +58,6 @@ export function AdminTransactionsTable({ initialTransactions, initialTotalCount 
   const handleLoadMore = async () => {
     setLoadingMore(true);
     try {
-      const { getMoreTransactions } = await import("@/app/admin/transactions/actions");
       const moreTxs = await getMoreTransactions(transactions.length);
       if (moreTxs.length > 0) {
         setTransactions(prev => [...prev, ...moreTxs as Transaction[]]);

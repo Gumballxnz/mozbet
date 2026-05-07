@@ -65,7 +65,6 @@ export function useGameEngine(gameId: string) {
         const status = row.status;
 
         if (status === "waiting") {
-          playSound('notification');
           startedAt.current = new Date(row.started_at).getTime();
           isCrashedRef.current = false;
           multiplierRef.current = 1.0;

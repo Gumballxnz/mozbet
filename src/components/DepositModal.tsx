@@ -128,6 +128,19 @@ export function DepositModal() {
             </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+          
+          {/* Seletor Visual de Operadora (Apenas Decorativo/Indicativo) */}
+          <div className="grid grid-cols-2 gap-3 mb-2">
+            <div className={`flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all ${paymentInfo.method === 'emola' ? 'bg-[#ff5b00]/10 border-[#ff5b00] ring-1 ring-[#ff5b00]/50 opacity-100' : 'bg-gray-800/30 border-gray-700 opacity-50 grayscale'}`}>
+              <span className="text-2xl mb-1">🟢</span>
+              <span className="font-black text-white tracking-wider text-sm">E-MOLA</span>
+            </div>
+            <div className={`flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all ${paymentInfo.method === 'mpesa' ? 'bg-[#df0000]/10 border-[#df0000] ring-1 ring-[#df0000]/50 opacity-100' : 'bg-gray-800/30 border-gray-700 opacity-50 grayscale'}`}>
+              <span className="text-2xl mb-1">🔴</span>
+              <span className="font-black text-white tracking-wider text-sm">M-PESA</span>
+            </div>
+          </div>
+
           {/* Telefone registado (bloqueado) */}
           <div className="space-y-2">
             <Label htmlFor="deposit-phone">{t("phone")}</Label>

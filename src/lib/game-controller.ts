@@ -203,7 +203,7 @@ export async function validateBet(userId: string, amount: number): Promise<{ val
 
   const { data: user, error } = await supabaseAdmin
     .from("users")
-    .select("balance")
+    .select("balance, bonus_balance")
     .eq("id", userId)
     .single();
 
@@ -211,37 +211,75 @@ export async function validateBet(userId: string, amount: number): Promise<{ val
     return { valid: false, error: "Utilizador não encontrado" };
   }
 
-  const currentBalance = Number(user.balance);
-  if (currentBalance < amount) {
+  const currentBalance = Number(user.balance || 0);
+  const currentBonus = Number(user.bonus_balance || 0);
+  const totalPower = currentBalance + currentBonus;
+
+  if (totalPower < amount) {
     return { valid: false, error: "Saldo insuficiente" };
   }
 
-  return { valid: true, balance: currentBalance };
+  return { valid: true, balance: totalPower };
 }
 
-// Descontar saldo de forma atómica
-export async function deductBalance(userId: string, currentBalance: number, amount: number): Promise<number> {
-  const newBalance = Math.max(0, parseFloat((currentBalance - amount).toFixed(2)));
+// Descontar saldo de forma inteligente (Bónus Primeiro)
+export async function deductBalance(userId: string, _dummyCurrent: number, amount: number): Promise<number> {
+  const { data: user } = await supabaseAdmin
+    .from("users")
+    .select("balance, bonus_balance")
+    .eq("id", userId)
+    .single();
+
+  if (!user) throw new Error("Usuário não encontrado");
+
+  let newBalance = Number(user.balance || 0);
+  let newBonus = Number(user.bonus_balance || 0);
+  let remainingAmount = amount;
+
+  // 1. Tentar gastar do Bónus primeiro
+  if (newBonus > 0) {
+    if (newBonus >= remainingAmount) {
+      newBonus -= remainingAmount;
+      remainingAmount = 0;
+    } else {
+      remainingAmount -= newBonus;
+      newBonus = 0;
+    }
+  }
+
+  // 2. Gastar o restante da Carteira Principal
+  if (remainingAmount > 0) {
+    newBalance -= remainingAmount;
+  }
+
+  newBalance = Math.max(0, parseFloat(newBalance.toFixed(2)));
+  newBonus = Math.max(0, parseFloat(newBonus.toFixed(2)));
+
   await supabaseAdmin
     .from("users")
-    .update({ balance: newBalance })
+    .update({ balance: newBalance, bonus_balance: newBonus })
     .eq("id", userId);
-  return newBalance;
+    
+  return newBalance + newBonus;
 }
 
-// Creditar saldo
+// Creditar saldo (Os ganhos vão SEMPRE para a carteira principal)
 export async function creditBalance(userId: string, amount: number): Promise<number> {
   const { data: user } = await supabaseAdmin
     .from("users")
-    .select("balance")
+    .select("balance, bonus_balance")
     .eq("id", userId)
     .single();
 
   const currentBalance = Number(user?.balance || 0);
+  const currentBonus = Number(user?.bonus_balance || 0);
+  
   const newBalance = parseFloat((currentBalance + amount).toFixed(2));
+  
   await supabaseAdmin
     .from("users")
     .update({ balance: newBalance })
     .eq("id", userId);
-  return newBalance;
+    
+  return newBalance + currentBonus;
 }

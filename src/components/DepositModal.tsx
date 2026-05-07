@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useAppStore } from "@/lib/store";
 import { toast } from "sonner";
+import { formatMZN } from "@/lib/utils";
 import { EMOLA_LOGO, MPESA_LOGO } from "@/lib/logos";
 import { Wallet, Check } from "lucide-react";
 

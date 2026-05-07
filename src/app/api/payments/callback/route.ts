@@ -14,15 +14,22 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing reference" }, { status: 400 });
     }
 
-    // 1. Buscar a transação pendente
-    const { data: transaction } = await supabaseAdmin
+    // 1. A referência gerada foi formatada como: MozbetDep + (8 primeiros chars do UUID)
+    // Extraímos os 8 caracteres
+    const shortId = reference.replace("MozbetDep", "");
+
+    // 2. Procurar nas últimas transações PENDING do banco (uma vez que não podemos fazer um LIKE num UUID diretamente)
+    const { data: pendingTxs } = await supabaseAdmin
       .from("transactions")
       .select("*, users(phone, balance, has_deposited)")
-      .eq("id", reference)
-      .single();
+      .eq("status", "PENDING")
+      .order("created_at", { ascending: false })
+      .limit(100);
+
+    const transaction = pendingTxs?.find(tx => tx.id.startsWith(shortId));
 
     if (!transaction) {
-      return NextResponse.json({ error: "Transaction not found" }, { status: 404 });
+      return NextResponse.json({ error: "Transaction not found or already processed" }, { status: 404 });
     }
 
     // Prevenir processamento duplo

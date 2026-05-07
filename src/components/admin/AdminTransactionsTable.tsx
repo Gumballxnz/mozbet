@@ -18,8 +18,10 @@ interface Transaction {
   phone?: string;
 }
 
-export function AdminTransactionsTable({ initialTransactions }: { initialTransactions: Transaction[] }) {
+export function AdminTransactionsTable({ initialTransactions, initialTotalCount }: { initialTransactions: Transaction[], initialTotalCount: number }) {
   const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
+  const [totalCount, setTotalCount] = useState(initialTotalCount);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [search, setSearch] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -32,16 +34,38 @@ export function AdminTransactionsTable({ initialTransactions }: { initialTransac
         const { getLatestTransactions } = await import("@/app/admin/transactions/actions");
         const latest = await getLatestTransactions();
         if (latest && latest.length > 0) {
-          // Apenas atualiza se houver dados
-          setTransactions(latest as Transaction[]);
+          // Atualiza apenas os novos (os primeiros 30) e preserva o resto
+          setTransactions(prev => {
+            const newTxsMap = new Map(latest.map(t => [t.id, t]));
+            const merged = [...latest as Transaction[]];
+            for (const t of prev) {
+              if (!newTxsMap.has(t.id)) merged.push(t);
+            }
+            return merged;
+          });
         }
       } catch (err) {
         console.error("Erro ao buscar transações em realtime:", err);
       }
-    }, 3000);
+    }, 5000); // Polling a cada 5s
 
     return () => clearInterval(interval);
   }, []);
+
+  const handleLoadMore = async () => {
+    setLoadingMore(true);
+    try {
+      const { getMoreTransactions } = await import("@/app/admin/transactions/actions");
+      const moreTxs = await getMoreTransactions(transactions.length);
+      if (moreTxs.length > 0) {
+        setTransactions(prev => [...prev, ...moreTxs as Transaction[]]);
+      }
+    } catch (err) {
+      toast.error("Erro ao carregar mais transações");
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   const filtered = transactions.filter(t => {
     const matchesSearch = t.phone?.includes(search) || t.type.includes(search.toUpperCase());
@@ -89,7 +113,7 @@ export function AdminTransactionsTable({ initialTransactions }: { initialTransac
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold text-white">Transações Financeiras</h1>
-          <p className="text-muted-foreground">Monitorização Realtime de M-Pesa e E-Mola.</p>
+          <p className="text-muted-foreground">Monitorização Realtime de M-Pesa e E-Mola. <span className="text-white font-bold ml-2">Total: {totalCount}</span></p>
         </div>
         
         <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
@@ -191,6 +215,19 @@ export function AdminTransactionsTable({ initialTransactions }: { initialTransac
           </table>
         </div>
       </div>
+
+      {/* Botão Carregar Mais */}
+      {transactions.length < totalCount && (
+        <div className="flex justify-center mt-6 mb-8">
+          <Button
+            onClick={handleLoadMore}
+            disabled={loadingMore}
+            className="bg-primary/20 hover:bg-primary/30 text-primary border border-primary/50 font-bold px-8"
+          >
+            {loadingMore ? "A Carregar..." : "Carregar Mais Transações"}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

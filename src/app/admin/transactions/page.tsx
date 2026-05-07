@@ -4,11 +4,11 @@ import { AdminTransactionsTable } from "@/components/admin/AdminTransactionsTabl
 export const dynamic = "force-dynamic";
 
 export default async function AdminTransactionsPage() {
-  const { data: transactionsRaw } = await supabaseAdmin
+  const { data: transactionsRaw, count } = await supabaseAdmin
     .from("transactions")
-    .select("*, users(phone)")
+    .select("*, users(phone)", { count: "exact" })
     .order("created_at", { ascending: false })
-    .limit(50);
+    .limit(30);
 
   const initialTransactions = transactionsRaw?.map(tx => ({
     ...tx,
@@ -16,6 +16,9 @@ export default async function AdminTransactionsPage() {
   })) || [];
 
   return (
-    <AdminTransactionsTable initialTransactions={initialTransactions} />
+    <AdminTransactionsTable 
+      initialTransactions={initialTransactions} 
+      initialTotalCount={count || 0} 
+    />
   );
 }

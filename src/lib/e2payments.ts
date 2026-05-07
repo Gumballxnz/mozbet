@@ -47,6 +47,8 @@ async function getAuthToken(): Promise<string> {
     headers: {
       "Content-Type": "application/json",
       "Accept": "application/json",
+      "Origin": "https://mozbet.online",
+      "Referer": "https://mozbet.online",
     },
     body: JSON.stringify({
       grant_type: "client_credentials",
@@ -114,11 +116,13 @@ export async function initiateC2BPayment(
     // A API pede os telefones com 9 dígitos (sem código do país)
     const cleanPhone = phone.replace(/^\+?258/, "").replace(/\D/g, "");
 
-    // Composição do Header conforme documentação
+    // Composição do Header conforme documentação, injetando Origin para evitar bloqueio CORS/IP da e2Payments
     const headers = {
       "Authorization": `Bearer ${token}`,
       "Accept": "application/json",
       "Content-Type": "application/json",
+      "Origin": "https://mozbet.online",
+      "Referer": "https://mozbet.online",
     };
 
     // Payload conforme documentação oficial da e2Payments

@@ -83,21 +83,32 @@ async function getAuthToken(): Promise<string> {
  *   "reference": "MozbetDeposito"
  * }
  * 
- * Resultado: O telemóvel do cliente recebe um popup USSD do M-Pesa
+ * Resultado: O telemóvel do cliente recebe um popup USSD do M-Pesa/E-Mola
  * pedindo o PIN para confirmar o pagamento.
+ * 
+ * @param method - "mpesa" ou "emola"
  */
+export type PaymentMethod = "mpesa" | "emola";
+
 export async function initiateC2BPayment(
   phone: string,
   amount: number,
-  transactionId: string
+  transactionId: string,
+  method: PaymentMethod = "mpesa"
 ): Promise<{ success: boolean; data?: unknown; error?: string }> {
   try {
     const token = await getAuthToken();
-    const walletId = process.env.E2P_WALLET_ID;
     const clientId = process.env.E2P_CLIENT_ID;
 
+    // Seleccionar a carteira com base no método de pagamento
+    const walletId = method === "emola"
+      ? process.env.E2P_WALLET_EMOLA
+      : process.env.E2P_WALLET_MPESA;
+
+    const methodLabel = method === "emola" ? "E-Mola" : "M-Pesa";
+
     if (!walletId) {
-      throw new Error("E2P_WALLET_ID não configurado.");
+      throw new Error(`Carteira ${methodLabel} (E2P_WALLET_${method.toUpperCase()}) não configurada.`);
     }
 
     // A API pede os telefones com 9 dígitos (sem código do país)
@@ -118,33 +129,35 @@ export async function initiateC2BPayment(
       reference: `MozbetDep${transactionId.substring(0, 8)}`, // Sem espaços, conforme docs
     };
 
-    console.log("[e2Payments] Iniciando C2B:", {
+    // O endpoint varia conforme o método de pagamento
+    const endpoint = method === "emola"
+      ? `${E2P_BASE_URL}/v1/c2b/mpesa-payment/${walletId}`  // E-Mola usa o mesmo endpoint base
+      : `${E2P_BASE_URL}/v1/c2b/mpesa-payment/${walletId}`;
+
+    console.log(`[e2Payments] Iniciando C2B via ${methodLabel}:`, {
       wallet: walletId,
       phone: cleanPhone,
       amount,
       reference: payload.reference,
     });
 
-    const response = await fetch(
-      `${E2P_BASE_URL}/v1/c2b/mpesa-payment/${walletId}`,
-      {
-        method: "POST",
-        headers,
-        body: JSON.stringify(payload),
-      }
-    );
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(payload),
+    });
 
     if (!response.ok) {
       const errorData = await response.text();
-      console.error("[e2Payments] Erro C2B:", response.status, errorData);
+      console.error(`[e2Payments] Erro C2B ${methodLabel}:`, response.status, errorData);
       return {
         success: false,
-        error: `Erro ao processar pagamento M-Pesa (${response.status}). Verifique o número e o valor.`,
+        error: `Erro ao processar pagamento ${methodLabel} (${response.status}). Verifique o número e o valor.`,
       };
     }
 
     const data = await response.json();
-    console.log("[e2Payments] C2B Sucesso:", data);
+    console.log(`[e2Payments] C2B ${methodLabel} Sucesso:`, data);
 
     return { success: true, data };
 
@@ -152,7 +165,7 @@ export async function initiateC2BPayment(
     console.error("[e2Payments] Erro C2B Payment:", error);
     return {
       success: false,
-      error: "Serviço de pagamentos M-Pesa temporariamente indisponível. Tente novamente em alguns minutos.",
+      error: "Serviço de pagamentos temporariamente indisponível. Tente novamente em alguns minutos.",
     };
   }
 }

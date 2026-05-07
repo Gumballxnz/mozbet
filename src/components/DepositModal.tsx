@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -18,6 +18,26 @@ import { formatMZN } from "@/lib/utils";
 
 const AMOUNTS = [10, 50, 100, 500, 1000, 5000];
 
+/**
+ * Detecta automaticamente o método de pagamento com base no prefixo do número.
+ * Regra de negócio: O utilizador SÓ pode depositar com o método da sua operadora.
+ * - Vodacom (84, 85) → M-Pesa
+ * - Movitel (86, 87) → E-Mola
+ */
+function detectPaymentMethod(phone: string): { method: "mpesa" | "emola"; label: string; icon: string } {
+  const clean = phone.replace(/\D/g, "").replace(/^258/, "");
+  const prefix = clean.substring(0, 2);
+
+  if (["84", "85"].includes(prefix)) {
+    return { method: "mpesa", label: "M-Pesa", icon: "🔴" };
+  }
+  if (["86", "87"].includes(prefix)) {
+    return { method: "emola", label: "E-Mola", icon: "🟢" };
+  }
+  // Fallback para outros prefixos (82, 83, 88) — M-Pesa por defeito
+  return { method: "mpesa", label: "M-Pesa", icon: "🔴" };
+}
+
 export function DepositModal() {
   const { t } = useTranslation();
   const { depositOpen, setDepositOpen, user } = useAppStore();
@@ -25,9 +45,11 @@ export function DepositModal() {
   const [amount, setAmount] = useState<string>("100");
   const [loading, setLoading] = useState(false);
 
-  // Aqui é o telefone logado, desabilitado para alteração. 
-  // Na Fase 5, a e2Payments enviará o push para este número exato.
+  // Telefone registado na conta — não pode ser alterado
   const phone = user?.phone || "";
+
+  // Detecção automática do método de pagamento pelo prefixo do número
+  const paymentInfo = useMemo(() => detectPaymentMethod(phone), [phone]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,7 +66,7 @@ export function DepositModal() {
       const res = await fetch("/api/payments/deposit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: numAmount }),
+        body: JSON.stringify({ amount: numAmount, method: paymentInfo.method }),
       });
 
       const data = await res.json();
@@ -58,7 +80,7 @@ export function DepositModal() {
       setDepositOpen(false);
       
       // Polling inteligente: verifica o saldo a cada 3s por até 30s
-      // Isto garante que o saldo atualiza na UI sem F5 mesmo em modo real (webhook)
+      // Garante que o saldo atualiza na UI sem F5 mesmo em modo real (webhook)
       let attempts = 0;
       const maxAttempts = 10;
       const pollInterval = setInterval(async () => {
@@ -109,6 +131,7 @@ export function DepositModal() {
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+          {/* Telefone registado (bloqueado) */}
           <div className="space-y-2">
             <Label htmlFor="deposit-phone">{t("phone")}</Label>
             <div className="relative opacity-80">
@@ -123,11 +146,23 @@ export function DepositModal() {
                 disabled
               />
             </div>
-            <p className="text-[10px] text-muted-foreground mt-1 leading-tight">
-              O depósito só pode ser feito com o número registado na sua conta por questões de segurança.
-            </p>
           </div>
 
+          {/* Método de pagamento detectado automaticamente */}
+          <div className="bg-[#1A1D27] border border-[#2A2F40] rounded-xl p-3 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">{paymentInfo.icon}</span>
+              <div>
+                <span className="text-xs text-gray-500 font-bold uppercase tracking-wider block">Método de pagamento</span>
+                <span className="text-white font-black text-base">{paymentInfo.label}</span>
+              </div>
+            </div>
+            <span className="text-[10px] text-gray-500 max-w-[140px] text-right leading-tight">
+              Detectado automaticamente pelo seu número de telefone.
+            </span>
+          </div>
+
+          {/* Valor */}
           <div className="space-y-2">
             <Label htmlFor="amount">{t("betAmount")} (MZN)</Label>
             <Input
@@ -142,6 +177,7 @@ export function DepositModal() {
             />
           </div>
 
+          {/* Atalhos de valores */}
           <div className="grid grid-cols-3 gap-2">
             {AMOUNTS.map((val) => (
               <Button
@@ -157,6 +193,7 @@ export function DepositModal() {
             ))}
           </div>
 
+          {/* Bónus de 1º depósito */}
           {!user?.hasDeposited && (
             <div className="bg-primary/10 border border-primary/30 rounded-lg p-3 flex flex-col items-center justify-center mb-2">
               <span className="text-primary font-bold text-sm glow-primary">{t("firstDepositBonus")}</span>
@@ -165,7 +202,7 @@ export function DepositModal() {
           )}
 
           <Button type="submit" className="w-full h-14 text-lg mt-2" disabled={loading}>
-            {loading ? t("processing") : `${t("deposit")} ${formatMZN(Number(amount) || 0)}`}
+            {loading ? t("processing") : `${t("deposit")} ${formatMZN(Number(amount) || 0)} via ${paymentInfo.label}`}
           </Button>
         </form>
       </DialogContent>

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { verifyToken, supabaseAdmin } from "@/lib/auth-server";
-import { initiateC2BPayment } from "@/lib/e2payments";
+import { initiateC2BPayment, type PaymentMethod } from "@/lib/e2payments";
 
 export async function POST(req: Request) {
   try {
@@ -21,9 +21,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Token inválido." }, { status: 401 });
     }
 
-    // 2. Extrair valor e validar
-    const { amount } = await req.json();
+    // 2. Extrair valor, método de pagamento e validar
+    const { amount, method = "mpesa" } = await req.json();
     const numAmount = Number(amount);
+    const paymentMethod: PaymentMethod = method === "emola" ? "emola" : "mpesa";
 
     if (isNaN(numAmount) || numAmount < 1 || numAmount > 25000) {
       return NextResponse.json({ error: "Valor de depósito inválido." }, { status: 400 });
@@ -72,7 +73,7 @@ export async function POST(req: Request) {
     });
     
     if (hasKeys) {
-      const e2pResponse = await initiateC2BPayment(decoded.phone, numAmount, transaction.id);
+      const e2pResponse = await initiateC2BPayment(decoded.phone, numAmount, transaction.id, paymentMethod);
       
       if (!e2pResponse.success) {
         // Se a API deles falhar, cancelamos a nossa transação

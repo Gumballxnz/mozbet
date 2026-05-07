@@ -118,7 +118,7 @@ export function DepositModal() {
       if (!open) setTimeout(() => setStep("form"), 300);
       else setAmount("100");
     }}>
-      <DialogContent className="sm:max-w-[400px] !top-4 !translate-y-0 sm:!top-[50%] sm:!translate-y-[-50%] max-h-[90vh] overflow-y-auto">
+      <DialogContent className={`sm:max-w-[400px] max-h-[90vh] overflow-y-auto transition-all duration-300 ${step === "form" ? "!top-4 !translate-y-0 sm:!top-[50%] sm:!translate-y-[-50%]" : "!top-[50%] !translate-y-[-50%]"}`}>
         {step === "form" ? (
           <>
             <DialogHeader>

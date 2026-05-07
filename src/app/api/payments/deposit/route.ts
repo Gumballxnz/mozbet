@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifyToken, supabaseAdmin } from "@/lib/auth-server";
 import { initiateC2BPayment, type PaymentMethod } from "@/lib/e2payments";
+import { forceApproveDeposit } from "@/app/admin/transactions/actions";
 
 export async function POST(req: Request) {
   try {
@@ -76,7 +77,7 @@ export async function POST(req: Request) {
       const e2pResponse = await initiateC2BPayment(decoded.phone, numAmount, transaction.id, paymentMethod);
       
       if (!e2pResponse.success) {
-        // Se a API deles falhar, cancelamos a nossa transação
+        // Se a API deles falhar ou o cliente colocar PIN errado
         await supabaseAdmin
           .from("transactions")
           .update({ status: "FAILED" })
@@ -90,6 +91,16 @@ export async function POST(req: Request) {
         });
           
         return NextResponse.json({ error: e2pResponse.error }, { status: 502 });
+      } else {
+        // A e2Payments retornou sucesso! Isto significa que o cliente confirmou com PIN no telemóvel durante a chamada C2B!
+        // Sendo a API síncrona, aprovamos na hora.
+        await forceApproveDeposit(transaction.id);
+        
+        return NextResponse.json({ 
+          success: true,
+          message: "Depósito aprovado com sucesso! O saldo foi creditado.",
+          transactionId: transaction.id
+        }, { status: 200 });
       }
     } else {
       // MODO SIMULAÇÃO (Enquanto esperamos chaves)

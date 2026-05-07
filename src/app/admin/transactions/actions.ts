@@ -51,10 +51,6 @@ export async function forceApproveDeposit(txId: string) {
         bonus = Math.min(numAmount * 5, 25000);
         newBonusBalance += bonus;
         
-        await supabaseAdmin.from("transactions").insert([{
-          user_id: tx.user_id, type: "BONUS", amount: bonus, status: "COMPLETED", phone: tx.phone
-        }]);
-        
         await supabaseAdmin.from('notifications').insert({
           user_id: tx.user_id,
           message: `Acaba de receber ${bonus.toFixed(2)} MZN de Bónus no seu primeiro depósito!`,

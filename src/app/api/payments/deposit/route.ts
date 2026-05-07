@@ -66,12 +66,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Falha simulada no M-pesa (Depósito de 2MT)." }, { status: 400 });
     }
 
-    // Para todos os outros casos (Reais ou Simulação de Sucesso), enviamos o PENDING
-    await supabaseAdmin.from('notifications').insert({
-      user_id: decoded.id,
-      message: `Sua solicitação de depósito de ${numAmount.toFixed(2)} MZN via telemóvel foi registrada. Aguardando confirmação.`,
-      type: "deposit_pending"
-    });
+    // Em integrações síncronas, não enviamos a notificação de 'Aguardando'
+    // pois o depósito será resolvido (Sucesso ou Falha) neste mesmo request.
     
     if (hasKeys) {
       const e2pResponse = await initiateC2BPayment(decoded.phone, numAmount, transaction.id, paymentMethod);

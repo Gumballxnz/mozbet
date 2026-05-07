@@ -79,13 +79,18 @@ export function DepositModal() {
       toast.success(t("success"), { description: data.message });
       setDepositOpen(false);
       
-      // Polling inteligente: verifica o saldo a cada 3s por até 30s
-      // Garante que o saldo atualiza na UI sem F5 mesmo em modo real (webhook)
+      // Polling inteligente: sincroniza com e2payments e verifica o saldo a cada 3s por até 30s
       let attempts = 0;
       const maxAttempts = 10;
       const pollInterval = setInterval(async () => {
         attempts++;
         try {
+          // 1. Forçar a sincronização lendo da e2Payments e atualizando PENDING
+          if (data.transactionId) {
+            await fetch(`/api/payments/sync?txId=${data.transactionId}`, { cache: "no-store" });
+          }
+
+          // 2. Verificar se o saldo já mudou
           const meRes = await fetch("/api/auth/me", { cache: "no-store" });
           const meData = await meRes.json();
           if (meData.user) {
@@ -94,7 +99,7 @@ export function DepositModal() {
             if (meData.user.hasDeposited) {
               markFirstDeposit();
             }
-            // Se o saldo mudou, parar o polling
+            // Se o saldo mudou, parar o polling e notificar o utilizador
             if (Number(meData.user.balance) !== (user?.balance || 0)) {
               clearInterval(pollInterval);
               toast.success("💰 Saldo atualizado!", { description: `Novo saldo: ${formatMZN(Number(meData.user.balance))} MZN` });

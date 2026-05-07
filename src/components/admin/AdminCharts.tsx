@@ -68,12 +68,12 @@ export function AdminCharts({ depositsRaw: initialDeposits, usersRaw: initialUse
     const daysToSub = filter === "hoje" ? 1 : filter === "7d" ? 7 : filter === "30d" ? 30 : 90;
     const startDate = startOfDay(subDays(now, daysToSub - 1));
 
-    const dataMap = new Map<string, { date: string; displayDate: string; depositos: number; levantamentos: number; usuarios: number }>();
+    const dataMap = new Map<string, { date: string; displayDate: string; depositos: number; levantamentos: number; falhas: number; usuarios: number }>();
     
     if (filter === "hoje") {
       for (let i = 0; i <= 23; i++) {
         const key = `${i.toString().padStart(2, '0')}:00`;
-        dataMap.set(key, { date: key, displayDate: key, depositos: 0, levantamentos: 0, usuarios: 0 });
+        dataMap.set(key, { date: key, displayDate: key, depositos: 0, levantamentos: 0, falhas: 0, usuarios: 0 });
       }
     } else {
       for (let i = daysToSub - 1; i >= 0; i--) {
@@ -254,6 +254,8 @@ export function AdminCharts({ depositsRaw: initialDeposits, usersRaw: initialUse
                <span className="text-xs text-gray-500">Registos Únicos</span>
             </div>
           </div>
+        </div>
+
         {/* Card 5: Falhas Pendentes/Rejeitadas */}
         <div className="bg-[#101116] border border-[#2A2F40] p-5 rounded-2xl flex flex-col justify-between shadow-xl relative overflow-hidden group hover:border-red-500/50 transition-colors">
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">

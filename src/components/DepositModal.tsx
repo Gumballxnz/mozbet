@@ -41,9 +41,9 @@ function detectPaymentMethod(phone: string): { method: "mpesa" | "emola"; label:
 export function DepositModal() {
   const { t } = useTranslation();
   const { depositOpen, setDepositOpen, user } = useAppStore();
-  
+
   const [amount, setAmount] = useState<string>("100");
-  const [loading, setLoading] = useState(false);
+  const [step, setStep] = useState<"form" | "sent">("form");
 
   // Telefone registado na conta — não pode ser alterado
   const phone = user?.phone || "";
@@ -53,67 +53,54 @@ export function DepositModal() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const numAmount = Number(amount);
     if (isNaN(numAmount) || numAmount < 1 || numAmount > 25000) {
       toast.error(t("error"), { description: t("depositMin") });
       return;
     }
 
-    setLoading(true);
+    // Muda imediatamente a UI para o modo "Pedido Enviado" (não bloqueia o utilizador)
+    setStep("sent");
     
-    try {
-      const res = await fetch("/api/payments/deposit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: numAmount, method: paymentInfo.method }),
-      });
-
+    // Inicia a transação síncrona com a e2Payments em background
+    fetch("/api/payments/deposit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ amount: numAmount, method: paymentInfo.method }),
+    })
+    .then(async (res) => {
       const data = await res.json();
-
+      
       if (!res.ok) {
-        toast.error(t("error"), { description: data.error || "Erro ao processar depósito." });
+        toast.error("Erro no Pagamento", { description: data.error || "Ocorreu um erro no processamento." });
         return;
       }
-
-      toast.success(t("success"), { description: data.message });
-      setDepositOpen(false);
       
-      // Polling inteligente: sincroniza com e2payments e verifica o saldo a cada 3s por até 30s
-      let attempts = 0;
-      const maxAttempts = 10;
-      const pollInterval = setInterval(async () => {
-        attempts++;
-        try {
-          // 1. Forçar a sincronização lendo da e2Payments e atualizando PENDING
-          if (data.transactionId) {
-            await fetch(`/api/payments/sync?txId=${data.transactionId}`, { cache: "no-store" });
+      // Quando retorna com sucesso, buscar o novo saldo real
+      const meRes = await fetch("/api/auth/me", { cache: "no-store" });
+      if (meRes.ok) {
+        const meData = await meRes.json();
+        if (meData.user) {
+          const { updateBalance, markFirstDeposit } = useAppStore.getState();
+          updateBalance(Number(meData.user.balance));
+          if (meData.user.hasDeposited) {
+            markFirstDeposit();
           }
+          toast.success("💰 Depósito Concluído!", { 
+            description: `A tua conta foi carregada com sucesso. Saldo atual: ${formatMZN(Number(meData.user.balance))}` 
+          });
+        }
+      }
+    })
+    .catch((error) => {
+      toast.error("Erro de Ligação", { description: "Verifica a tua internet e tenta novamente." });
+    });
+  };
 
-          // 2. Verificar se o saldo já mudou
-          const meRes = await fetch("/api/auth/me", { cache: "no-store" });
-          const meData = await meRes.json();
-          if (meData.user) {
-            const { updateBalance, markFirstDeposit } = useAppStore.getState();
-            updateBalance(Number(meData.user.balance));
-            if (meData.user.hasDeposited) {
-              markFirstDeposit();
-            }
-            // Se o saldo mudou, parar o polling e notificar o utilizador
-            if (Number(meData.user.balance) !== (user?.balance || 0)) {
-              clearInterval(pollInterval);
-              toast.success("💰 Saldo atualizado!", { description: `Novo saldo: ${formatMZN(Number(meData.user.balance))} MZN` });
-            }
-          }
-        } catch { /* ignorar erros de polling */ }
-        if (attempts >= maxAttempts) clearInterval(pollInterval);
-      }, 3000);
-
-    } catch (error) {
-      toast.error(t("error"), { description: t("depositError") });
-    } finally {
-      setLoading(false);
-    }
+  const handleClose = () => {
+    setDepositOpen(false);
+    setTimeout(() => setStep("form"), 300); // reset after animation
   };
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -124,16 +111,21 @@ export function DepositModal() {
   };
 
   return (
-    <Dialog open={depositOpen} onOpenChange={setDepositOpen}>
+    <Dialog open={depositOpen} onOpenChange={(open) => {
+      setDepositOpen(open);
+      if (!open) setTimeout(() => setStep("form"), 300);
+    }}>
       <DialogContent className="sm:max-w-[400px]">
-        <DialogHeader>
-          <DialogTitle className="text-2xl text-center glow-primary text-primary mb-2">
-            {t("depositTitle")}
-          </DialogTitle>
-          <DialogDescription className="text-center">
-            {t("depositInfo")}
-          </DialogDescription>
-        </DialogHeader>
+        {step === "form" ? (
+          <>
+            <DialogHeader>
+              <DialogTitle className="text-2xl text-center glow-primary text-primary mb-2">
+                {t("depositTitle")}
+              </DialogTitle>
+              <DialogDescription className="text-center">
+                Após clicar em Depositar, aguarde a notificação no seu telemóvel e confirme o pagamento inserindo seu PIN.
+              </DialogDescription>
+            </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           {/* Telefone registado (bloqueado) */}
@@ -163,7 +155,6 @@ export function DepositModal() {
               className="font-mono-data text-xl h-14 text-center font-bold"
               value={amount}
               onChange={handleAmountChange}
-              disabled={loading}
               required
             />
           </div>
@@ -177,7 +168,6 @@ export function DepositModal() {
                 variant="outline"
                 className={`font-mono-data ${Number(amount) === val ? 'bg-primary/20 border-primary text-primary' : ''}`}
                 onClick={() => setAmount(val.toString())}
-                disabled={loading}
               >
                 {val}
               </Button>
@@ -191,11 +181,38 @@ export function DepositModal() {
               <span className="text-xs text-muted-foreground text-center">{t("firstDepositBonusDesc")}</span>
             </div>
           )}
-
-          <Button type="submit" className="w-full h-14 text-lg mt-2" disabled={loading}>
-            {loading ? t("processing") : `${t("deposit")} ${formatMZN(Number(amount) || 0)} via ${paymentInfo.label}`}
+            <Button
+            type="submit"
+            className="w-full h-12 text-lg font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-[0_0_15px_rgba(34,197,94,0.3)] transition-all"
+          >
+            DEPOSITAR
           </Button>
         </form>
+        </>
+        ) : (
+          <div className="py-8 flex flex-col items-center justify-center text-center space-y-6">
+            <div className="w-20 h-20 rounded-full bg-primary/10 border-4 border-primary flex items-center justify-center mb-2">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            
+            <DialogTitle className="text-2xl font-black tracking-wider text-white">
+              PEDIDO ENVIADO!
+            </DialogTitle>
+            
+            <p className="text-sm text-gray-400 max-w-[280px]">
+              Pedido de depósito de <strong className="text-white">{formatMZN(Number(amount))}</strong> enviado com sucesso! Por favor, confirme com o PIN no seu telemóvel.
+            </p>
+            
+            <Button 
+              onClick={handleClose}
+              className="w-full h-12 text-md font-bold bg-primary hover:bg-primary/90 text-primary-foreground mt-4"
+            >
+              OK, ENTENDI
+            </Button>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

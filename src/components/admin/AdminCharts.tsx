@@ -84,6 +84,7 @@ export function AdminCharts({ depositsRaw: initialDeposits, usersRaw: initialUse
           displayDate: filter === "7d" ? format(d, "EEE", { locale: ptBR }).toUpperCase() : format(d, "dd MMM", { locale: ptBR }),
           depositos: 0,
           levantamentos: 0,
+          falhas: 0,
           usuarios: 0
         });
       }
@@ -117,6 +118,22 @@ export function AdminCharts({ depositsRaw: initialDeposits, usersRaw: initialUse
         if (isAfter(d, startDate) || format(d, "yyyy-MM-dd") === format(startDate, "yyyy-MM-dd")) {
           const key = format(d, "yyyy-MM-dd");
           if (dataMap.has(key)) dataMap.get(key)!.levantamentos += Number(withd.amount);
+        }
+      }
+    });
+
+    // Preencher Falhas
+    failed.forEach(fail => {
+      const d = parseISO(fail.created_at);
+      if (filter === "hoje") {
+        if (format(d, "yyyy-MM-dd") === format(now, "yyyy-MM-dd")) {
+          const hourKey = `${format(d, "HH")}:00`;
+          if (dataMap.has(hourKey)) dataMap.get(hourKey)!.falhas += Number(fail.amount);
+        }
+      } else {
+        if (isAfter(d, startDate) || format(d, "yyyy-MM-dd") === format(startDate, "yyyy-MM-dd")) {
+          const key = format(d, "yyyy-MM-dd");
+          if (dataMap.has(key)) dataMap.get(key)!.falhas += Number(fail.amount);
         }
       }
     });
@@ -237,11 +254,6 @@ export function AdminCharts({ depositsRaw: initialDeposits, usersRaw: initialUse
                <span className="text-xs text-gray-500">Registos Únicos</span>
             </div>
           </div>
-        </div>
-
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
         {/* Card 5: Falhas Pendentes/Rejeitadas */}
         <div className="bg-[#101116] border border-[#2A2F40] p-5 rounded-2xl flex flex-col justify-between shadow-xl relative overflow-hidden group hover:border-red-500/50 transition-colors">
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
@@ -312,6 +324,10 @@ export function AdminCharts({ depositsRaw: initialDeposits, usersRaw: initialUse
                       <stop offset="5%" stopColor="#EF4444" stopOpacity={0.5}/>
                       <stop offset="95%" stopColor="#EF4444" stopOpacity={0}/>
                     </linearGradient>
+                    <linearGradient id="colorFalhas" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.5}/>
+                      <stop offset="95%" stopColor="#F59E0B" stopOpacity={0}/>
+                    </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#2A2F40" vertical={false} />
                   <XAxis dataKey="displayDate" stroke="#6B7280" fontSize={11} tickLine={false} axisLine={false} />
@@ -323,6 +339,7 @@ export function AdminCharts({ depositsRaw: initialDeposits, usersRaw: initialUse
                   <Legend verticalAlign="top" height={36} iconType="circle" />
                   <Area type="monotone" dataKey="depositos" name="Entradas (Depósitos)" stroke="#28A745" strokeWidth={3} fillOpacity={1} fill="url(#colorDepositos)" />
                   <Area type="monotone" dataKey="levantamentos" name="Saídas (Levantamentos)" stroke="#EF4444" strokeWidth={3} fillOpacity={1} fill="url(#colorLevantamentos)" />
+                  <Area type="monotone" dataKey="falhas" name="Falhas (Não creditado)" stroke="#F59E0B" strokeWidth={3} fillOpacity={1} fill="url(#colorFalhas)" />
                 </AreaChart>
               </ResponsiveContainer>
             )}

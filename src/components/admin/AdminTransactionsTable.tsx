@@ -70,50 +70,7 @@ export function AdminTransactionsTable({ initialTransactions, initialTotalCount 
     }
   };
 
-  const handleApprove = async (txId: string) => {
-    setApprovingId(txId);
-    try {
-      const { forceApproveDeposit } = await import("@/app/admin/transactions/actions");
-      const res = await forceApproveDeposit(txId);
-      if (res.success) {
-        toast.success("Transação aprovada! Saldo creditado na conta do utilizador.");
-        // Atualizar estado local
-        setTransactions(prev => prev.map(t => t.id === txId ? { ...t, status: "COMPLETED" } : t));
-      } else {
-        toast.error(res.error || "Falha ao aprovar transação.");
-      }
-    } catch (err) {
-      toast.error("Erro interno ao aprovar transação.");
-    } finally {
-      setApprovingId(null);
-    }
-  };
 
-  const handleApproveAllPending = async () => {
-    const pendingToApprove = filtered.filter(t => t.type === "DEPOSIT" && t.status === "PENDING");
-    if (pendingToApprove.length === 0) return toast.info("Nenhuma transação pendente visível para aprovar.");
-    
-    if (!confirm(`ATENÇÃO: Vais aprovar ${pendingToApprove.length} transações e creditar saldo aos clientes. Tens a certeza que todos eles pagaram na e2Payments?`)) return;
-
-    setApprovingMultiple(true);
-    let successCount = 0;
-    
-    try {
-      const { forceApproveDeposit } = await import("@/app/admin/transactions/actions");
-      for (const tx of pendingToApprove) {
-        const res = await forceApproveDeposit(tx.id);
-        if (res.success) {
-          successCount++;
-          setTransactions(prev => prev.map(t => t.id === tx.id ? { ...t, status: "COMPLETED" } : t));
-        }
-      }
-      toast.success(`${successCount} transações aprovadas com sucesso!`);
-    } catch (err) {
-      toast.error("Erro ao aprovar múltiplas transações.");
-    } finally {
-      setApprovingMultiple(false);
-    }
-  };
 
   const filtered = transactions.filter(t => {
     const matchesSearch = t.phone?.includes(search) || t.type.includes(search.toUpperCase());
@@ -201,15 +158,7 @@ export function AdminTransactionsTable({ initialTransactions, initialTotalCount 
             Baixar Extrato
           </Button>
 
-          {filtered.some(t => t.type === "DEPOSIT" && t.status === "PENDING") && (
-            <Button 
-              onClick={handleApproveAllPending}
-              disabled={approvingMultiple}
-              className="bg-green-600/20 text-green-500 border border-green-500/50 hover:bg-green-600 hover:text-white font-bold h-10 px-4 transition-colors"
-            >
-              {approvingMultiple ? "A processar..." : "Aprovar Todos Pendentes"}
-            </Button>
-          )}
+
 
           <div className="relative flex-1 sm:w-60">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -273,19 +222,7 @@ export function AdminTransactionsTable({ initialTransactions, initialTotalCount 
                       </span>
                     )}
                   </td>
-                  <td className="px-6 py-4 text-right">
-                    {tx.type === "DEPOSIT" && tx.status !== "COMPLETED" && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleApprove(tx.id)}
-                        disabled={approvingId === tx.id}
-                        className="h-8 bg-primary/10 border-primary/50 text-primary hover:bg-primary hover:text-black font-bold"
-                      >
-                        {approvingId === tx.id ? "Aguarde..." : "Aprovar"}
-                      </Button>
-                    )}
-                  </td>
+
                 </tr>
               ))}
               

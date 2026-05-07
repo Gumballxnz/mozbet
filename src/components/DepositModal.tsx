@@ -57,10 +57,30 @@ export function DepositModal() {
       toast.success(t("success"), { description: data.message });
       setDepositOpen(false);
       
-      // Atualiza a interface silenciosamente com o novo saldo (se estiver no modo simulação)
-      setTimeout(() => {
-        fetch("/api/auth/me", { cache: "no-store" });
-      }, 2500);
+      // Polling inteligente: verifica o saldo a cada 3s por até 30s
+      // Isto garante que o saldo atualiza na UI sem F5 mesmo em modo real (webhook)
+      let attempts = 0;
+      const maxAttempts = 10;
+      const pollInterval = setInterval(async () => {
+        attempts++;
+        try {
+          const meRes = await fetch("/api/auth/me", { cache: "no-store" });
+          const meData = await meRes.json();
+          if (meData.user) {
+            const { updateBalance, markFirstDeposit } = useAppStore.getState();
+            updateBalance(Number(meData.user.balance));
+            if (meData.user.hasDeposited) {
+              markFirstDeposit();
+            }
+            // Se o saldo mudou, parar o polling
+            if (Number(meData.user.balance) !== (user?.balance || 0)) {
+              clearInterval(pollInterval);
+              toast.success("💰 Saldo atualizado!", { description: `Novo saldo: ${formatMZN(Number(meData.user.balance))} MZN` });
+            }
+          }
+        } catch { /* ignorar erros de polling */ }
+        if (attempts >= maxAttempts) clearInterval(pollInterval);
+      }, 3000);
 
     } catch (error) {
       toast.error(t("error"), { description: t("depositError") });

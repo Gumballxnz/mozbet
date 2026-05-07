@@ -15,6 +15,12 @@ interface Props {
 }
 
 export function AdminCharts({ depositsRaw: initialDeposits, usersRaw: initialUsers, withdrawalsRaw: initialWithdrawals }: Props) {
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   const [filter, setFilter] = useState<"hoje" | "7d" | "30d" | "tudo">("7d");
   const [deposits, setDeposits] = useState(initialDeposits);
   const [withdrawals, setWithdrawals] = useState(initialWithdrawals);
@@ -263,31 +269,33 @@ export function AdminCharts({ depositsRaw: initialDeposits, usersRaw: initialUse
             </div>
           </div>
           
-          <div className="w-full">
-            <ResponsiveContainer width="100%" height={350}>
-              <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorDepositos" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#28A745" stopOpacity={0.5}/>
-                    <stop offset="95%" stopColor="#28A745" stopOpacity={0}/>
-                  </linearGradient>
-                  <linearGradient id="colorLevantamentos" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#EF4444" stopOpacity={0.5}/>
-                    <stop offset="95%" stopColor="#EF4444" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#2A2F40" vertical={false} />
-                <XAxis dataKey="displayDate" stroke="#6B7280" fontSize={11} tickLine={false} axisLine={false} />
-                <YAxis stroke="#6B7280" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(val) => `MZN ${val >= 1000 ? (val/1000).toFixed(1)+'k' : val}`} />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#1A1D27', borderColor: '#2A2F40', borderRadius: '12px', color: '#fff', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)' }} 
-                  itemStyle={{ fontWeight: 'bold' }} 
-                />
-                <Legend verticalAlign="top" height={36} iconType="circle" />
-                <Area type="monotone" dataKey="depositos" name="Entradas (Depósitos)" stroke="#28A745" strokeWidth={3} fillOpacity={1} fill="url(#colorDepositos)" />
-                <Area type="monotone" dataKey="levantamentos" name="Saídas (Levantamentos)" stroke="#EF4444" strokeWidth={3} fillOpacity={1} fill="url(#colorLevantamentos)" />
-              </AreaChart>
-            </ResponsiveContainer>
+          <div className="w-full h-[350px]">
+            {isMounted && (
+              <ResponsiveContainer width="100%" height={350}>
+                <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorDepositos" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#28A745" stopOpacity={0.5}/>
+                      <stop offset="95%" stopColor="#28A745" stopOpacity={0}/>
+                    </linearGradient>
+                    <linearGradient id="colorLevantamentos" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#EF4444" stopOpacity={0.5}/>
+                      <stop offset="95%" stopColor="#EF4444" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#2A2F40" vertical={false} />
+                  <XAxis dataKey="displayDate" stroke="#6B7280" fontSize={11} tickLine={false} axisLine={false} />
+                  <YAxis stroke="#6B7280" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(val) => `MZN ${val >= 1000 ? (val/1000).toFixed(1)+'k' : val}`} />
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: '#1A1D27', borderColor: '#2A2F40', borderRadius: '12px', color: '#fff', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)' }} 
+                    itemStyle={{ fontWeight: 'bold' }} 
+                  />
+                  <Legend verticalAlign="top" height={36} iconType="circle" />
+                  <Area type="monotone" dataKey="depositos" name="Entradas (Depósitos)" stroke="#28A745" strokeWidth={3} fillOpacity={1} fill="url(#colorDepositos)" />
+                  <Area type="monotone" dataKey="levantamentos" name="Saídas (Levantamentos)" stroke="#EF4444" strokeWidth={3} fillOpacity={1} fill="url(#colorLevantamentos)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
 
@@ -307,26 +315,28 @@ export function AdminCharts({ depositsRaw: initialDeposits, usersRaw: initialUse
             </div>
           </div>
           
-          <div className="w-full">
-            <ResponsiveContainer width="100%" height={350}>
-              <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorUsuarios" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#0EA5E9" stopOpacity={0.6}/>
-                    <stop offset="95%" stopColor="#0EA5E9" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#2A2F40" vertical={false} />
-                <XAxis dataKey="displayDate" stroke="#6B7280" fontSize={11} tickLine={false} axisLine={false} />
-                <YAxis stroke="#6B7280" fontSize={11} tickLine={false} axisLine={false} />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#1A1D27', borderColor: '#2A2F40', borderRadius: '12px', color: '#fff', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)' }} 
-                  itemStyle={{ fontWeight: 'bold' }} 
-                />
-                <Legend verticalAlign="top" height={36} iconType="circle" />
-                <Area type="monotone" dataKey="usuarios" name="Novas Contas" stroke="#0EA5E9" strokeWidth={4} fillOpacity={1} fill="url(#colorUsuarios)" />
-              </AreaChart>
-            </ResponsiveContainer>
+          <div className="w-full h-[350px]">
+            {isMounted && (
+              <ResponsiveContainer width="100%" height={350}>
+                <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorUsuarios" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#0EA5E9" stopOpacity={0.6}/>
+                      <stop offset="95%" stopColor="#0EA5E9" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#2A2F40" vertical={false} />
+                  <XAxis dataKey="displayDate" stroke="#6B7280" fontSize={11} tickLine={false} axisLine={false} />
+                  <YAxis stroke="#6B7280" fontSize={11} tickLine={false} axisLine={false} />
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: '#1A1D27', borderColor: '#2A2F40', borderRadius: '12px', color: '#fff', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)' }} 
+                    itemStyle={{ fontWeight: 'bold' }} 
+                  />
+                  <Legend verticalAlign="top" height={36} iconType="circle" />
+                  <Area type="monotone" dataKey="usuarios" name="Novas Contas" stroke="#0EA5E9" strokeWidth={4} fillOpacity={1} fill="url(#colorUsuarios)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
 

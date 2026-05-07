@@ -1,26 +1,36 @@
 /**
- * MOZBET - Módulo de Integração e2Payments (M-Pesa / E-Mola)
+ * MOZBET - Módulo de Integração e2Payments (M-Pesa)
  * 
+ * Baseado na documentação oficial: e2paymentdocs.md
  * Implementação segura que RODA APENAS NO SERVIDOR.
  * Nenhuma credencial é exposta ao utilizador.
+ * 
+ * Fluxo C2B (Customer to Business):
+ * 1. Geramos um token OAuth2 com client_id + client_secret
+ * 2. Enviamos POST para /v1/c2b/mpesa-payment/{wallet_id}
+ * 3. O M-Pesa envia USSD push para o telefone do cliente
+ * 4. Cliente confirma com PIN → e2Payments notifica via webhook (callback)
  */
 
-const E2P_API_BASE = "https://api.e2payments.com/v1"; // URL base oficial (pode ser ajustada na sexta-feira se eles derem outra)
+// URL base oficial conforme documentação e2Payments
+const E2P_BASE_URL = "https://e2payments.explicador.co.mz";
 
 interface E2PTokenResponse {
   access_token: string;
   expires_in: number;
+  token_type: string;
 }
 
-// Em Next.js Edge ou Node, podemos fazer um pequeno cache na memória
+// Cache do token em memória do servidor (evita gerar token a cada pedido)
 let cachedToken: string | null = null;
 let tokenExpiryTime: number = 0;
 
 /**
- * 1. Obter o Token de Autenticação da e2Payments (OAuth2)
+ * 1. Obter Token de Autenticação OAuth2
+ * POST https://e2payments.explicador.co.mz/oauth/token
  */
 async function getAuthToken(): Promise<string> {
-  // Se o token ainda for válido, reutilizamos para evitar spam na API deles
+  // Se o token ainda for válido, reutilizamos
   if (cachedToken && Date.now() < tokenExpiryTime) {
     return cachedToken;
   }
@@ -29,77 +39,170 @@ async function getAuthToken(): Promise<string> {
   const clientSecret = process.env.E2P_CLIENT_SECRET;
 
   if (!clientId || !clientSecret) {
-    throw new Error("Credenciais e2Payments não configuradas no .env.local");
+    throw new Error("Credenciais e2Payments (E2P_CLIENT_ID / E2P_CLIENT_SECRET) não configuradas.");
   }
 
-  try {
-    const response = await fetch(`${E2P_API_BASE}/oauth/token`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        client_id: clientId,
-        client_secret: clientSecret,
-        grant_type: "client_credentials",
-      }),
-    });
+  const response = await fetch(`${E2P_BASE_URL}/oauth/token`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Accept": "application/json",
+    },
+    body: JSON.stringify({
+      grant_type: "client_credentials",
+      client_id: clientId,
+      client_secret: clientSecret,
+    }),
+  });
 
-    if (!response.ok) {
-      throw new Error("Falha na autenticação da e2Payments");
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("[e2Payments] Erro ao gerar token:", response.status, errorText);
+    throw new Error(`Falha na autenticação e2Payments (${response.status})`);
+  }
+
+  const data: E2PTokenResponse = await response.json();
+
+  cachedToken = data.access_token;
+  // Guardar expiração com 5 minutos de margem de segurança
+  tokenExpiryTime = Date.now() + (data.expires_in - 300) * 1000;
+
+  console.log("[e2Payments] Token gerado com sucesso. Expira em:", data.expires_in, "segundos");
+  return data.access_token;
+}
+
+/**
+ * 2. Iniciar Pagamento C2B (Depósito via M-Pesa)
+ * POST https://e2payments.explicador.co.mz/v1/c2b/mpesa-payment/{wallet_id}
+ * 
+ * Payload conforme documentação:
+ * {
+ *   "client_id": "...",
+ *   "amount": "30",
+ *   "phone": "848512345",
+ *   "reference": "MozbetDeposito"
+ * }
+ * 
+ * Resultado: O telemóvel do cliente recebe um popup USSD do M-Pesa
+ * pedindo o PIN para confirmar o pagamento.
+ */
+export async function initiateC2BPayment(
+  phone: string,
+  amount: number,
+  transactionId: string
+): Promise<{ success: boolean; data?: unknown; error?: string }> {
+  try {
+    const token = await getAuthToken();
+    const walletId = process.env.E2P_WALLET_ID;
+    const clientId = process.env.E2P_CLIENT_ID;
+
+    if (!walletId) {
+      throw new Error("E2P_WALLET_ID não configurado.");
     }
 
-    const data: E2PTokenResponse = await response.json();
-    
-    cachedToken = data.access_token;
-    // Salvar o tempo de expiração subtraindo 1 minuto por margem de segurança
-    tokenExpiryTime = Date.now() + (data.expires_in - 60) * 1000;
+    // A API pede os telefones com 9 dígitos (sem código do país)
+    const cleanPhone = phone.replace(/^\+?258/, "").replace(/\D/g, "");
 
-    return data.access_token;
+    // Composição do Header conforme documentação
+    const headers = {
+      "Authorization": `Bearer ${token}`,
+      "Accept": "application/json",
+      "Content-Type": "application/json",
+    };
+
+    // Payload conforme documentação oficial da e2Payments
+    const payload = {
+      client_id: clientId,
+      amount: String(amount),       // A API espera uma string
+      phone: cleanPhone,            // 9 dígitos, ex: 848512345
+      reference: `MozbetDep${transactionId.substring(0, 8)}`, // Sem espaços, conforme docs
+    };
+
+    console.log("[e2Payments] Iniciando C2B:", {
+      wallet: walletId,
+      phone: cleanPhone,
+      amount,
+      reference: payload.reference,
+    });
+
+    const response = await fetch(
+      `${E2P_BASE_URL}/v1/c2b/mpesa-payment/${walletId}`,
+      {
+        method: "POST",
+        headers,
+        body: JSON.stringify(payload),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error("[e2Payments] Erro C2B:", response.status, errorData);
+      return {
+        success: false,
+        error: `Erro ao processar pagamento M-Pesa (${response.status}). Verifique o número e o valor.`,
+      };
+    }
+
+    const data = await response.json();
+    console.log("[e2Payments] C2B Sucesso:", data);
+
+    return { success: true, data };
+
   } catch (error) {
-    console.error("Erro no getAuthToken:", error);
-    throw error;
+    console.error("[e2Payments] Erro C2B Payment:", error);
+    return {
+      success: false,
+      error: "Serviço de pagamentos M-Pesa temporariamente indisponível. Tente novamente em alguns minutos.",
+    };
   }
 }
 
 /**
- * 2. Iniciar um Pagamento (Depósito - C2B)
- * Esta função envia o PUSH (USSD) diretamente para o telefone do cliente.
+ * 3. Listar todas as carteiras (útil para debug no admin)
+ * POST https://e2payments.explicador.co.mz/v1/wallets/mpesa/get/all
  */
-export async function initiateC2BPayment(phone: string, amount: number, reference: string) {
-  try {
-    const token = await getAuthToken();
-    const walletId = process.env.E2P_WALLET_ID;
+export async function listWallets(): Promise<unknown> {
+  const token = await getAuthToken();
+  const clientId = process.env.E2P_CLIENT_ID;
 
-    // A API pede os telefones no formato nacional de Moçambique: 84xxxxxxx
-    const cleanPhone = phone.replace("+258", "");
+  const response = await fetch(`${E2P_BASE_URL}/v1/wallets/mpesa/get/all`, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${token}`,
+      "Accept": "application/json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ client_id: clientId }),
+  });
 
-    const response = await fetch(`${E2P_API_BASE}/c2b/payment`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
-      },
-      body: JSON.stringify({
-        wallet_id: walletId,
-        amount: amount,
-        customer_msisdn: cleanPhone,
-        reference: reference, // Nosso ID de transação para identificar quando o dinheiro cair
-        // callback_url: "https://mozbet.online/api/payments/callback" // Fase 8
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.text();
-      console.error("Erro na e2Payments:", errorData);
-      throw new Error("Erro ao processar pagamento na e2Payments");
-    }
-
-    const data = await response.json();
-    return { success: true, data };
-    
-  } catch (error) {
-    console.error("Erro C2B Payment:", error);
-    return { success: false, error: "Serviço de pagamentos temporariamente indisponível." };
+  if (!response.ok) {
+    throw new Error(`Erro ao listar carteiras: ${response.status}`);
   }
+
+  return response.json();
+}
+
+/**
+ * 4. Histórico de pagamentos recebidos
+ * POST https://e2payments.explicador.co.mz/v1/payments/mpesa/get/all
+ */
+export async function getPaymentHistory(): Promise<unknown> {
+  const token = await getAuthToken();
+  const clientId = process.env.E2P_CLIENT_ID;
+
+  const response = await fetch(`${E2P_BASE_URL}/v1/payments/mpesa/get/all`, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${token}`,
+      "Accept": "application/json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ client_id: clientId }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Erro ao buscar histórico: ${response.status}`);
+  }
+
+  return response.json();
 }

@@ -12,8 +12,8 @@
  * 4. Cliente confirma com PIN → e2Payments notifica via webhook (callback)
  */
 
-// URL base oficial conforme documentação e2Payments
-const E2P_BASE_URL = "https://e2payments.explicador.co.mz";
+// URL base real da API e2Payments (confirmado via diagnóstico)
+const E2P_BASE_URL = "https://mpesaemolatech.com";
 
 interface E2PTokenResponse {
   access_token: string;

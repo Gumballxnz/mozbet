@@ -14,8 +14,8 @@ import { Label } from "@/components/ui/label";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useAppStore } from "@/lib/store";
 import { toast } from "sonner";
-import { formatMZN } from "@/lib/utils";
 import { EMOLA_LOGO, MPESA_LOGO } from "@/lib/logos";
+import { Wallet, Check } from "lucide-react";
 
 const AMOUNTS = [10, 50, 100, 500, 1000, 5000];
 
@@ -207,24 +207,39 @@ export function DepositModal() {
         </form>
         </>
         ) : (
-          <div className="py-8 flex flex-col items-center justify-center text-center space-y-6">
-            <div className="w-20 h-20 rounded-full bg-primary/10 border-4 border-primary flex items-center justify-center mb-2">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
+          <div className="flex flex-col items-center justify-center text-center pb-2">
+            
+            {/* Header de Sucesso parecido com a Whapro */}
+            <div className="w-full flex items-center justify-start mb-10 pb-4 border-b border-[#2A2F40]/30 -mt-2">
+               <Wallet className="w-5 h-5 text-primary mr-2" />
+               <h2 className="text-xl font-bold font-mono-data tracking-wider text-white">DEPOSITAR</h2>
+            </div>
+
+            {/* Ícone de Sucesso Pulse */}
+            <div className="relative w-28 h-28 flex items-center justify-center mb-8 mt-2">
+               <div className="absolute inset-0 bg-primary/5 rounded-full animate-ping" style={{ animationDuration: '3s' }} />
+               <div className="absolute inset-2 bg-primary/10 rounded-full" />
+               <div className="absolute inset-5 bg-[#101116] rounded-full border border-primary/20" />
+               
+               <div className="relative w-14 h-14 rounded-full border-[3px] border-primary flex items-center justify-center bg-[#101116] shadow-[0_0_15px_rgba(34,197,94,0.3)]">
+                 <Check className="w-6 h-6 text-primary" strokeWidth={4} />
+               </div>
             </div>
             
-            <DialogTitle className="text-2xl font-black tracking-wider text-white">
+            {/* Título de Sucesso */}
+            <DialogTitle className="text-2xl font-black font-mono-data tracking-widest text-white uppercase mb-3">
               PEDIDO ENVIADO!
             </DialogTitle>
             
-            <p className="text-sm text-gray-400 max-w-[280px]">
-              Pedido de depósito de <strong className="text-white">{formatMZN(Number(amount))}</strong> enviado com sucesso! Por favor, confirme com o PIN no seu telemóvel.
+            {/* Mensagem Explicativa */}
+            <p className="text-[11px] text-gray-400 max-w-[300px] uppercase font-bold leading-relaxed mb-8">
+              Pedido de depósito enviado com sucesso! Por favor, confirme o PIN no seu telemóvel para depositar. Obrigado!
             </p>
             
+            {/* Botão de Fechar */}
             <Button 
               onClick={handleClose}
-              className="w-full h-12 text-md font-bold bg-primary hover:bg-primary/90 text-primary-foreground mt-4"
+              className="w-full h-14 text-sm font-black bg-primary hover:bg-primary/90 text-black uppercase tracking-wider rounded-xl transition-all"
             >
               OK, ENTENDI
             </Button>

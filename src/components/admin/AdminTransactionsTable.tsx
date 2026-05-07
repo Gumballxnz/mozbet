@@ -23,7 +23,9 @@ export function AdminTransactionsTable({ initialTransactions, initialTotalCount 
   const [totalCount, setTotalCount] = useState(initialTotalCount);
   const [loadingMore, setLoadingMore] = useState(false);
   const [approvingId, setApprovingId] = useState<string | null>(null);
+  const [approvingMultiple, setApprovingMultiple] = useState(false);
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
@@ -87,19 +89,45 @@ export function AdminTransactionsTable({ initialTransactions, initialTotalCount 
     }
   };
 
+  const handleApproveAllPending = async () => {
+    const pendingToApprove = filtered.filter(t => t.type === "DEPOSIT" && t.status === "PENDING");
+    if (pendingToApprove.length === 0) return toast.info("Nenhuma transação pendente visível para aprovar.");
+    
+    if (!confirm(`ATENÇÃO: Vais aprovar ${pendingToApprove.length} transações e creditar saldo aos clientes. Tens a certeza que todos eles pagaram na e2Payments?`)) return;
+
+    setApprovingMultiple(true);
+    let successCount = 0;
+    
+    try {
+      const { forceApproveDeposit } = await import("@/app/admin/transactions/actions");
+      for (const tx of pendingToApprove) {
+        const res = await forceApproveDeposit(tx.id);
+        if (res.success) {
+          successCount++;
+          setTransactions(prev => prev.map(t => t.id === tx.id ? { ...t, status: "COMPLETED" } : t));
+        }
+      }
+      toast.success(`${successCount} transações aprovadas com sucesso!`);
+    } catch (err) {
+      toast.error("Erro ao aprovar múltiplas transações.");
+    } finally {
+      setApprovingMultiple(false);
+    }
+  };
+
   const filtered = transactions.filter(t => {
     const matchesSearch = t.phone?.includes(search) || t.type.includes(search.toUpperCase());
+    const matchesStatus = statusFilter === "ALL" || t.status === statusFilter;
     
-    if (!startDate && !endDate) return matchesSearch;
+    if (!startDate && !endDate) return matchesSearch && matchesStatus;
     
     const txDate = new Date(t.created_at);
     const start = startDate ? new Date(startDate) : new Date(0);
     const end = endDate ? new Date(endDate) : new Date();
-    // Ajustar fim do dia para a data final
     if (endDate) end.setHours(23, 59, 59, 999);
     
     const isInRange = txDate >= start && txDate <= end;
-    return matchesSearch && isInRange;
+    return matchesSearch && matchesStatus && isInRange;
   });
 
   const handleDownloadCSV = () => {
@@ -153,12 +181,35 @@ export function AdminTransactionsTable({ initialTransactions, initialTotalCount 
             />
           </div>
 
+          <div className="flex gap-2">
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="bg-[#101116] border border-[#2A2F40] rounded-xl px-3 text-xs text-white outline-none h-10"
+            >
+              <option value="ALL">Todos os Estados</option>
+              <option value="COMPLETED">✅ Aprovados</option>
+              <option value="PENDING">🕒 Pendentes</option>
+              <option value="FAILED">❌ Falhados</option>
+            </select>
+          </div>
+
           <Button 
             onClick={handleDownloadCSV}
             className="bg-primary/20 text-primary border border-primary/50 font-bold h-10 px-4"
           >
             Baixar Extrato
           </Button>
+
+          {filtered.some(t => t.type === "DEPOSIT" && t.status === "PENDING") && (
+            <Button 
+              onClick={handleApproveAllPending}
+              disabled={approvingMultiple}
+              className="bg-green-600/20 text-green-500 border border-green-500/50 hover:bg-green-600 hover:text-white font-bold h-10 px-4 transition-colors"
+            >
+              {approvingMultiple ? "A processar..." : "Aprovar Todos Pendentes"}
+            </Button>
+          )}
 
           <div className="relative flex-1 sm:w-60">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />

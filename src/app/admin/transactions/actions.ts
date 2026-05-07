@@ -38,16 +38,18 @@ export async function forceApproveDeposit(txId: string) {
     // 1. Marcar como COMPLETED
     await supabaseAdmin.from("transactions").update({ status: "COMPLETED" }).eq("id", txId);
 
-    // 2. Processar saldo e bónus
+    // 2. Processar saldo e bónus corretamente
     const numAmount = Number(tx.amount);
-    const { data: user } = await supabaseAdmin.from("users").select("balance, has_deposited").eq("id", tx.user_id).single();
+    const { data: user } = await supabaseAdmin.from("users").select("balance, bonus_balance, has_deposited").eq("id", tx.user_id).single();
     
     if (user) {
-      let finalBalance = Number(user.balance) + numAmount;
+      const finalBalance = Number(user.balance) + numAmount;
+      let newBonusBalance = Number(user.bonus_balance || 0);
+      let bonus = 0;
       
       if (!user.has_deposited) {
-        const bonus = Math.min(numAmount * 5, 25000);
-        finalBalance += bonus;
+        bonus = Math.min(numAmount * 5, 25000);
+        newBonusBalance += bonus;
         
         await supabaseAdmin.from("transactions").insert([{
           user_id: tx.user_id, type: "BONUS", amount: bonus, status: "COMPLETED", phone: tx.phone
@@ -62,6 +64,7 @@ export async function forceApproveDeposit(txId: string) {
       
       await supabaseAdmin.from("users").update({
         balance: finalBalance,
+        ...(bonus > 0 && { bonus_balance: newBonusBalance }),
         has_deposited: true
       }).eq("id", tx.user_id);
 

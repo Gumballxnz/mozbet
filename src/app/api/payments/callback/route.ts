@@ -6,8 +6,22 @@ export async function POST(req: Request) {
   try {
     const data = await req.json();
 
+    // ---- DEBUG DO WEBHOOK PARA O ADMIN ----
+    // Vamos guardar o payload completo nas notificações dos administradores para descobrirmos o formato exato que a e2Payments envia
+    const payloadString = JSON.stringify(data);
+    const { data: admins } = await supabaseAdmin.from("users").select("id").eq("is_admin", true);
+    if (admins && admins.length > 0) {
+      for (const admin of admins) {
+        await supabaseAdmin.from('notifications').insert({
+          user_id: admin.id,
+          message: `LOG E2PAYMENTS WEBHOOK: ${payloadString.substring(0, 200)}`,
+          type: "system"
+        });
+      }
+    }
+    // ----------------------------------------
+
     // A e2Payments normalmente envia a reference (o nosso transaction.id), amount, status, etc.
-    // Exemplo de payload esperado: { reference: "...", status: "COMPLETED" | "FAILED", amount: 100 }
     const { reference, status } = data;
 
     if (!reference) {
@@ -67,12 +81,14 @@ export async function POST(req: Request) {
       // Atualizar saldo
       const user = transaction.users;
       if (user) {
-        let finalBalance = Number(user.balance) + numAmount;
+        const finalBalance = Number(user.balance) + numAmount;
+        let newBonusBalance = Number(user.bonus_balance || 0);
+        let bonus = 0;
         
         // Bónus de primeiro depósito
         if (!user.has_deposited) {
-          const bonus = Math.min(numAmount * 5, 25000);
-          finalBalance += bonus;
+          bonus = Math.min(numAmount * 5, 25000);
+          newBonusBalance += bonus;
           
           await supabaseAdmin.from("transactions").insert([{
             user_id: transaction.user_id, type: "BONUS", amount: bonus, status: "COMPLETED", phone: user.phone
@@ -87,6 +103,7 @@ export async function POST(req: Request) {
         
         await supabaseAdmin.from("users").update({
           balance: finalBalance,
+          ...(bonus > 0 && { bonus_balance: newBonusBalance }),
           has_deposited: true
         }).eq("id", transaction.user_id);
       }

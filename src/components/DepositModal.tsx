@@ -129,16 +129,49 @@ export function DepositModal() {
 
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           
-          {/* Seletor Visual de Operadora (Apenas Decorativo/Indicativo) */}
+          {/* Seletor Visual de Operadora (Com Logos Estilizados) */}
           <div className="grid grid-cols-2 gap-3 mb-2">
-            <div className={`flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all ${paymentInfo.method === 'emola' ? 'bg-[#ff5b00]/10 border-[#ff5b00] ring-1 ring-[#ff5b00]/50 opacity-100' : 'bg-gray-800/30 border-gray-700 opacity-50 grayscale'}`}>
-              <span className="text-2xl mb-1">🟢</span>
-              <span className="font-black text-white tracking-wider text-sm">E-MOLA</span>
+            
+            {/* E-MOLA BUTTON */}
+            <div 
+              onClick={() => {
+                if (paymentInfo.method !== 'emola') {
+                  toast.error("Operadora Incorreta", { description: "O teu número de telemóvel está registado como M-Pesa. Não podes depositar via e-Mola." });
+                }
+              }}
+              className={`flex flex-col items-center justify-center p-2 rounded-xl transition-all cursor-pointer ${paymentInfo.method === 'emola' ? 'bg-[#ff5b00] border-2 border-white ring-2 ring-[#ff5b00]/50 shadow-[0_0_15px_rgba(255,91,0,0.4)] opacity-100 scale-105 z-10' : 'bg-gray-800 border border-gray-700 opacity-60 hover:opacity-80'}`}
+            >
+              <div className="flex items-center gap-1">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM17 15L14 11V15H12V9H14L17 13V9H19V15H17Z" fill="white"/>
+                </svg>
+                <div className="flex flex-col items-start leading-none ml-1">
+                  <span className="text-[10px] font-bold text-white uppercase tracking-wider mb-[-2px]">e-Mola</span>
+                  <span className="text-[8px] text-white/80">Movitel</span>
+                </div>
+              </div>
             </div>
-            <div className={`flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all ${paymentInfo.method === 'mpesa' ? 'bg-[#df0000]/10 border-[#df0000] ring-1 ring-[#df0000]/50 opacity-100' : 'bg-gray-800/30 border-gray-700 opacity-50 grayscale'}`}>
-              <span className="text-2xl mb-1">🔴</span>
-              <span className="font-black text-white tracking-wider text-sm">M-PESA</span>
+
+            {/* M-PESA BUTTON */}
+            <div 
+              onClick={() => {
+                if (paymentInfo.method !== 'mpesa') {
+                  toast.error("Operadora Incorreta", { description: "O teu número de telemóvel está registado como e-Mola. Não podes depositar via M-Pesa." });
+                }
+              }}
+              className={`flex flex-col items-center justify-center p-2 rounded-xl transition-all cursor-pointer ${paymentInfo.method === 'mpesa' ? 'bg-[#e60000] border-2 border-white ring-2 ring-[#e60000]/50 shadow-[0_0_15px_rgba(230,0,0,0.4)] opacity-100 scale-105 z-10' : 'bg-gray-800 border border-gray-700 opacity-60 hover:opacity-80'}`}
+            >
+              <div className="flex items-center gap-2">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM13 16C10.79 16 9 14.21 9 12C9 9.79 10.79 8 13 8C14.1 8 15.09 8.45 15.83 9.17L14.41 10.59C14.05 10.22 13.55 10 13 10C11.9 10 11 10.9 11 12C11 13.1 11.9 14 13 14C13.55 14 14.05 13.78 14.41 13.41L15.83 14.83C15.09 15.55 14.1 16 13 16Z" fill="white"/>
+                </svg>
+                <div className="flex flex-col items-start leading-none">
+                  <span className="text-[12px] font-bold text-white uppercase tracking-wider mb-[-2px]">m-pesa</span>
+                  <span className="text-[8px] text-white/80">Vodacom</span>
+                </div>
+              </div>
             </div>
+
           </div>
 
           {/* Telefone registado (bloqueado) */}

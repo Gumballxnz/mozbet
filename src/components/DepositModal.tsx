@@ -148,20 +148,6 @@ export function DepositModal() {
             </div>
           </div>
 
-          {/* Método de pagamento detectado automaticamente */}
-          <div className="bg-[#1A1D27] border border-[#2A2F40] rounded-xl p-3 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">{paymentInfo.icon}</span>
-              <div>
-                <span className="text-xs text-gray-500 font-bold uppercase tracking-wider block">Método de pagamento</span>
-                <span className="text-white font-black text-base">{paymentInfo.label}</span>
-              </div>
-            </div>
-            <span className="text-[10px] text-gray-500 max-w-[140px] text-right leading-tight">
-              Detectado automaticamente pelo seu número de telefone.
-            </span>
-          </div>
-
           {/* Valor */}
           <div className="space-y-2">
             <Label htmlFor="amount">{t("betAmount")} (MZN)</Label>

@@ -22,6 +22,7 @@ export function AdminTransactionsTable({ initialTransactions, initialTotalCount 
   const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
   const [totalCount, setTotalCount] = useState(initialTotalCount);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [approvingId, setApprovingId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -64,6 +65,25 @@ export function AdminTransactionsTable({ initialTransactions, initialTotalCount 
       toast.error("Erro ao carregar mais transações");
     } finally {
       setLoadingMore(false);
+    }
+  };
+
+  const handleApprove = async (txId: string) => {
+    setApprovingId(txId);
+    try {
+      const { forceApproveDeposit } = await import("@/app/admin/transactions/actions");
+      const res = await forceApproveDeposit(txId);
+      if (res.success) {
+        toast.success("Transação aprovada! Saldo creditado na conta do utilizador.");
+        // Atualizar estado local
+        setTransactions(prev => prev.map(t => t.id === txId ? { ...t, status: "COMPLETED" } : t));
+      } else {
+        toast.error(res.error || "Falha ao aprovar transação.");
+      }
+    } catch (err) {
+      toast.error("Erro interno ao aprovar transação.");
+    } finally {
+      setApprovingId(null);
     }
   };
 
@@ -161,7 +181,8 @@ export function AdminTransactionsTable({ initialTransactions, initialTotalCount 
                 <th className="px-6 py-4">Tipo</th>
                 <th className="px-6 py-4">Telefone</th>
                 <th className="px-6 py-4">Valor (MT)</th>
-                <th className="px-6 py-4 text-right">Estado</th>
+                <th className="px-6 py-4 text-center">Estado</th>
+                <th className="px-6 py-4 text-right">Ação</th>
               </tr>
             </thead>
             <tbody>
@@ -184,21 +205,34 @@ export function AdminTransactionsTable({ initialTransactions, initialTotalCount 
                   <td className="px-6 py-4 font-mono-data font-black text-white text-lg">
                     {formatMZN(tx.amount)}
                   </td>
-                  <td className="px-6 py-4 text-right">
+                  <td className="px-6 py-4 text-center">
                     {tx.status === "COMPLETED" && (
-                      <span className="inline-flex items-center gap-1 text-primary font-bold">
+                      <span className="inline-flex items-center gap-1 bg-primary/10 text-primary px-2 py-1 rounded-md font-bold text-xs">
                         <CheckCircle2 className="w-4 h-4" /> Pago
                       </span>
                     )}
                     {tx.status === "PENDING" && (
-                      <span className="inline-flex items-center gap-1 text-orange-500 font-bold">
+                      <span className="inline-flex items-center gap-1 bg-orange-500/10 text-orange-500 px-2 py-1 rounded-md font-bold text-xs">
                         <Clock className="w-4 h-4" /> Pendente
                       </span>
                     )}
                     {tx.status === "FAILED" && (
-                      <span className="inline-flex items-center gap-1 text-red-500 font-bold">
+                      <span className="inline-flex items-center gap-1 bg-red-500/10 text-red-500 px-2 py-1 rounded-md font-bold text-xs">
                         <XCircle className="w-4 h-4" /> Falhou
                       </span>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    {tx.type === "DEPOSIT" && tx.status !== "COMPLETED" && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleApprove(tx.id)}
+                        disabled={approvingId === tx.id}
+                        className="h-8 bg-primary/10 border-primary/50 text-primary hover:bg-primary hover:text-black font-bold"
+                      >
+                        {approvingId === tx.id ? "Aguarde..." : "Aprovar"}
+                      </Button>
                     )}
                   </td>
                 </tr>

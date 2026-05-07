@@ -25,6 +25,13 @@ export default async function AdminDashboard() {
     .eq("type", "WITHDRAWAL")
     .eq("status", "COMPLETED");
 
+  // Buscar depósitos que falharam
+  const { data: failedRaw } = await supabaseAdmin
+    .from("transactions")
+    .select("created_at, amount")
+    .eq("type", "DEPOSIT")
+    .eq("status", "FAILED");
+
   return (
     <div className="space-y-8">
       <div>
@@ -37,6 +44,7 @@ export default async function AdminDashboard() {
         depositsRaw={depositsRaw || []} 
         usersRaw={usersRaw || []} 
         withdrawalsRaw={withdrawalsRaw || []}
+        failedRaw={failedRaw || []}
       />
     </div>
   );

@@ -115,6 +115,7 @@ export function DepositModal() {
     <Dialog open={depositOpen} onOpenChange={(open) => {
       setDepositOpen(open);
       if (!open) setTimeout(() => setStep("form"), 300);
+      else setAmount("100");
     }}>
       <DialogContent className="sm:max-w-[400px] !top-4 !translate-y-0 sm:!top-[50%] sm:!translate-y-[-50%] max-h-[90vh] overflow-y-auto">
         {step === "form" ? (

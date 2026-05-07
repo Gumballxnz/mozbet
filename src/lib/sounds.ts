@@ -5,6 +5,9 @@
 const audioCache: Record<string, HTMLAudioElement> = {};
 
 export const playSound = (soundName: 'error' | 'notification' | 'win' | 'cashout' | 'crash' | 'click' | 'engine') => {
+  // Desativado a pedido do utilizador: "muitos clientes estao reclamando do som"
+  return;
+  
   if (typeof window === 'undefined') return;
   
   try {

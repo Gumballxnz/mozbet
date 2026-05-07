@@ -144,9 +144,8 @@ export function AdminTransactionsTable({ initialTransactions, initialTotalCount 
               className="bg-[#101116] border border-[#2A2F40] rounded-xl px-3 text-xs text-white outline-none h-10"
             >
               <option value="ALL">Todos os Estados</option>
-              <option value="COMPLETED">✅ Aprovados</option>
-              <option value="PENDING">🕒 Pendentes</option>
-              <option value="FAILED">❌ Falhados</option>
+              <option value="COMPLETED">✅ Aprovadas</option>
+              <option value="FAILED">❌ Falhadas</option>
             </select>
           </div>
 
@@ -181,7 +180,6 @@ export function AdminTransactionsTable({ initialTransactions, initialTotalCount 
                 <th className="px-6 py-4">Telefone</th>
                 <th className="px-6 py-4">Valor (MT)</th>
                 <th className="px-6 py-4 text-center">Estado</th>
-                <th className="px-6 py-4 text-right">Ação</th>
               </tr>
             </thead>
             <tbody>
@@ -207,12 +205,7 @@ export function AdminTransactionsTable({ initialTransactions, initialTotalCount 
                   <td className="px-6 py-4 text-center">
                     {tx.status === "COMPLETED" && (
                       <span className="inline-flex items-center gap-1 bg-primary/10 text-primary px-2 py-1 rounded-md font-bold text-xs">
-                        <CheckCircle2 className="w-4 h-4" /> Pago
-                      </span>
-                    )}
-                    {tx.status === "PENDING" && (
-                      <span className="inline-flex items-center gap-1 bg-orange-500/10 text-orange-500 px-2 py-1 rounded-md font-bold text-xs">
-                        <Clock className="w-4 h-4" /> Pendente
+                        <CheckCircle2 className="w-4 h-4" /> Aprovada
                       </span>
                     )}
                     {tx.status === "FAILED" && (
@@ -227,7 +220,7 @@ export function AdminTransactionsTable({ initialTransactions, initialTotalCount 
               
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-muted-foreground font-medium">
+                  <td colSpan={4} className="px-6 py-12 text-center text-muted-foreground font-medium">
                     Nenhuma transação encontrada.
                   </td>
                 </tr>

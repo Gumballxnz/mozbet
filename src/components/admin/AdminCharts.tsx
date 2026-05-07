@@ -12,9 +12,10 @@ interface Props {
   depositsRaw: { created_at: string; amount: number }[];
   usersRaw: { created_at: string; balance: number }[];
   withdrawalsRaw: { created_at: string; amount: number }[];
+  failedRaw?: { created_at: string; amount: number }[];
 }
 
-export function AdminCharts({ depositsRaw: initialDeposits, usersRaw: initialUsers, withdrawalsRaw: initialWithdrawals }: Props) {
+export function AdminCharts({ depositsRaw: initialDeposits, usersRaw: initialUsers, withdrawalsRaw: initialWithdrawals, failedRaw: initialFailed = [] }: Props) {
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
@@ -24,6 +25,7 @@ export function AdminCharts({ depositsRaw: initialDeposits, usersRaw: initialUse
   const [filter, setFilter] = useState<"hoje" | "7d" | "30d" | "tudo">("7d");
   const [deposits, setDeposits] = useState(initialDeposits);
   const [withdrawals, setWithdrawals] = useState(initialWithdrawals);
+  const [failed, setFailed] = useState(initialFailed);
   const [users, setUsers] = useState(initialUsers);
 
   // Subscrever ao Realtime para Gráficos
@@ -36,6 +38,8 @@ export function AdminCharts({ depositsRaw: initialDeposits, usersRaw: initialUse
            } else if (payload.new.type === 'WITHDRAWAL') {
              setWithdrawals(prev => [...prev, { created_at: payload.new.created_at, amount: payload.new.amount }]);
            }
+        } else if (payload.new.status === 'FAILED' && payload.new.type === 'DEPOSIT') {
+             setFailed(prev => [...prev, { created_at: payload.new.created_at, amount: payload.new.amount }]);
         }
       })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'users' }, payload => {
@@ -51,6 +55,8 @@ export function AdminCharts({ depositsRaw: initialDeposits, usersRaw: initialUse
   // Dados globais para as caixas de resumo
   const totalDeposits = useMemo(() => deposits.reduce((acc, curr) => acc + Number(curr.amount), 0), [deposits]);
   const totalWithdrawals = useMemo(() => withdrawals.reduce((acc, curr) => acc + Number(curr.amount), 0), [withdrawals]);
+  const totalFailed = useMemo(() => failed.reduce((acc, curr) => acc + Number(curr.amount), 0), [failed]);
+  const failedCount = failed.length;
   const ggr = totalDeposits - totalWithdrawals; // Gross Gaming Revenue
   const totalRetained = useMemo(() => users.reduce((acc, curr) => acc + Number(curr.balance || 0), 0), [users]);
   const totalUsers = users.length;
@@ -142,8 +148,8 @@ export function AdminCharts({ depositsRaw: initialDeposits, usersRaw: initialUse
   return (
     <div className="space-y-6">
       
-      {/* 4 Cards Principais - Estilo Stripe/Utmify */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* 5 Cards Principais - Estilo Stripe/Utmify */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         
         {/* Card 1: Receita Bruta (Depósitos) */}
         <div className="bg-[#101116] border border-[#2A2F40] p-5 rounded-2xl flex flex-col justify-between shadow-xl relative overflow-hidden group hover:border-primary/50 transition-colors">
@@ -233,6 +239,30 @@ export function AdminCharts({ depositsRaw: initialDeposits, usersRaw: initialUse
           </div>
         </div>
 
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
+        {/* Card 5: Falhas Pendentes/Rejeitadas */}
+        <div className="bg-[#101116] border border-[#2A2F40] p-5 rounded-2xl flex flex-col justify-between shadow-xl relative overflow-hidden group hover:border-red-500/50 transition-colors">
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+             <ArrowDownRight className="w-16 h-16 text-red-500" />
+          </div>
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center text-red-500">
+              <ArrowDownRight className="w-4 h-4" />
+            </div>
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Falhas</span>
+          </div>
+          <div>
+            <span className="text-3xl font-black text-white">{failedCount} <span className="text-lg text-gray-500 font-medium">Depósitos</span></span>
+            <div className="flex items-center gap-2 mt-2">
+               <span className="text-xs font-bold text-red-500 bg-red-500/10 px-2 py-0.5 rounded-full flex items-center gap-1">
+                 Total Perdas
+               </span>
+               <span className="text-xs text-gray-500">{formatMZN(totalFailed)} não creditado</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Controlos do Gráfico Principal */}

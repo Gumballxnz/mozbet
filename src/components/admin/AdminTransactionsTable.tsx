@@ -114,8 +114,8 @@ export function AdminTransactionsTable({ initialTransactions, initialTotalCount 
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
+      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 flex-wrap">
+        <div className="flex-shrink-0">
           <h1 className="text-3xl font-bold text-white">Transações Financeiras</h1>
           <p className="text-muted-foreground">Monitorização Realtime de M-Pesa e E-Mola. <span className="text-white font-bold ml-2">Total: {totalCount}</span></p>
         </div>

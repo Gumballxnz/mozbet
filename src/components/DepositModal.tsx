@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -49,6 +49,17 @@ export function DepositModal() {
 
   // Telefone registado na conta — não pode ser alterado
   const phone = user?.phone || "";
+
+  // Fechar o modal automaticamente após 5 segundos na mensagem de sucesso
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (step === "sent") {
+      timer = setTimeout(() => {
+        setDepositOpen(false);
+      }, 5000);
+    }
+    return () => clearTimeout(timer);
+  }, [step, setDepositOpen]);
 
   // Detecção automática do método de pagamento pelo prefixo do número
   const paymentInfo = useMemo(() => detectPaymentMethod(phone), [phone]);
@@ -240,10 +251,22 @@ export function DepositModal() {
             {/* Botão de Fechar */}
             <Button 
               onClick={handleClose}
-              className="w-full h-14 text-sm font-black bg-primary hover:bg-primary/90 text-black uppercase tracking-wider rounded-xl transition-all"
+              className="relative w-full h-14 text-sm font-black bg-primary hover:bg-primary/90 text-black uppercase tracking-wider rounded-xl transition-all overflow-hidden"
             >
-              OK, ENTENDI
+              <span className="relative z-10">OK, ENTENDI</span>
+              
+              {/* Barra de progresso para o fecho automático */}
+              <div 
+                className="absolute bottom-0 left-0 h-1.5 bg-black/20 w-full" 
+                style={{ animation: 'progress-bar-shrink 5s linear forwards' }} 
+              />
             </Button>
+            <style dangerouslySetInnerHTML={{ __html: `
+              @keyframes progress-bar-shrink {
+                from { width: 100%; }
+                to { width: 0%; }
+              }
+            `}} />
           </div>
         )}
       </DialogContent>

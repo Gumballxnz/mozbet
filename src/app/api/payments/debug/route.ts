@@ -75,6 +75,7 @@ export async function GET() {
 
   // Teste 3: Tentar URL alternativa (mpesaemolatech.com)
   const ALT_URL = "https://mpesaemolatech.com";
+  let altToken = "";
   try {
     const altRes = await fetch(`${ALT_URL}/oauth/token`, {
       method: "POST",
@@ -96,8 +97,40 @@ export async function GET() {
       ok: altRes.ok,
       body: altBody.substring(0, 500),
     };
+    
+    if (altRes.ok) {
+      altToken = JSON.parse(altBody).access_token;
+    }
   } catch (e: unknown) {
     results.altUrlTest = { url: ALT_URL, error: String(e) };
+  }
+
+  // Teste 4: Se o token da URL alternativa funcionou, vamos tentar um C2B fake
+  if (altToken && process.env.E2P_WALLET_MPESA) {
+     try {
+       const c2bRes = await fetch(`${ALT_URL}/v1/c2b/mpesa-payment/${process.env.E2P_WALLET_MPESA}`, {
+         method: "POST",
+         headers: {
+           "Authorization": `Bearer ${altToken}`,
+           "Content-Type": "application/json",
+           "Accept": "application/json",
+         },
+         body: JSON.stringify({
+           client_id: process.env.E2P_CLIENT_ID,
+           amount: "1",
+           phone: "848512345", // Telefone fake
+           reference: "TestDebug123"
+         })
+       });
+       const c2bBody = await c2bRes.text();
+       results.c2bTest = {
+         status: c2bRes.status,
+         ok: c2bRes.ok,
+         body: c2bBody
+       };
+     } catch (e: unknown) {
+       results.c2bTest = { error: String(e) };
+     }
   }
 
   return NextResponse.json(results, { status: 200 });

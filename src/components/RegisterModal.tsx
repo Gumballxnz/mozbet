@@ -371,7 +371,7 @@ export function RegisterModal() {
                     <span className="text-white font-bold text-sm">+258</span>
                   </div>
                   <Input
-                    id="phone" type="tel" placeholder="use: 82/83/84/85/86/87/88"
+                    id="phone" type="tel" placeholder="TELEFONE"
                     className="border-none bg-transparent h-12 font-mono-data text-white focus-visible:ring-0 px-3 shadow-none"
                     value={phone} onChange={handlePhoneChange} disabled={loading} required
                   />
@@ -519,7 +519,7 @@ export function RegisterModal() {
                   <span className="text-lg mr-1" role="img">🇲🇿</span>
                   <span className="text-white font-bold text-sm">+258</span>
                 </div>
-                <Input type="tel" placeholder="use: 82/83/84/85/86/87/88"
+                <Input type="tel" placeholder="TELEFONE"
                   className="border-none bg-transparent h-12 font-mono-data text-white focus-visible:ring-0 px-3 shadow-none"
                   value={phone} onChange={handlePhoneChange} disabled={loading}
                 />

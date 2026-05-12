@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { verifyToken, supabaseAdmin } from "@/lib/auth-server";
-import { initiateC2BPayment, type PaymentMethod } from "@/lib/e2payments";
+import { processDebitoPayment, type DebitoPaymentMethod } from "@/lib/debitopay";
 import { forceApproveDeposit } from "@/app/admin/transactions/actions";
 
 export async function POST(req: Request) {
@@ -25,10 +25,10 @@ export async function POST(req: Request) {
     // 2. Extrair valor, método de pagamento e validar
     const { amount, method = "mpesa" } = await req.json();
     const numAmount = Number(amount);
-    const paymentMethod: PaymentMethod = method === "emola" ? "emola" : "mpesa";
+    const paymentMethod: DebitoPaymentMethod = method === "emola" ? "emola" : "mpesa";
 
-    if (isNaN(numAmount) || numAmount < 1 || numAmount > 25000) {
-      return NextResponse.json({ error: "Valor de depósito inválido." }, { status: 400 });
+    if (isNaN(numAmount) || numAmount < 10 || numAmount > 25000) {
+      return NextResponse.json({ error: "O valor mínimo de depósito é 10 MZN." }, { status: 400 });
     }
 
     // 3. Criar o registo da transação como PENDENTE no Banco de Dados
@@ -51,7 +51,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Erro interno ao iniciar depósito." }, { status: 500 });
     }
 
-    const hasKeys = !!process.env.E2P_CLIENT_ID;
+    const hasKeys = !!process.env.DEBITOPAY_API_KEY;
     
     // MODO SIMULAÇÃO RÁPIDO (Apenas para o teste falho de 2MT)
     if (!hasKeys && numAmount === 2) {
@@ -70,10 +70,10 @@ export async function POST(req: Request) {
     // pois o depósito será resolvido (Sucesso ou Falha) neste mesmo request.
     
     if (hasKeys) {
-      const e2pResponse = await initiateC2BPayment(decoded.phone, numAmount, transaction.id, paymentMethod);
+      const debitopayRes = await processDebitoPayment(decoded.phone, numAmount, transaction.id, paymentMethod);
       
-      if (!e2pResponse.success) {
-        // Se a API deles falhar ou o cliente colocar PIN errado
+      if (!debitopayRes.success) {
+        // Se a API deles falhar ou o cliente colocar PIN errado (síncrono)
         await supabaseAdmin
           .from("transactions")
           .update({ status: "FAILED" })
@@ -82,21 +82,31 @@ export async function POST(req: Request) {
         // Notificação: Depósito Falhou
         await supabaseAdmin.from('notifications').insert({
           user_id: decoded.id,
-          message: `Falha no depósito de ${numAmount.toFixed(2)} MZN: Ocorreu um erro ao processar o seu depósito. Por favor, verifique se o número de telefone e o valor inseridos estão corretos e tente novamente.`,
+          message: `Falha no depósito de ${numAmount.toFixed(2)} MZN: ${debitopayRes.error || "Ocorreu um erro no processamento."} Tente novamente.`,
           type: "deposit_failed"
         });
           
-        return NextResponse.json({ error: e2pResponse.error }, { status: 502 });
+        return NextResponse.json({ error: debitopayRes.error }, { status: 502 });
       } else {
-        // A e2Payments retornou sucesso! Isto significa que o cliente confirmou com PIN no telemóvel durante a chamada C2B!
-        // Sendo a API síncrona, aprovamos na hora.
-        await forceApproveDeposit(transaction.id);
+        const status = debitopayRes.data?.status;
         
-        return NextResponse.json({ 
-          success: true,
-          message: "Depósito aprovado com sucesso! O saldo foi creditado.",
-          transactionId: transaction.id
-        }, { status: 200 });
+        if (status === "success") {
+            // M-Pesa (síncrono) - Aprovado na hora
+            await forceApproveDeposit(transaction.id);
+            
+            return NextResponse.json({ 
+              success: true,
+              message: "Depósito aprovado com sucesso! O saldo foi creditado.",
+              transactionId: transaction.id
+            }, { status: 200 });
+        } else {
+            // e-Mola ou mKesh (assíncrono) - Fica Pendente
+            return NextResponse.json({ 
+              success: true,
+              message: "Verifique o seu telemóvel para confirmar o pagamento.",
+              transactionId: transaction.id
+            }, { status: 200 });
+        }
       }
     } else {
       // MODO SIMULAÇÃO (Enquanto esperamos chaves)

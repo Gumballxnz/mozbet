@@ -63,9 +63,8 @@ export async function processDebitoPayment(
       });
       clearTimeout(timeoutId);
     } catch (err: any) {
-      if (err.name === "AbortError") {
+      if (controller.signal.aborted) {
         // Demorou mais de 8s, o que significa que o USSD já está no telemóvel do cliente!
-        // Como a Vercel morre aos 10s, nós forçamos o estado "pending" e confiamos no Webhook!
         console.log(`[Debito Pay] Timeout de 8s atingido. USSD enviado. Assumindo PENDENTE.`);
         return { success: true, data: { status: "pending" } };
       }
@@ -78,7 +77,7 @@ export async function processDebitoPayment(
       data = JSON.parse(textData);
     } catch (e) {
       console.error("[Debito Pay] Resposta inválida (não JSON):", textData);
-      return { success: false, error: "Serviço de pagamentos devolveu erro no gateway." };
+      return { success: false, error: `Erro no Gateway (HTTP ${response.status}): ${textData.substring(0, 50)}...` };
     }
     
     // Se o status HTTP for um erro ou o status da transação for failed
@@ -86,7 +85,7 @@ export async function processDebitoPayment(
       console.error(`[Debito Pay] Erro na API:`, data);
       return {
         success: false,
-        error: data.error || data.message || `Erro ao processar pagamento via ${method}. Verifique o número e o valor.`
+        error: `A Debito Pay rejeitou (HTTP ${response.status}): ${data.error || data.message || JSON.stringify(data)}`
       };
     }
 

@@ -81,11 +81,12 @@ export async function processDebitoPayment(
       return { success: false, error: "Serviço de pagamentos devolveu erro no gateway." };
     }
     
-    if (!response.ok || !data.success) {
+    // Se o status HTTP for um erro ou o status da transação for failed
+    if (!response.ok || data.status === "failed" || data.success === false) {
       console.error(`[Debito Pay] Erro na API:`, data);
       return {
         success: false,
-        error: data.error || `Erro ao processar pagamento via ${method}. Verifique o número e o valor.`
+        error: data.error || data.message || `Erro ao processar pagamento via ${method}. Verifique o número e o valor.`
       };
     }
 

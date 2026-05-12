@@ -37,7 +37,7 @@ export async function processDebitoPayment(
       amount: amount,
       currency: "MZN",
       phone: cleanPhone,
-      backend_transaction: true,
+      customer_phone: cleanPhone,
       source: "gateway",
       source_id: transactionId
     };
@@ -54,7 +54,9 @@ export async function processDebitoPayment(
         method: "POST",
         headers: {
           "Authorization": `Bearer ${API_KEY}`,
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "Origin": "https://mozbet.online",
+          "Referer": "https://mozbet.online"
         },
         body: JSON.stringify(payload),
         signal: controller.signal

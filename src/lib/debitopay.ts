@@ -19,12 +19,15 @@ export async function processDebitoPayment(
       throw new Error("Credenciais da Debito Pay não configuradas nas variáveis de ambiente.");
     }
 
-    // A Debito Pay recomenda o indicativo 258 sem o + para e-Mola.
     let cleanPhone = phone.replace(/\D/g, "");
     if (!cleanPhone.startsWith("258")) {
       cleanPhone = "258" + cleanPhone;
     }
-    // M-Pesa aceita com ou sem +, e-Mola prefere sem +. Vamos usar sem + para evitar erros de gateway.
+    
+    // M-Pesa na doc tem +, e-Mola não tem. Para segurança garantimos ambos formatos.
+    if (method === "mpesa") {
+        cleanPhone = "+" + cleanPhone;
+    }
 
     const payload = {
       action: "process",
@@ -34,6 +37,7 @@ export async function processDebitoPayment(
       amount: amount,
       currency: "MZN",
       phone: cleanPhone,
+      customer_phone: cleanPhone,
       source: "gateway",
       source_id: transactionId
     };
@@ -50,7 +54,9 @@ export async function processDebitoPayment(
         method: "POST",
         headers: {
           "Authorization": `Bearer ${API_KEY}`,
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "Origin": "https://mozbet.online",
+          "Referer": "https://mozbet.online"
         },
         body: JSON.stringify(payload),
         signal: controller.signal

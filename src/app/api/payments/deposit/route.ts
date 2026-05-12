@@ -86,7 +86,7 @@ export async function POST(req: Request) {
           type: "deposit_failed"
         });
           
-        return NextResponse.json({ error: debitopayRes.error }, { status: 502 });
+        return NextResponse.json({ error: debitopayRes.error }, { status: 400 });
       } else {
         const status = debitopayRes.data?.status;
         

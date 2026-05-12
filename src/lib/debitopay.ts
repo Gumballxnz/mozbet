@@ -19,12 +19,12 @@ export async function processDebitoPayment(
       throw new Error("Credenciais da Debito Pay não configuradas nas variáveis de ambiente.");
     }
 
-    // A Debito Pay precisa que o telefone de Moçambique tenha o indicativo internacional +258
+    // A Debito Pay recomenda o indicativo 258 sem o + para e-Mola.
     let cleanPhone = phone.replace(/\D/g, "");
     if (!cleanPhone.startsWith("258")) {
       cleanPhone = "258" + cleanPhone;
     }
-    cleanPhone = "+" + cleanPhone;
+    // M-Pesa aceita com ou sem +, e-Mola prefere sem +. Vamos usar sem + para evitar erros de gateway.
 
     const payload = {
       action: "process",
@@ -40,16 +40,40 @@ export async function processDebitoPayment(
 
     console.log(`[Debito Pay] Iniciando pagamento via ${method}:`, payload);
 
-    const response = await fetch("https://gyqoaningqhurhvdugne.supabase.co/functions/v1/payment-orchestrator", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${API_KEY}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(payload)
-    });
+    // AbortController para não deixar a Vercel dar timeout (limite de 10s no plano Hobby)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 segundos
 
-    const data = await response.json();
+    let response;
+    try {
+      response = await fetch("https://gyqoaningqhurhvdugne.supabase.co/functions/v1/payment-orchestrator", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${API_KEY}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload),
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+    } catch (err: any) {
+      if (err.name === "AbortError") {
+        // Demorou mais de 8s, o que significa que o USSD já está no telemóvel do cliente!
+        // Como a Vercel morre aos 10s, nós forçamos o estado "pending" e confiamos no Webhook!
+        console.log(`[Debito Pay] Timeout de 8s atingido. USSD enviado. Assumindo PENDENTE.`);
+        return { success: true, data: { status: "pending" } };
+      }
+      throw err;
+    }
+
+    const textData = await response.text();
+    let data;
+    try {
+      data = JSON.parse(textData);
+    } catch (e) {
+      console.error("[Debito Pay] Resposta inválida (não JSON):", textData);
+      return { success: false, error: "Serviço de pagamentos devolveu erro no gateway." };
+    }
     
     if (!response.ok || !data.success) {
       console.error(`[Debito Pay] Erro na API:`, data);

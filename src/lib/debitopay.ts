@@ -37,8 +37,6 @@ export async function processDebitoPayment(
       amount: amount,
       currency: "MZN",
       phone: cleanPhone,
-      customer_phone: cleanPhone,
-      source: "gateway",
       source_id: transactionId
     };
 

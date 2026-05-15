@@ -213,6 +213,11 @@ export function AdminTransactionsTable({ initialTransactions, initialTotalCount 
                         <XCircle className="w-4 h-4" /> Falhou
                       </span>
                     )}
+                    {tx.status === "PENDING" && (
+                      <span className="inline-flex items-center gap-1 bg-yellow-500/10 text-yellow-500 px-2 py-1 rounded-md font-bold text-xs">
+                        <Clock className="w-4 h-4" /> Pendente
+                      </span>
+                    )}
                   </td>
 
                 </tr>

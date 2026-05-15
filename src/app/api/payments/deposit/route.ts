@@ -98,23 +98,15 @@ export async function POST(req: Request) {
             .eq("id", transaction.id);
         }
         
-        if (status === "success") {
-            // M-Pesa (síncrono) - Aprovado na hora
-            await forceApproveDeposit(transaction.id);
-            
-            return NextResponse.json({ 
-              success: true,
-              message: "Depósito aprovado com sucesso! O saldo foi creditado.",
-              transactionId: transaction.id
-            }, { status: 200 });
-        } else {
-            // e-Mola ou mKesh (assíncrono) - Fica Pendente
-            return NextResponse.json({ 
-              success: true,
-              message: "Verifique o seu telemóvel para confirmar o pagamento.",
-              transactionId: transaction.id
-            }, { status: 200 });
-        }
+        // ATENÇÃO: Nunca aprovar de forma síncrona, mesmo que a DebitoPay retorne "success".
+        // Isso evita a fraude de M-Pesa "confirmar sem cobrar nada".
+        // O depósito ficará PENDENTE e só será aprovado quando o Webhook (callback/route.ts) for disparado.
+        return NextResponse.json({ 
+          success: true,
+          status: "PENDING",
+          message: "Verifique o seu telemóvel para confirmar o pagamento.",
+          transactionId: transaction.id
+        }, { status: 200 });
       }
     } else {
       // MODO SIMULAÇÃO (Enquanto esperamos chaves)

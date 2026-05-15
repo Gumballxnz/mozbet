@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { User, Wallet, LogOut, MessageCircle, Bell, Zap, AlertTriangle, ExternalLink, X } from "lucide-react";
 import { formatMZN } from "@/lib/utils";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo, useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { playSound } from "@/lib/sounds";
@@ -21,12 +22,20 @@ const AVATARS = [
 
 export function MobileHeader() {
   const { t } = useTranslation();
+  const router = useRouter();
   const { isLoggedIn, user, openLogin, openRegister, setChatOpen, setDepositOpen } = useAppStore();
 
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [hasUnread, setHasUnread] = useState(false);
   const [activeTab, setActiveTab] = useState<'promos' | 'notifs'>('notifs');
+  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
+
+  const handleGoToProfile = () => {
+    setIsLoadingProfile(true);
+    router.push('/perfil');
+    setTimeout(() => setIsLoadingProfile(false), 2000);
+  };
 
   const getRelativeTime = (dateString: string) => {
     const diffInMs = new Date().getTime() - new Date(dateString).getTime();
@@ -151,16 +160,21 @@ export function MobileHeader() {
                   )}
                 </Button>
                 
-                <Link href="/perfil">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="w-9 h-9 rounded-full bg-surface p-0 overflow-hidden border-2 border-primary/50 shadow-[0_0_10px_rgba(0,255,127,0.2)]"
-                    title="Perfil"
-                  >
-                    <img src={user.avatar || defaultAvatar} alt="Avatar" className="w-full h-full object-cover" />
-                  </Button>
-                </Link>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="w-9 h-9 rounded-full bg-surface p-0 overflow-hidden border-2 border-primary/50 shadow-[0_0_10px_rgba(0,255,127,0.2)] relative"
+                  title="Perfil"
+                  onClick={handleGoToProfile}
+                  disabled={isLoadingProfile}
+                >
+                  <img src={user.avatar || defaultAvatar} alt="Avatar" className={`w-full h-full object-cover transition-opacity ${isLoadingProfile ? 'opacity-30' : 'opacity-100'}`} />
+                  {isLoadingProfile && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                    </div>
+                  )}
+                </Button>
                 
                 <Button
                   variant="ghost"

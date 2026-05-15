@@ -35,9 +35,21 @@ export async function POST(req: Request) {
     const body = JSON.parse(rawBody);
     console.log("[Debito Pay Webhook] Evento Recebido:", body.event, body.data);
 
-    // O source_id é o nosso transaction.id (que enviamos no pedido processPayment)
-    // Se a Debito Pay devolver no reference, nós pegamos daí, senão do source_id
-    const transactionId = body.data?.source_id || body.data?.reference;
+    // O webhook agora busca a transação pelo provider_reference que guardamos
+    const paymentId = body.data?.payment_id;
+    let transactionId = body.data?.source_id || body.data?.reference;
+
+    if (paymentId) {
+      const { data: tx } = await supabaseAdmin
+        .from("transactions")
+        .select("id")
+        .eq("provider_reference", paymentId)
+        .single();
+      
+      if (tx) {
+        transactionId = tx.id;
+      }
+    }
 
     if (!transactionId) {
       console.error("[Debito Pay Webhook] ID de transação ausente no payload.");

@@ -89,6 +89,14 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: debitopayRes.error }, { status: 400 });
       } else {
         const status = debitopayRes.data?.status;
+        const paymentId = debitopayRes.data?.payment_id;
+        
+        if (paymentId) {
+          await supabaseAdmin
+            .from("transactions")
+            .update({ provider_reference: paymentId })
+            .eq("id", transaction.id);
+        }
         
         if (status === "success") {
             // M-Pesa (síncrono) - Aprovado na hora

@@ -45,7 +45,7 @@ export const translations = {
 
     // Depósito
     depositTitle: "DEPOSITAR",
-    depositMin: "Valor mínimo é 1 MT",
+    depositMin: "O valor mínimo de depósito é 10 MT",
     depositMax: "Valor máximo é 25.000 MT",
     invalidPhone: "Número inválido. Use 9 dígitos (84/85/86/87).",
     processing: "A PROCESSAR...",
@@ -149,7 +149,7 @@ export const translations = {
 
     // Deposit
     depositTitle: "DEPOSIT",
-    depositMin: "Minimum amount is 1 MT",
+    depositMin: "Minimum deposit amount is 10 MT",
     depositMax: "Maximum amount is 25,000 MT",
     invalidPhone: "Invalid number. Use 9 digits (84/85/86/87).",
     processing: "PROCESSING...",

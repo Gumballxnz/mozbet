@@ -94,7 +94,7 @@ export async function POST(req: Request) {
         if (paymentId) {
           await supabaseAdmin
             .from("transactions")
-            .update({ provider_reference: paymentId })
+            .update({ reference: paymentId })
             .eq("id", transaction.id);
         }
         

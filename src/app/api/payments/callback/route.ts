@@ -35,7 +35,7 @@ export async function POST(req: Request) {
     const body = JSON.parse(rawBody);
     console.log("[Debito Pay Webhook] Evento Recebido:", body.event, body.data);
 
-    // O webhook agora busca a transação pelo provider_reference que guardamos
+    // O webhook agora busca a transação pelo reference que guardamos
     const paymentId = body.data?.payment_id;
     let transactionId = body.data?.source_id || body.data?.reference;
 
@@ -43,7 +43,7 @@ export async function POST(req: Request) {
       const { data: tx } = await supabaseAdmin
         .from("transactions")
         .select("id")
-        .eq("provider_reference", paymentId)
+        .eq("reference", paymentId)
         .single();
       
       if (tx) {

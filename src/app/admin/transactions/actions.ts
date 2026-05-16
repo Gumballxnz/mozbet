@@ -80,7 +80,7 @@ export async function forceApproveDeposit(txId: string) {
 
 /**
  * Reconcilia todas as transações PENDENTES com a API da Debito Pay.
- * Para cada transação que tenha provider_reference, consulta o estado real
+ * Para cada transação que tenha reference, consulta o estado real
  * e aprova ou marca como falha automaticamente.
  */
 export async function reconcilePendingTransactions() {
@@ -90,7 +90,7 @@ export async function reconcilePendingTransactions() {
 
     const { data: pendingTxs, error: fetchError } = await supabaseAdmin
       .from("transactions")
-      .select("id, provider_reference, amount, user_id, created_at")
+      .select("id, reference, amount, user_id, created_at")
       .eq("status", "PENDING")
       .eq("type", "DEPOSIT")
       .gte("created_at", since)
@@ -106,14 +106,14 @@ export async function reconcilePendingTransactions() {
     let skipped = 0;
 
     for (const tx of pendingTxs) {
-      // Se não tiver provider_reference, não podemos verificar na DebitoPay
-      if (!tx.provider_reference) {
+      // Se não tiver reference, não podemos verificar na DebitoPay
+      if (!tx.reference) {
         skipped++;
         continue;
       }
 
       try {
-        const result = await checkDebitoPayStatus(tx.provider_reference);
+        const result = await checkDebitoPayStatus(tx.reference);
 
         if (!result.success) {
           console.warn(`[Reconciliação] Erro ao verificar tx ${tx.id}:`, result.error);

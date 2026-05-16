@@ -21,7 +21,7 @@ export async function POST(req: Request) {
     const rawBody = await req.text();
     
     // Tentamos fazer parse só para log
-    let bodyObj = { event: "unknown", data: {} };
+    let bodyObj: any = { event: "unknown", data: {} };
     try {
       bodyObj = JSON.parse(rawBody);
     } catch(e) {}

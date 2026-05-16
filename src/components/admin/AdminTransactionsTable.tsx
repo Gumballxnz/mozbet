@@ -3,11 +3,11 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { formatMZN } from "@/lib/utils";
-import { ArrowDownLeft, ArrowUpRight, CheckCircle2, Clock, XCircle, Search } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, CheckCircle2, Clock, XCircle, Search, RefreshCw } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { getLatestTransactions, getMoreTransactions } from "@/app/admin/transactions/actions";
+import { getLatestTransactions, getMoreTransactions, reconcilePendingTransactions } from "@/app/admin/transactions/actions";
 
 interface Transaction {
   id: string;
@@ -29,6 +29,7 @@ export function AdminTransactionsTable({ initialTransactions, initialTotalCount 
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [isSyncing, setIsSyncing] = useState(false);
 
   useEffect(() => {
     // Polling seguro usando Server Actions a cada 3 segundos
@@ -69,7 +70,43 @@ export function AdminTransactionsTable({ initialTransactions, initialTotalCount 
     }
   };
 
+  // Sincronizar pagamentos pendentes com a DebitoPay
+  const handleSyncPayments = async () => {
+    setIsSyncing(true);
+    toast.loading("A verificar pagamentos na DebitoPay...", { id: "sync" });
+    
+    try {
+      const result = await reconcilePendingTransactions();
+      
+      if (result.error) {
+        toast.error(`Erro na sincronização: ${result.error}`, { id: "sync" });
+      } else if (result.approved === 0 && result.failed === 0) {
+        toast.info(`${result.checked} transações verificadas. Nenhuma alteração necessária (${result.skipped} ainda pendentes na DebitoPay).`, { id: "sync" });
+      } else {
+        toast.success(
+          `Sincronização concluída! ✅ ${result.approved} aprovadas, ❌ ${result.failed} falhadas, ⏳ ${result.skipped} ainda pendentes.`, 
+          { id: "sync", duration: 8000 }
+        );
+      }
 
+      // Atualizar a lista após sincronização
+      const latest = await getLatestTransactions();
+      if (latest && latest.length > 0) {
+        setTransactions(prev => {
+          const newTxsMap = new Map(latest.map(t => [t.id, t]));
+          const merged = [...latest as Transaction[]];
+          for (const t of prev) {
+            if (!newTxsMap.has(t.id)) merged.push(t);
+          }
+          return merged;
+        });
+      }
+    } catch (err) {
+      toast.error("Erro ao sincronizar pagamentos", { id: "sync" });
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   const filtered = transactions.filter(t => {
     const matchesSearch = t.phone?.includes(search) || t.type.includes(search.toUpperCase());
@@ -145,6 +182,7 @@ export function AdminTransactionsTable({ initialTransactions, initialTotalCount 
             >
               <option value="ALL">Todos os Estados</option>
               <option value="COMPLETED">✅ Aprovadas</option>
+              <option value="PENDING">⏳ Pendentes</option>
               <option value="FAILED">❌ Falhadas</option>
             </select>
           </div>
@@ -156,7 +194,15 @@ export function AdminTransactionsTable({ initialTransactions, initialTotalCount 
             Baixar Extrato
           </Button>
 
-
+          {/* Botão Sincronizar Pagamentos Pendentes */}
+          <Button 
+            onClick={handleSyncPayments}
+            disabled={isSyncing}
+            className="bg-yellow-500/20 text-yellow-400 border border-yellow-500/50 font-bold h-10 px-4 hover:bg-yellow-500/30 disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
+            {isSyncing ? "A Sincronizar..." : "Sincronizar Pagamentos"}
+          </Button>
 
           <div className="relative flex-1 sm:w-60">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -225,7 +271,7 @@ export function AdminTransactionsTable({ initialTransactions, initialTotalCount 
               
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="px-6 py-12 text-center text-muted-foreground font-medium">
+                  <td colSpan={5} className="px-6 py-12 text-center text-muted-foreground font-medium">
                     Nenhuma transação encontrada.
                   </td>
                 </tr>
@@ -250,3 +296,4 @@ export function AdminTransactionsTable({ initialTransactions, initialTotalCount 
     </div>
   );
 }
+

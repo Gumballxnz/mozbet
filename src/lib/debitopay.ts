@@ -1,6 +1,53 @@
 
-
 export type DebitoPaymentMethod = "mpesa" | "emola";
+
+const DEBITOPAY_API_URL = "https://gyqoaningqhurhvdugne.supabase.co/functions/v1/payment-orchestrator";
+
+/**
+ * Consulta o estado de um pagamento na API da Debito Pay.
+ * Usa o endpoint check-status do payment-orchestrator.
+ */
+export async function checkDebitoPayStatus(paymentId: string): Promise<{
+  success: boolean;
+  status?: string;
+  data?: any;
+  error?: string;
+}> {
+  try {
+    const API_KEY = process.env.DEBITOPAY_API_KEY;
+    if (!API_KEY) return { success: false, error: "API Key não configurada" };
+
+    const response = await fetch(DEBITOPAY_API_URL, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        action: "check-status",
+        payment_id: paymentId,
+      }),
+    });
+
+    const textData = await response.text();
+    let data;
+    try {
+      data = JSON.parse(textData);
+    } catch {
+      return { success: false, error: `Resposta inválida da DebitoPay: ${textData.substring(0, 100)}` };
+    }
+
+    if (!data.success) {
+      return { success: false, error: data.error || "Erro ao verificar estado" };
+    }
+
+    console.log(`[Debito Pay] check-status para ${paymentId}:`, data.payment?.status);
+    return { success: true, status: data.payment?.status, data: data.payment };
+  } catch (error: any) {
+    console.error("[Debito Pay] Erro ao verificar estado:", error.message);
+    return { success: false, error: "Erro de conexão ao verificar estado" };
+  }
+}
 
 export async function processDebitoPayment(
   phone: string,
@@ -48,7 +95,7 @@ export async function processDebitoPayment(
 
     let response;
     try {
-      response = await fetch("https://gyqoaningqhurhvdugne.supabase.co/functions/v1/payment-orchestrator", {
+      response = await fetch(DEBITOPAY_API_URL, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${API_KEY}`,

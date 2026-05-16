@@ -18,7 +18,7 @@ import { formatMZN } from "@/lib/utils";
 import { EMOLA_LOGO, MPESA_LOGO } from "@/lib/logos";
 import { Wallet, Check } from "lucide-react";
 
-const AMOUNTS = [10, 50, 200, 500, 1000, 5000];
+const AMOUNTS = [10, 50, 100, 500, 1000, 5000];
 
 /**
  * Detecta automaticamente o método de pagamento com base no prefixo do número.

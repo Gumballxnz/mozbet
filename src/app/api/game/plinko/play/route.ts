@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
 
     const newBalance = await deductBalance(payload.id, validation.balance!, betAmount);
 
-    const playerWins = shouldPlayerWin(payload.id);
+    const playerWins = await shouldPlayerWin(payload.id);
 
     const MULTIPLIERS = pins === 16 ? MULTIPLIERS_16 : pins === 14 ? MULTIPLIERS_14 : MULTIPLIERS_12;
 

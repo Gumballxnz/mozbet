@@ -72,11 +72,12 @@ export function GameCatalog() {
       return;
     }
 
-    // Regra de segurança: Usuário comum com saldo 0 não pode entrar nos jogos
-    if (!user?.isAdmin && (user?.balance || 0) <= 0) {
+    // Regra de segurança: Usuário comum precisa ter feito pelo menos um depósito para jogar (exceto aviator e mines)
+    const isFreeAccessGame = gameId === "aviator" || gameId === "mines";
+    if (!isFreeAccessGame && !user?.isAdmin && !user?.hasDeposited) {
       playSound('notification');
-      toast.error("Saldo Insuficiente", {
-        description: "Adicione saldo à sua conta para jogar.",
+      toast.error("Depósito Necessário", {
+        description: "Faça um depósito para ter acesso a este jogo.",
         action: {
           label: "Depositar",
           onClick: () => useAppStore.getState().setDepositOpen(true),

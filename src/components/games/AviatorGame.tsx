@@ -186,8 +186,15 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
     fetchHistory();
     fetchTopBets();
     
-    const channel = supabase.channel(`game_aviator_bets`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'bets', filter: `game_id=eq.aviator` }, (payload) => {
+    if (!roundId) return;
+
+    const channel = supabase.channel(`game_aviator_bets_${roundId}`)
+      .on('postgres_changes', { 
+        event: 'INSERT', 
+        schema: 'public', 
+        table: 'bets', 
+        filter: `round_id=eq.${roundId}` 
+      }, (payload) => {
         const data = payload.new as any;
         setRoundBets(prev => {
             if (prev.some(b => b.user === maskUserId(data.user_id))) return prev;
@@ -199,12 +206,17 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
             }, ...prev].slice(0, 50);
         });
       })
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'bets', filter: `game_id=eq.aviator` }, (payload) => {
+      .on('postgres_changes', { 
+        event: 'UPDATE', 
+        schema: 'public', 
+        table: 'bets', 
+        filter: `round_id=eq.${roundId}` 
+      }, (payload) => {
         const data = payload.new as any;
         if (data.status === 'won') {
           setRoundBets(prev => prev.map(b => {
               if (b.user === maskUserId(data.user_id)) {
-                  return { ...b, cashedAt: data.crash_point, win: data.win_amount };
+                  return { ...b, cashedAt: data.cashout_multiplier, win: data.win_amount };
               }
               return b;
           }));
@@ -215,7 +227,7 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [fetchHistory, fetchTopBets]);
+  }, [roundId, fetchHistory, fetchTopBets]);
 
   const handleBet = async (boxIndex: number, amount: number) => {
     if (!isLoggedIn) { toast.error("Faça login para apostar!"); return; }
@@ -409,16 +421,63 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
             </div>
             
             <div className="absolute inset-0 flex flex-col items-center justify-center z-10 pointer-events-none p-4">
+              <style>{`
+                @keyframes spin-propeller {
+                  0% { transform: rotate(0deg); }
+                  100% { transform: rotate(360deg); }
+                }
+                .propeller {
+                  animation: spin-propeller 0.05s linear infinite;
+                  transform-origin: 0px 0px;
+                }
+                .propeller-slow {
+                  animation: spin-propeller 0.4s linear infinite;
+                  transform-origin: 0px 0px;
+                }
+                @keyframes float-plane {
+                  0%, 100% { transform: translateY(0px) rotate(0deg); }
+                  25% { transform: translateY(-3px) rotate(1.5deg); }
+                  75% { transform: translateY(3px) rotate(-1.5deg); }
+                }
+                .flying-plane {
+                  animation: float-plane 1s ease-in-out infinite;
+                }
+                @keyframes grid-scroll {
+                  0% { background-position: 0px 0px; }
+                  100% { background-position: -50px 50px; }
+                }
+                @keyframes fly-away {
+                  0% { transform: translate(90px, var(--crashed-y)) rotate(var(--crashed-angle)); opacity: 1; }
+                  100% { transform: translate(140px, -40px) rotate(-25deg); opacity: 0; }
+                }
+                .plane-fly-away {
+                  animation: fly-away 0.8s cubic-bezier(0.25, 1, 0.50, 1) forwards;
+                }
+              `}</style>
+
+              {/* GRADE DE FUNDO ANIMADA NO ESTILO SPRIBE */}
+              <div 
+                className="absolute inset-0 opacity-[0.08] pointer-events-none"
+                style={{
+                  backgroundImage: `
+                    linear-gradient(to right, rgba(255,255,255,0.15) 1px, transparent 1px),
+                    linear-gradient(to bottom, rgba(255,255,255,0.15) 1px, transparent 1px)
+                  `,
+                  backgroundSize: "50px 50px",
+                  animation: phase === "rising" ? "grid-scroll 1.2s linear infinite" : "none"
+                }}
+              />
+
               {phase === "loading" && (
                 <div className="w-16 h-16 border-4 border-red-600/20 border-t-red-600 rounded-full animate-spin" />
               )}
 
               {phase === "waiting" && (
-                <div className="flex flex-col items-center gap-2 animate-in fade-in zoom-in duration-500">
+                <div className="flex flex-col items-center gap-2 animate-in fade-in zoom-in duration-500 z-20">
                   <div className="w-20 h-20 bg-red-600/10 rounded-full flex items-center justify-center border border-red-600/20 mb-2">
                      <div className="w-10 h-10 animate-bounce"><svg width="1em" height="1em" viewBox="0 0 512 512" className="fill-red-600 w-full h-full drop-shadow-[0_5px_15px_rgba(229,57,53,0.8)]"><path d="M492.3 227.1L277.5 131.6l-50.6-96c-4.4-8.3-12.8-13.6-22.1-13.6-11.8 0-21.3 9.6-21.3 21.3 0 2.8 1.1 5.5 3.2 7.5L257.6 127 124.9 67.5c-4.3-1.9-9.1-2.4-13.7-1.3L42.5 83c-9.6 2.4-16.1 11.2-16.1 21.1 0 7.8 4.2 14.8 11.2 18L130 166.4l-48.8 49-65.7-10.4c-3.1-.5-6.3.1-8.9 1.7-4.8 2.9-7.1 8.6-5.5 13.9l19.5 64.9c2 6.7 8.1 11.3 15.1 11.3 1 0 2-.1 3-.3l189.6-39.6c4.6-1 9.4-.6 13.8 1l185.3 69.1c11.3 4.2 23.9-1.5 28.1-12.8 2.6-6.9 1.5-14.7-2.9-20.5-5.9-7.9-14.9-12.3-24.6-12.3z"/></svg></div>
                   </div>
-                  <div className="text-white text-lg lg:text-xl font-black uppercase tracking-widest text-shadow-lg">WAITING FOR NEXT ROUND</div>
+                  <div className="text-white text-lg lg:text-xl font-black uppercase tracking-widest text-shadow-lg text-center">AGUARDANDO PRÓXIMA RODADA</div>
                   <div className="text-gray-400 font-black text-2xl lg:text-4xl mt-2 flex items-baseline gap-1">
                      <span className="animate-pulse">00:{countdown < 10 ? `0${countdown}` : countdown}</span>
                   </div>
@@ -428,77 +487,135 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
                 </div>
               )}
 
-              {phase === "rising" && (
-                <div className="flex flex-col items-center justify-center relative w-full h-full">
-                  <span className="absolute font-black text-white drop-shadow-[0_10px_20px_rgba(0,0,0,0.9)] z-20" style={{ fontSize: "clamp(60px, 12vw, 120px)", lineHeight: 1 }}>
-                    {multiplier.toFixed(2)}x
-                  </span>
-                  
-                  {/* ANIMAÇÃO DO AVIÃO E CURVA — ESTILO SPRIBE */}
-                  <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                    {(() => {
-                      // Curva exponencial: começa rasteira e sobe cada vez mais
-                      const logVal = Math.log(multiplier) / Math.log(20); // 0..1 satura em 20x
-                      const curveT = Math.min(logVal, 0.95);
-
-                      // Ponto final da curva: X fixo na direita, Y sobe com o multiplicador
-                      const endX = 90;
-                      const endY = Math.max(5, 92 - curveT * 85);
-
-                      // Ponto de controlo da curva cúbica: puxa para baixo no início, sobe ao fim
-                      const cp1X = 40;
-                      const cp1Y = 92; // controlo inicial rente ao chão
-                      const cp2X = endX - 10;
-                      const cp2Y = endY + (92 - endY) * 0.1;
-
-                      const d = `M 5 92 C ${cp1X} ${cp1Y}, ${cp2X} ${cp2Y}, ${endX} ${endY}`;
-                      const fill = `M 5 92 C ${cp1X} ${cp1Y}, ${cp2X} ${cp2Y}, ${endX} ${endY} L ${endX} 92 Z`;
-
-                      // Ângulo do avião na ponta da curva
-                      const angle = -Math.min(curveT * 65, 65);
-
-                      return (
-                        <svg viewBox="0 0 100 100" className="w-full h-full" preserveAspectRatio="none">
-                          <defs>
-                            <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="0%" stopColor="rgba(229, 57, 53, 0.35)" />
-                              <stop offset="100%" stopColor="rgba(229, 57, 53, 0.0)" />
-                            </linearGradient>
-                          </defs>
-                          {/* Área preenchida sob a curva */}
-                          <path d={fill} fill="url(#grad)" />
-                          {/* Linha da curva */}
-                          <path
-                            d={d}
-                            fill="none"
-                            stroke="#E53935"
-                            strokeWidth="2.5"
-                            strokeLinecap="round"
-                            style={{ filter: "drop-shadow(0 0 6px rgba(229,57,53,0.8))" }}
-                          />
-                          {/* Avião na ponta — posição em % do viewBox */}
-                          <g transform={`translate(${endX}, ${endY}) rotate(${angle})`}>
-                            <path
-                              d="M0,-3 L8,0 L0,3 L1,0 Z"
-                              fill="#E53935"
-                              style={{ filter: "drop-shadow(0 0 4px rgba(229,57,53,1))" }}
-                            />
-                          </g>
-                        </svg>
-                      );
-                    })()}
-                  </div>
-                </div>
-              )}
-
               {phase === "crashed" && (
-                <div className="flex flex-col items-center gap-2 animate-in fade-in zoom-in-95 duration-200">
+                <div className="flex flex-col items-center justify-center gap-2 animate-in fade-in zoom-in-95 duration-200 z-20">
                   <div className="bg-[#E53935] text-white font-black text-xl lg:text-3xl uppercase tracking-tighter px-10 py-3 rounded-2xl shadow-2xl rotate-[-2deg]">
                     FUGIU PARA LONGE!
                   </div>
                   <span className="font-black text-[#E53935] drop-shadow-[0_5px_15px_rgba(229,57,53,0.4)]" style={{ fontSize: "clamp(60px, 12vw, 110px)", lineHeight: 1 }}>
                     {multiplier.toFixed(2)}x
                   </span>
+                </div>
+              )}
+
+              {/* CURVA DE VOO E AVIÃO PREMIUM */}
+              {(phase === "rising" || phase === "crashed" || phase === "waiting") && (
+                <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                  {(() => {
+                    const logVal = Math.log(multiplier) / Math.log(20);
+                    const curveT = Math.min(logVal, 0.95);
+
+                    const endX = phase === "waiting" ? 8 : 90;
+                    const endY = phase === "waiting" ? 92 : Math.max(5, 92 - curveT * 85);
+
+                    const cp1X = 40;
+                    const cp1Y = 92;
+                    const cp2X = endX - 10;
+                    const cp2Y = endY + (92 - endY) * 0.1;
+
+                    const d = `M 5 92 C ${cp1X} ${cp1Y}, ${cp2X} ${cp2Y}, ${endX} ${endY}`;
+                    const fill = `M 5 92 C ${cp1X} ${cp1Y}, ${cp2X} ${cp2Y}, ${endX} ${endY} L ${endX} 92 Z`;
+
+                    const angle = phase === "waiting" ? 0 : -Math.min(curveT * 40, 40);
+
+                    return (
+                      <svg viewBox="0 0 100 100" className="w-full h-full" preserveAspectRatio="none">
+                        <defs>
+                          <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="rgba(229, 57, 53, 0.45)" />
+                            <stop offset="100%" stopColor="rgba(229, 57, 53, 0.0)" />
+                          </linearGradient>
+                        </defs>
+                        
+                        {/* Curva vermelha e área sob a curva */}
+                        {phase !== "waiting" && (
+                          <>
+                            <path d={fill} fill="url(#grad)" />
+                            <path
+                              d={d}
+                              fill="none"
+                              stroke="#E53935"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              style={{ filter: "drop-shadow(0 0 5px rgba(229,57,53,0.85))" }}
+                            />
+                          </>
+                        )}
+
+                        {/* O Aviãozinho Estilizado */}
+                        <g 
+                          style={{
+                            "--crashed-y": `${endY}%`,
+                            "--crashed-angle": `${angle}deg`
+                          } as React.CSSProperties}
+                          className={phase === "crashed" ? "plane-fly-away" : ""}
+                          transform={phase === "crashed" ? undefined : `translate(${endX}, ${endY}) rotate(${angle})`}
+                        >
+                          <g className={phase === "rising" ? "flying-plane" : ""} style={{ transformOrigin: "0px 0px" }}>
+                            <svg viewBox="0 0 48 32" width="52" height="35" x="-26" y="-17" className="overflow-visible">
+                              {/* Asa Traseira / Cauda */}
+                              <path 
+                                d="M 6 16 L 1 7 C 0.5 6, 2 5, 4 6 L 9 13 Z" 
+                                fill="#D32F2F" 
+                                stroke="#B71C1C"
+                                strokeWidth="0.5"
+                              />
+                              {/* Cauda Horizontal */}
+                              <path d="M 8 16 L 3 19 L 3 20 L 9 18 Z" fill="#B71C1C" />
+
+                              {/* Corpo Principal (Vermelho esportivo) */}
+                              <path 
+                                d="M 6 16 C 6 12, 12 8, 22 8 C 32 8, 38 10, 42 16 C 38 22, 32 24, 22 24 C 12 24, 6 20, 6 16 Z" 
+                                fill="#E53935" 
+                                stroke="#B71C1C"
+                                strokeWidth="0.5"
+                                style={{ filter: "drop-shadow(0 3px 5px rgba(0,0,0,0.6))" }}
+                              />
+                              
+                              {/* Faixa decorativa branca no corpo */}
+                              <path d="M 12 11 C 18 10, 24 11, 28 13 C 26 18, 20 20, 14 20 Z" fill="#FFFFFF" opacity="0.25" />
+                              
+                              {/* Cockpit / Cabine (Azul c/ reflexo) */}
+                              <path 
+                                d="M 22 11 C 24 8, 28 8, 32 11 C 30 15, 24 15, 22 11 Z" 
+                                fill="#E0F7FA" 
+                                stroke="#00ACC1"
+                                strokeWidth="0.5"
+                              />
+
+                              {/* Asa Inferior */}
+                              <path 
+                                d="M 20 18 L 24 29 C 24.5 30, 26 30, 27 29 L 24 18 Z" 
+                                fill="#B71C1C" 
+                                stroke="#8E0C0C"
+                                strokeWidth="0.5"
+                              />
+
+                              {/* Asa Superior */}
+                              <path 
+                                d="M 22 12 L 28 2 C 28.5 1, 30 1, 31 2 L 26 12 Z" 
+                                fill="#E53935" 
+                                stroke="#B71C1C"
+                                strokeWidth="0.5"
+                              />
+
+                              {/* Nariz do Avião (Spinner) */}
+                              <path d="M 42 13 C 44 13, 44 19, 42 19 Z" fill="#B71C1C" stroke="#8E0C0C" strokeWidth="0.5" />
+                              
+                              {/* Hélice Giratória */}
+                              <g transform="translate(43, 16)">
+                                <g className={phase === "waiting" ? "propeller-slow" : "propeller"}>
+                                  <path d="M 0 0 L 0 -13 C -1 -13, 1 -13, 0 0 Z" fill="#F5F5F5" opacity="0.9" />
+                                  <path d="M 0 0 L 0 13 C -1 13, 1 13, 0 0 Z" fill="#F5F5F5" opacity="0.9" />
+                                  <circle cx="0" cy="0" r="2.2" fill="#FFFFFF" />
+                                </g>
+                              </g>
+                            </svg>
+                          </g>
+                        </g>
+                      </svg>
+                    );
+                  })()}
                 </div>
               )}
             </div>

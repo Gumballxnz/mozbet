@@ -19,10 +19,12 @@ export const supabaseAdmin = createClient(
 const getJwtSecretKey = () => {
   const secret = process.env.JWT_SECRET;
   if (!secret) {
+    // SEGURANÇA: Em produção, JWT_SECRET é OBRIGATÓRIO. Sem ele, tokens podem ser forjados.
     if (process.env.NODE_ENV === "production") {
-      throw new Error("JWT_SECRET is not set in environment variables");
+      throw new Error("FATAL: JWT_SECRET não definido nas variáveis de ambiente. A aplicação não pode iniciar em produção sem esta chave.");
     }
-    return "default-dev-secret-key-do-not-use-in-production-123456789";
+    console.warn("⚠️ [SEGURANÇA] JWT_SECRET não definido. Usando chave de desenvolvimento. NÃO usar em produção!");
+    return "dev-only-local-secret-" + Date.now().toString(36);
   }
   return secret;
 };

@@ -24,7 +24,7 @@ export async function POST(req: Request) {
     let newBalance = await deductBalance(payload.id, validation.balance!, Number(betAmount));
 
     // 3. O algoritmo decide se ganha ou perde
-    const wins = shouldPlayerWin(payload.id);
+    const wins = await shouldPlayerWin(payload.id);
 
     let multiplier = 0;
     let winAmount = 0;

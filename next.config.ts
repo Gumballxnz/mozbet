@@ -1,5 +1,8 @@
 import type { NextConfig } from "next";
 
+// SEGURANÇA: IP do servidor VPS lido de variável de ambiente (nunca hardcoded no código público)
+const VPS_URL = process.env.VPS_SOCKET_URL || "http://localhost:3001";
+
 const nextConfig: NextConfig = {
   // Otimizações de performance
   poweredByHeader: false, // Remove header "X-Powered-By" (segurança)
@@ -11,13 +14,21 @@ const nextConfig: NextConfig = {
       {
         source: "/(.*)",
         headers: [
-          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          { key: "X-Frame-Options", value: "DENY" },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           { key: "X-XSS-Protection", value: "1; mode=block" },
           {
             key: "Content-Security-Policy",
-            value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://apis.google.com https://static.cloudflareinsights.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' blob: data: https://api.dicebear.com https://objectstorage.ca-montreal-1.oraclecloud.com https://www.mozbet.online https://www.google-analytics.com https://www.googletagmanager.com; connect-src 'self' wss://*.supabase.co https://*.supabase.co https://cloudflareinsights.com https://www.google-analytics.com ws://155.248.224.133:3001 http://155.248.224.133:3001; frame-ancestors 'self';",
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://apis.google.com https://static.cloudflareinsights.com https://www.googletagmanager.com",
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+              "font-src 'self' https://fonts.gstatic.com",
+              "img-src 'self' blob: data: https://api.dicebear.com https://objectstorage.ca-montreal-1.oraclecloud.com https://www.mozbet.online https://www.google-analytics.com https://www.googletagmanager.com",
+              "connect-src 'self' wss://*.supabase.co https://*.supabase.co https://cloudflareinsights.com https://www.google-analytics.com",
+              "frame-ancestors 'none'",
+            ].join("; ") + ";",
           },
           {
             key: "Permissions-Policy",
@@ -33,7 +44,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/socket.io/:path*",
-        destination: "http://155.248.224.133:3001/socket.io/:path*",
+        destination: `${VPS_URL}/socket.io/:path*`,
       },
     ];
   },

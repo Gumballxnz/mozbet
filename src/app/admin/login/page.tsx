@@ -151,7 +151,7 @@ export default function AdminLoginPage() {
                     <span className="text-lg mr-1" role="img">🇲🇿</span>
                     <span className="text-white font-bold text-sm">+258</span>
                   </div>
-                  <Input type="tel" placeholder="840683435"
+                  <Input type="tel" placeholder="8XXXXXXXX"
                     className="border-none bg-transparent h-12 font-mono-data text-white focus-visible:ring-0 px-3 shadow-none"
                     value={phone} onChange={handlePhoneChange} disabled={loading} required />
                 </div>

@@ -23,6 +23,13 @@ const AVATARS = [
   "https://api.dicebear.com/7.x/adventurer/svg?seed=Zoe&backgroundColor=ec4899",
 ];
 
+const maskPhone = (phone?: string) => {
+  if (!phone) return "";
+  const cleaned = phone.replace(/\D/g, "");
+  if (cleaned.length < 7) return phone;
+  return `${cleaned.slice(0, 2)}•••••${cleaned.slice(-2)}`;
+};
+
 export default function PerfilPage() {
   const { user, logout, setDepositOpen } = useAppStore();
   const balance = user?.balance || 0;
@@ -249,7 +256,7 @@ export default function PerfilPage() {
         </div>
 
         <div className="text-center space-y-1">
-          <h2 className="text-2xl font-black text-white tracking-tight">{user.phone}</h2>
+          <h2 className="text-2xl font-black text-white tracking-tight">{maskPhone(user.phone)}</h2>
           <div className="bg-white/5 px-3 py-0.5 rounded-full inline-block">
              <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest opacity-80">ID: {shortId}</p>
           </div>

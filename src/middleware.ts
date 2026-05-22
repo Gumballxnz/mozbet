@@ -20,10 +20,11 @@ export async function middleware(request: NextRequest) {
   // 1. ROTAS DE API — Proteção CORS e Anti-Clone Estrita
   if (url.startsWith("/api/")) {
     const isLocalhost = request.url.includes("localhost");
-    const isVercel = origin.endsWith(".vercel.app");
+    // SEGURANÇA: Apenas aceitar deploys Vercel com prefixo "mozbet-" (evita clones em *.vercel.app)
+    const isVercelAllowed = origin.startsWith("https://mozbet-") && origin.endsWith(".vercel.app");
     
-    // Se for um pedido de outra origem e não estiver na lista permitida, nem for da vercel, bloqueia!
-    if (origin && !ALLOWED_ORIGINS.includes(origin) && !isLocalhost && !isVercel) {
+    // Se for um pedido de outra origem e não estiver na lista permitida, bloqueia!
+    if (origin && !ALLOWED_ORIGINS.includes(origin) && !isLocalhost && !isVercelAllowed) {
       console.warn(`[SEGURANÇA] Bloqueio de Clone/API Request externo: Origin=${origin} URL=${request.url}`);
       return new NextResponse(
         JSON.stringify({ error: "Acesso à API bloqueado por política CORS estrita.", origin }),
@@ -50,7 +51,11 @@ export async function middleware(request: NextRequest) {
     }
 
     try {
-      const secret = process.env.JWT_SECRET || "default-dev-secret-key-do-not-use-in-production-123456789";
+      const secret = process.env.JWT_SECRET;
+      if (!secret) {
+        console.error("[SEGURANÇA] JWT_SECRET não definido no middleware!");
+        return NextResponse.redirect(new URL("/", request.url));
+      }
       const { payload } = await jwtVerify(token, new TextEncoder().encode(secret));
       
       // Se a rota for admin, verificar se é admin no Payload JWT
@@ -72,7 +77,7 @@ export async function middleware(request: NextRequest) {
   const response = NextResponse.next();
   
   // Reforço extra caso o NextConfig não consiga injetar nalgumas rotas
-  response.headers.set("X-Frame-Options", "DENY"); // Bloqueia iframe clone
+  response.headers.set("X-Frame-Options", "DENY"); // Bloqueia embed em iframes de terceiros (anti-clone)
   response.headers.set("X-Content-Type-Options", "nosniff");
   response.headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
 

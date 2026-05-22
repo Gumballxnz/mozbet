@@ -46,6 +46,7 @@ export function DepositModal() {
 
   const [amount, setAmount] = useState<string>("200");
   const [step, setStep] = useState<"form" | "sent">("form");
+  const [isLoading, setIsLoading] = useState(false);
 
   // Telefone registado na conta — não pode ser alterado
   const phone = user?.phone || "";
@@ -73,8 +74,7 @@ export function DepositModal() {
       return;
     }
 
-    // Muda imediatamente a UI para o modo "Pedido Enviado" (não bloqueia o utilizador)
-    setStep("sent");
+    setIsLoading(true);
     
     // Inicia a transação síncrona com a e2Payments em background
     fetch("/api/payments/deposit", {
@@ -87,8 +87,13 @@ export function DepositModal() {
       
       if (!res.ok) {
         toast.error("Erro no Pagamento", { description: data.error || "Ocorreu um erro no processamento." });
+        setIsLoading(false);
         return;
       }
+      
+      // Só mudamos para o ecrã de enviado/sucesso se o request foi aceite
+      setStep("sent");
+      setIsLoading(false);
       
       // Quando retorna com sucesso, buscar o novo saldo real
       const meRes = await fetch("/api/auth/me", { cache: "no-store" });
@@ -108,6 +113,7 @@ export function DepositModal() {
     })
     .catch((error) => {
       toast.error("Erro de Ligação", { description: "Verifica a tua internet e tenta novamente." });
+      setIsLoading(false);
     });
   };
 
@@ -212,9 +218,17 @@ export function DepositModal() {
           )}
             <Button
             type="submit"
-            className="w-full h-12 text-lg font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-[0_0_15px_rgba(34,197,94,0.3)] transition-all"
+            disabled={isLoading}
+            className="w-full h-12 text-lg font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-[0_0_15px_rgba(34,197,94,0.3)] transition-all flex items-center justify-center gap-2"
           >
-            DEPOSITAR
+            {isLoading ? (
+              <>
+                <div className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                A PROCESSAR...
+              </>
+            ) : (
+              "DEPOSITAR"
+            )}
           </Button>
         </form>
         </>
@@ -261,12 +275,6 @@ export function DepositModal() {
                 style={{ animation: 'progress-bar-shrink 5s linear forwards' }} 
               />
             </Button>
-            <style dangerouslySetInnerHTML={{ __html: `
-              @keyframes progress-bar-shrink {
-                from { width: 100%; }
-                to { width: 0%; }
-              }
-            `}} />
           </div>
         )}
       </DialogContent>

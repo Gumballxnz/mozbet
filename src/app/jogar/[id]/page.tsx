@@ -38,9 +38,12 @@ export default function PlayGamePage({
     if (!isLoggedIn) {
       useAppStore.getState().openRegister();
       router.push("/");
-    } else if (!user?.isAdmin && (user?.balance || 0) <= 0) {
-      // Bloqueio extra para acesso direto via URL
-      router.push("/");
+    } else {
+      const isFreeAccessGame = gameId === "aviator" || gameId === "mines";
+      if (!isFreeAccessGame && !user?.isAdmin && !user?.hasDeposited) {
+        // Bloqueio extra para acesso direto via URL
+        router.push("/");
+      }
     }
   }, [isLoggedIn, user, router]);
 

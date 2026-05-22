@@ -49,7 +49,6 @@ export async function POST(req: Request) {
         .insert({
           user_id: payload.id,
           round_id: round.id,
-          game_id: gameId,
           amount: Number(betAmount),
           status: "active"
         });
@@ -68,7 +67,7 @@ export async function POST(req: Request) {
     }
 
     // 4. Lógica para jogos individuais (Chicken Highway, Subway, etc)
-    const wins = shouldPlayerWin(payload.id);
+    const wins = await shouldPlayerWin(payload.id);
     let finalCrash = 1.00;
     if (wins) {
       finalCrash = Number((1.5 + Math.random() * 8.5).toFixed(2));
@@ -96,7 +95,6 @@ export async function POST(req: Request) {
       .insert({
         user_id: payload.id,
         round_id: round.id,
-        game_id: gameId,
         amount: Number(betAmount),
         status: "active"
       });

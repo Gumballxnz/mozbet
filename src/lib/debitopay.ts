@@ -87,7 +87,11 @@ export async function processDebitoPayment(
       source_id: transactionId
     };
 
-    console.log(`[Debito Pay] Iniciando pagamento via ${method}:`, payload);
+    if (process.env.NODE_ENV !== "production") {
+      console.log(`[Debito Pay] Iniciando pagamento via ${method}:`, payload);
+    } else {
+      console.log(`[Debito Pay] Iniciando pagamento via ${method} | Transação=${transactionId} | Valor=${amount} MZN`);
+    }
 
     // AbortController para não deixar a Vercel dar timeout (limite de 10s no plano Hobby)
     const controller = new AbortController();

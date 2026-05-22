@@ -21,12 +21,26 @@ export async function POST(req: Request) {
     // 1. Validar se for jogo GLOBAL
     const GLOBAL_GAMES = ["aviator", "earplane", "crash"];
     if (GLOBAL_GAMES.includes(gameId)) {
+        // Buscar a ronda activa 'waiting' ou 'running' no Supabase para este jogo
+        const { data: activeRound, error: activeRoundErr } = await supabaseAdmin
+            .from("game_rounds")
+            .select("id")
+            .eq("game_id", gameId)
+            .in("status", ["waiting", "running"])
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+        if (activeRoundErr || !activeRound) {
+            return NextResponse.json({ error: "Nenhuma ronda activa encontrada." }, { status: 400 });
+        }
+
         // Buscar aposta activa do utilizador para a ronda actual
         const { data: bet, error } = await supabaseAdmin
             .from("bets")
             .select("id, amount, status, round_id")
             .eq("user_id", payload.id)
-            .eq("game_id", gameId)
+            .eq("round_id", activeRound.id)
             .eq("status", "active")
             .order("created_at", { ascending: false })
             .limit(1)
@@ -57,18 +71,22 @@ export async function POST(req: Request) {
     }
 
     // 2. Lógica para jogos individuais (Chicken Highway, Subway, etc)
-    // Buscar aposta activa e o seu respectivo segredo (crash_point) no banco
-    const { data: bet, error: betErr } = await supabaseAdmin
+    // Buscar apostas activas do utilizador no banco
+    const { data: activeBets, error: betErr } = await supabaseAdmin
         .from("bets")
-        .select("id, amount, status, round_id, game_rounds(crash_point)")
+        .select("id, amount, status, round_id, game_rounds(crash_point, game_id)")
         .eq("user_id", payload.id)
-        .eq("game_id", gameId)
         .eq("status", "active")
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .single();
+        .order("created_at", { ascending: false });
 
-    if (betErr || !bet) {
+    if (betErr || !activeBets || activeBets.length === 0) {
+        return NextResponse.json({ error: "Nenhuma aposta activa encontrada." }, { status: 400 });
+    }
+
+    // Filtrar a aposta pelo gameId atual (join game_rounds.game_id)
+    const bet = activeBets.find((b: any) => b.game_rounds?.game_id === gameId);
+
+    if (!bet) {
         return NextResponse.json({ error: "Nenhuma aposta activa encontrada." }, { status: 400 });
     }
 

@@ -45,6 +45,7 @@ export function LiveBetsTable() {
       if (isMounted.current) {
         const sanitized = history.map(bet => ({
           ...bet,
+          time: bet.time && bet.time.includes('T') ? new Date(bet.time).toLocaleTimeString('pt-PT', { hour12: false }) : bet.time,
           gameIcon: sanitizeBanner(bet.gameIcon, bet.game?.toLowerCase())
         }));
         setActivities(sanitized);
@@ -56,6 +57,7 @@ export function LiveBetsTable() {
       if (isMounted.current) {
         const sanitized = {
           ...fakeBet,
+          time: fakeBet.time && fakeBet.time.includes('T') ? new Date(fakeBet.time).toLocaleTimeString('pt-PT', { hour12: false }) : fakeBet.time,
           gameIcon: sanitizeBanner(fakeBet.gameIcon, fakeBet.game?.toLowerCase())
         };
         setActivities(prev => {

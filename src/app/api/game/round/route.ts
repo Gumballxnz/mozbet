@@ -93,7 +93,8 @@ export async function GET(req: NextRequest) {
 // POST — Avançar estado da ronda (chamado pelo loop do jogo)
 export async function POST(req: NextRequest) {
   try {
-    const { gameId, action } = await req.json();
+    const body = await req.json();
+    const { gameId, action, roundId } = body;
 
     if (action === "new_round") {
       const serverSeed = generateServerSeed();
@@ -123,7 +124,6 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === "start") {
-      const { roundId } = await req.json();
       await supabaseAdmin
         .from("game_rounds")
         .update({ status: "running", started_at: new Date().toISOString() })
@@ -133,8 +133,6 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === "crash") {
-      const { roundId } = await req.json();
-
       // Marcar ronda como crashed
       await supabaseAdmin
         .from("game_rounds")

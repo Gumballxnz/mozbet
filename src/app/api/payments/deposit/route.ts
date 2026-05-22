@@ -53,7 +53,16 @@ export async function POST(req: Request) {
 
     const hasKeys = !!process.env.DEBITOPAY_API_KEY;
     
-    // MODO SIMULAÇÃO RÁPIDO (Apenas para o teste falho de 2MT)
+    // UX-07: Em produção, nunca permitir o modo simulação se as chaves estiverem em falta
+    if (!hasKeys && process.env.NODE_ENV === "production") {
+      await supabaseAdmin.from("transactions").update({ status: "FAILED" }).eq("id", transaction.id);
+      return NextResponse.json(
+        { error: "Sistema de pagamento temporariamente indisponível." },
+        { status: 503 }
+      );
+    }
+    
+    // MODO SIMULAÇÃO RÁPIDO (Apenas para o teste falho de 2MT em dev/testes)
     if (!hasKeys && numAmount === 2) {
       await supabaseAdmin.from("transactions").update({ status: "FAILED" }).eq("id", transaction.id);
       

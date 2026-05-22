@@ -35,10 +35,10 @@ export function GamePlayer({
       if (e.data.type === 'UPDATE_BALANCE' && mode === 'real') {
         updateBalance(e.data.balance);
       } else if (e.data.type === 'ENGINE_READY' && mode === 'real' && user) {
-        // Enviar o saldo atual para o Iframe assim que ele estiver pronto
+        // Enviar o saldo atual para o Iframe assim que ele estiver pronto (restrito para a mesma origem)
         iframeRef.current?.contentWindow?.postMessage(
           { type: 'SYNC_BALANCE', balance: user.balance },
-          '*'
+          window.location.origin
         );
       } else if (e.data.type === 'CLOSE_GAME') {
         if (document.fullscreenElement) document.exitFullscreen();

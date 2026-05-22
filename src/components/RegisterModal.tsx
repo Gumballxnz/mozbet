@@ -89,8 +89,8 @@ export function RegisterModal() {
       return;
     }
 
-    if (password.length < 4) {
-      toast.error("Erro", { description: "A senha deve ter pelo menos 4 caracteres." });
+    if (password.length < 6) {
+      toast.error("Erro", { description: "A senha deve ter pelo menos 6 caracteres." });
       return;
     }
 

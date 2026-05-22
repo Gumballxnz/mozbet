@@ -44,9 +44,9 @@ export async function POST(req: Request) {
       );
     }
 
-    if (password.length < 4) {
+    if (password.length < 6) {
       return NextResponse.json(
-        { error: "A palavra-passe deve ter pelo menos 4 caracteres" },
+        { error: "A palavra-passe deve ter pelo menos 6 caracteres" },
         { status: 400 }
       );
     }

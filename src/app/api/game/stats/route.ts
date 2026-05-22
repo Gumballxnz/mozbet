@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
   if (isAdmin) {
     // Admin vê dados REAIS
     return NextResponse.json({
-      online: getRealOnlineCount(),
+      online: await getRealOnlineCount(),
       isReal: true,
       deposits: [], // Dados reais viriam do BD
       withdrawals: [],

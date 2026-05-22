@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
     const newBalance = await deductBalance(payload.id, validation.balance!, betAmount);
 
     // 5. Decidir se o jogador vai ganhar ou perder
-    const playerWins = shouldPlayerWin(payload.id);
+    const playerWins = await shouldPlayerWin(payload.id);
 
     // 6. Gerar posições das minas
     const minePositions: number[] = [];
@@ -90,7 +90,6 @@ export async function POST(req: NextRequest) {
           mineCount,
           minePositions,
           revealedCells: [],
-          playerWins,
         },
       });
 

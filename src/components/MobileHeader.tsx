@@ -212,7 +212,7 @@ export function MobileHeader() {
 
       {/* Dropdown de Notificações */}
       {showNotifications && isLoggedIn && (
-        <div className="fixed top-[60px] right-4 w-[350px] z-50 bg-[#101116] border border-[#2A2F40] rounded-2xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-4">
+        <div className="fixed top-[60px] right-4 w-[calc(100vw-2rem)] max-w-[350px] z-50 bg-[#101116] border border-[#2A2F40] rounded-2xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-4">
           <div className="p-4 bg-[#0B0C10] relative">
             <button onClick={() => setShowNotifications(false)} className="absolute top-4 right-4 text-muted-foreground hover:text-white"><X className="w-4 h-4" /></button>
             <div className="flex items-center gap-2 mb-1">

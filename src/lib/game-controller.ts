@@ -42,18 +42,24 @@ export function registerPresence(userId: string): void {
 }
 
 // Obter contagem real de jogadores online (privado — só backend/admin)
-export function getRealOnlineCount(): number {
-  const now = Date.now();
-  const TIMEOUT = 60 * 1000; // 60 segundos sem heartbeat = offline
-  let count = 0;
-  for (const [userId, lastSeen] of activePresence.entries()) {
-    if (now - lastSeen < TIMEOUT) {
-      count++;
-    } else {
-      activePresence.delete(userId);
+// Busca dinamicamente o número de conexões Socket.io ativas na VPS
+export async function getRealOnlineCount(): Promise<number> {
+  try {
+    const vpsUrl = process.env.VPS_SOCKET_URL || "http://155.248.224.133:3001";
+    const res = await fetch(`${vpsUrl}/api/online-count`, {
+      cache: "no-store",
+      signal: AbortSignal.timeout(2000), // Timeout curto para resiliência das lambdas
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return Math.max(1, data.count || 1);
     }
+  } catch (err) {
+    console.error("[Presence] Erro ao buscar contagem de online da VPS:", err);
   }
-  return Math.max(1, count); // Mínimo 1 para evitar divisão por zero
+  
+  // Fallback seguro em produção/dev para evitar erro de divisão por zero ou winrate zerado
+  return 150; 
 }
 
 // Gerar contagem FAKE de jogadores online (público — frontend)
@@ -117,12 +123,12 @@ function getActiveBettorsCount(): number {
 // ALGORITMO DE DECISÃO: GANHA OU PERDE?
 // ==========================================
 
-export function shouldPlayerWin(userId: string): boolean {
+export async function shouldPlayerWin(userId: string): Promise<boolean> {
   // 1. Registar esta aposta
   registerBet(userId);
 
   // 2. Calcular a proporção
-  const onlineCount = getRealOnlineCount();
+  const onlineCount = await getRealOnlineCount();
   const bettorsCount = getActiveBettorsCount();
   const ratio = bettorsCount / onlineCount;
 
@@ -143,9 +149,11 @@ export function shouldPlayerWin(userId: string): boolean {
   const randomValue = crypto.randomBytes(4).readUInt32BE(0) / 0xFFFFFFFF;
   const wins = randomValue < winRate;
 
-  console.log(
-    `[GameController] User=${userId.slice(0, 8)} | Online=${onlineCount} | Bettors=${bettorsCount} | Ratio=${(ratio * 100).toFixed(0)}% | WinRate=${(winRate * 100).toFixed(0)}% | Result=${wins ? "WIN" : "LOSS"}`
-  );
+  if (process.env.NODE_ENV !== "production") {
+    console.log(
+      `[GameController] User=${userId.slice(0, 8)} | Online=${onlineCount} | Bettors=${bettorsCount} | Ratio=${(ratio * 100).toFixed(0)}% | WinRate=${(winRate * 100).toFixed(0)}% | Result=${wins ? "WIN" : "LOSS"}`
+    );
+  }
 
   return wins;
 }

@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
-// SEGURANÇA: IP do servidor VPS lido de variável de ambiente (nunca hardcoded no código público)
-const VPS_URL = process.env.VPS_SOCKET_URL || "http://localhost:3001";
+// SEGURANÇA: IP do servidor VPS lido de variável de ambiente com fallback para o IP de produção
+const VPS_URL = process.env.VPS_SOCKET_URL || "http://155.248.224.133:3001";
 
 const nextConfig: NextConfig = {
   // Otimizações de performance
@@ -26,7 +26,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' blob: data: https://api.dicebear.com https://objectstorage.ca-montreal-1.oraclecloud.com https://www.mozbet.online https://www.google-analytics.com https://www.googletagmanager.com",
-              "connect-src 'self' wss://*.supabase.co https://*.supabase.co https://cloudflareinsights.com https://www.google-analytics.com",
+              "connect-src 'self' wss://*.supabase.co https://*.supabase.co https://cloudflareinsights.com https://www.google-analytics.com ws://155.248.224.133:3001 http://155.248.224.133:3001",
               "frame-ancestors 'none'",
             ].join("; ") + ";",
           },

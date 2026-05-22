@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
-// SEGURANÇA: IP do servidor VPS lido de variável de ambiente com fallback para o IP de produção
-const VPS_URL = process.env.VPS_SOCKET_URL || "http://155.248.224.133:3001";
+// SEGURANÇA: IP do servidor VPS fixado diretamente para evitar problemas de variáveis de ambiente incorretas na Vercel
+const VPS_URL = "http://155.248.224.133:3001";
 
 const nextConfig: NextConfig = {
   // Otimizações de performance

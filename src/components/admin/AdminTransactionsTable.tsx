@@ -145,8 +145,8 @@ export function AdminTransactionsTable({ initialTransactions, initialTotalCount 
               className="bg-[#101116] border border-[#2A2F40] rounded-xl px-3 text-xs text-white outline-none h-10"
             >
               <option value="ALL">Todos os Estados</option>
-              <option value="COMPLETED">✅ Aprovadas</option>
-              <option value="FAILED">❌ Falhadas</option>
+              <option value="COMPLETED">✅ Pago</option>
+              <option value="FAILED">❌ Falho</option>
             </select>
           </div>
 
@@ -206,12 +206,12 @@ export function AdminTransactionsTable({ initialTransactions, initialTotalCount 
                   <td className="px-6 py-4 text-center">
                     {tx.status === "COMPLETED" && (
                       <span className="inline-flex items-center gap-1 bg-primary/10 text-primary px-2 py-1 rounded-md font-bold text-xs">
-                        <CheckCircle2 className="w-4 h-4" /> Aprovada
+                        <CheckCircle2 className="w-4 h-4" /> Pago
                       </span>
                     )}
                     {tx.status === "FAILED" && (
                       <span className="inline-flex items-center gap-1 bg-red-500/10 text-red-500 px-2 py-1 rounded-md font-bold text-xs">
-                        <XCircle className="w-4 h-4" /> Falhou
+                        <XCircle className="w-4 h-4" /> Falho
                       </span>
                     )}
 

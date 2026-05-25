@@ -116,7 +116,7 @@ export async function processE2Payment(
       client_id: clientId,
       amount: String(amount),
       phone: cleanPhone,
-      reference: `MOZBET-${transactionId.split("-")[0]}`,
+      reference: `MOZ${transactionId.split("-")[0]}`,
     };
 
     console.log(`[E2Payments] Iniciando pagamento C2B via ${method.toUpperCase()} | Transação=${transactionId} | Valor=${amount} MZN | Telefone=***${cleanPhone.slice(-3)}`);

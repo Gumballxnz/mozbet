@@ -77,7 +77,7 @@ export async function middleware(request: NextRequest) {
   const response = NextResponse.next();
   
   // Reforço extra caso o NextConfig não consiga injetar nalgumas rotas
-  response.headers.set("X-Frame-Options", "DENY"); // Bloqueia embed em iframes de terceiros (anti-clone)
+  response.headers.set("X-Frame-Options", "SAMEORIGIN"); // Permite embed apenas do próprio site (mesma origem)
   response.headers.set("X-Content-Type-Options", "nosniff");
   response.headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
 

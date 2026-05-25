@@ -31,7 +31,7 @@ const maskPhone = (phone?: string) => {
 };
 
 export default function PerfilPage() {
-  const { user, logout, setDepositOpen } = useAppStore();
+  const { user, logout, setDepositOpen, setDepositTab } = useAppStore();
   const balance = user?.balance || 0;
   const router = useRouter();
   
@@ -55,9 +55,6 @@ export default function PerfilPage() {
   const [newPassword, setNewPassword] = useState("");
   const [passwordStep, setPasswordStep] = useState<"choose" | "verify" | "done">("choose");
   
-  const [showWithdrawForm, setShowWithdrawForm] = useState(false);
-  const [withdrawAmount, setWithdrawAmount] = useState("");
-  const [isWithdrawing, setIsWithdrawing] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showWithdrawErrorModal, setShowWithdrawErrorModal] = useState(false);
 
@@ -71,27 +68,8 @@ export default function PerfilPage() {
   
   // DADOS REAIS DO BANCO DE DADOS
   const bonusBalance = user.bonusBalance || 0.00; 
-  const toUnlock = user.unlockedBalance || 0.00;
   const vipLevel = user.vipLevel || 1;
-
-  // LÓGICA DE MUDANÇAS REAIS
-  const hasChanges = (email !== (user.email || "")) || (selectedAvatar !== (user.avatar || fallbackAvatar));
-
-  const handleWithdraw = () => {
-    if (!withdrawAmount || parseFloat(withdrawAmount) <= 0) {
-      toast.error("Introduza um valor válido para levantamento.");
-      return;
-    }
-
-    setIsWithdrawing(true);
-    
-    // Simulação de processamento para dar realismo
-    setTimeout(() => {
-      playSound('notification');
-      setShowWithdrawErrorModal(true);
-      setIsWithdrawing(false);
-    }, 1500);
-  };
+  const toUnlock = user.unlockedBalance || 0.00;
 
   const handleSave = async (forceAvatar?: string) => {
     const avatarToSave = forceAvatar || selectedAvatar;
@@ -294,8 +272,11 @@ export default function PerfilPage() {
       {/* BOTÕES DE ACÇÃO PRINCIPAIS */}
       <div className="space-y-3">
         <Button 
-          onClick={() => setDepositOpen(true)}
-          className="w-full h-14 bg-primary text-black hover:bg-primary/90 font-black text-lg rounded-2xl flex items-center justify-center gap-2 shadow-xl shadow-primary/10 transition-all hover:scale-[1.01] active:scale-[0.98]"
+          onClick={() => {
+            setDepositTab("deposit");
+            setDepositOpen(true);
+          }}
+          className="w-full h-14 bg-primary text-black hover:bg-primary/90 font-black text-lg rounded-2xl flex items-center justify-center gap-2 shadow-xl shadow-primary/10 transition-all hover:scale-[1.01] active:scale-[0.98] cursor-pointer"
         >
           <Wallet size={24} />
           DEPOSITAR
@@ -304,67 +285,23 @@ export default function PerfilPage() {
         <div className="grid grid-cols-2 gap-3">
           <Button 
             variant="outline"
-            onClick={() => setShowWithdrawForm(!showWithdrawForm)}
-            className={`h-12 bg-surface border-white/5 text-white font-bold rounded-xl hover:bg-white/5 flex items-center gap-2 transition-all ${showWithdrawForm ? 'border-primary bg-primary/5' : ''}`}
+            onClick={() => {
+              setDepositTab("withdraw");
+              setDepositOpen(true);
+            }}
+            className="h-12 bg-surface border-white/5 text-white font-bold rounded-xl hover:bg-white/5 flex items-center gap-2 transition-all cursor-pointer"
           >
             <ArrowUpCircle size={18} className="text-primary" />
             LEVANTAMENTO
           </Button>
           <Button 
             onClick={handleLogout}
-            className="h-12 bg-red-500/10 border border-red-500/20 text-red-500 font-bold rounded-xl hover:bg-red-500/20 flex items-center gap-2"
+            className="h-12 bg-red-500/10 border border-red-500/20 text-red-500 font-bold rounded-xl hover:bg-red-500/20 flex items-center gap-2 cursor-pointer"
           >
             <LogOut size={18} />
             SAIR
           </Button>
         </div>
-
-        {/* FORMULÁRIO DE LEVANTAMENTO (Apenas para número cadastrado) */}
-        {showWithdrawForm && (
-          <div className="bg-surface border border-primary/20 p-5 rounded-2xl space-y-4 animate-in slide-in-from-top-4 duration-300 shadow-xl shadow-primary/5">
-            <div className="flex items-center gap-2 text-primary font-black text-xs uppercase tracking-widest">
-              <ArrowUpCircle size={16} />
-              Solicitar Levantamento
-            </div>
-            
-            <div className="space-y-3">
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-muted-foreground uppercase ml-1">Número de Recebimento (M-Pesa/e-Mola)</label>
-                <div className="relative">
-                  <Input 
-                    value={user.phone}
-                    disabled
-                    className="bg-black/40 border-white/10 text-white font-bold h-12 rounded-xl pl-10 opacity-70 cursor-not-allowed"
-                  />
-                  <Phone size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                </div>
-                <p className="text-[9px] text-muted-foreground ml-1 italic">* Por segurança, levantamentos são permitidos apenas para o número da conta.</p>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-muted-foreground uppercase ml-1">Valor do Saque (MZN)</label>
-                <div className="relative">
-                  <Input 
-                    type="number"
-                    value={withdrawAmount}
-                    onChange={(e) => setWithdrawAmount(e.target.value)}
-                    placeholder="ex: 10.00 MZN"
-                    className="bg-black/60 border-primary/20 focus:border-primary text-white font-black h-12 rounded-xl pl-10 text-lg"
-                  />
-                  <Wallet size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-primary" />
-                </div>
-              </div>
-
-              <Button 
-                onClick={handleWithdraw}
-                disabled={isWithdrawing || !withdrawAmount}
-                className="w-full h-12 bg-primary text-black font-black rounded-xl hover:bg-primary/90 transition-all active:scale-[0.98]"
-              >
-                {isWithdrawing ? "A PROCESSAR..." : "CONFIRMAR SAQUE"}
-              </Button>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* CARDS DE SALDO E INFO (Grelha) */}

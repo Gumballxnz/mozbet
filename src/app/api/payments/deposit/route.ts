@@ -26,8 +26,30 @@ export async function POST(req: Request) {
     const numAmount = Number(amount);
     const paymentMethod: E2PaymentMethod = method === "emola" ? "emola" : "mpesa";
 
-    if (isNaN(numAmount) || numAmount < 10 || numAmount > 25000) {
-      return NextResponse.json({ error: "O valor mínimo de depósito é 10 MZN." }, { status: 400 });
+    // Carregar limites e bónus do banco de dados (settings)
+    let minDeposit = 10;
+    let maxDeposit = 50000;
+    let bonusPercent = 500;
+    try {
+      const { data: settings } = await supabaseAdmin
+        .from("settings")
+        .select("key, value");
+
+      if (settings) {
+        const minSetting = settings.find(s => s.key === "min_deposit");
+        const maxSetting = settings.find(s => s.key === "max_deposit");
+        const bonusSetting = settings.find(s => s.key === "first_deposit_bonus_percent");
+
+        if (minSetting) minDeposit = Number(minSetting.value);
+        if (maxSetting) maxDeposit = Number(maxSetting.value);
+        if (bonusSetting) bonusPercent = Number(bonusSetting.value);
+      }
+    } catch (err) {
+      console.error("[API Deposit] Erro ao buscar configurações do banco, usando fallbacks.");
+    }
+
+    if (isNaN(numAmount) || numAmount < minDeposit || numAmount > maxDeposit) {
+      return NextResponse.json({ error: `O valor mínimo de depósito é ${minDeposit} MZN e o máximo é ${maxDeposit.toLocaleString("pt-MZ")} MZN.` }, { status: 400 });
     }
 
     // 3. Criar o registo da transação como PENDENTE no Banco de Dados
@@ -74,127 +96,100 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Falha simulada no M-pesa (Depósito de 2MT)." }, { status: 400 });
     }
 
+    let paymentSuccess = false;
+    let errorMessage = "Ocorreu um erro no processamento do depósito.";
+
     if (hasKeys) {
-      // ===== MODO E2PAYMENTS — PAGAMENTO INSTANTÂNEO =====
+      // ===== MODO E2PAYMENTS — PAGAMENTO REAL E INSTANTÂNEO =====
       const e2payRes = await processE2Payment(decoded.phone, numAmount, transaction.id, paymentMethod);
-      
-      if (!e2payRes.success) {
-        // Pagamento falhou (PIN errado, saldo insuficiente, etc.)
-        await supabaseAdmin
-          .from("transactions")
-          .update({ status: "FAILED" })
-          .eq("id", transaction.id);
-          
-        // Notificação: Depósito Falhou
-        await supabaseAdmin.from('notifications').insert({
-          user_id: decoded.id,
-          message: `Falha no depósito de ${numAmount.toFixed(2)} MZN: ${e2payRes.error || "Ocorreu um erro no processamento."} Tente novamente.`,
-          type: "deposit_failed"
-        });
-          
-        return NextResponse.json({ error: e2payRes.error }, { status: 400 });
+      if (e2payRes.success) {
+        paymentSuccess = true;
+      } else {
+        errorMessage = e2payRes.error || "Pagamento rejeitado pelo gateway.";
       }
-
-      // ===== PAGAMENTO APROVADO INSTANTANEAMENTE =====
-      // A E2Payments confirma na hora — marcamos como COMPLETED e creditamos o saldo imediatamente
-      await supabaseAdmin
-        .from("transactions")
-        .update({ status: "COMPLETED" })
-        .eq("id", transaction.id);
-
-      // Notificação: Depósito Concluído
-      await supabaseAdmin.from('notifications').insert({
-        user_id: decoded.id,
-        message: `O seu depósito de ${numAmount.toFixed(2)} MZN foi aprovado com sucesso e creditado na sua conta. Boas apostas!`,
-        type: "deposit_success"
-      });
-
-      // Adiciona o saldo à conta
-      const { data: user } = await supabaseAdmin.from("users").select("balance, bonus_balance, has_deposited").eq("id", decoded.id).single();
-      
-      let newBalance = 0;
-      if (user) {
-        newBalance = Number(user.balance) + numAmount;
-        let newBonusBalance = Number(user.bonus_balance || 0);
-        let bonus = 0;
-        
-        // Aplica o Bónus de 500% se for o 1º depósito
-        if (!user.has_deposited) {
-          bonus = Math.min(numAmount * 5, 25000);
-          newBonusBalance += bonus;
-          
-          await supabaseAdmin.from("transactions").insert([{
-            user_id: decoded.id, type: "BONUS", amount: bonus, status: "COMPLETED", phone: decoded.phone
-          }]);
-          
-          await supabaseAdmin.from('notifications').insert({
-            user_id: decoded.id,
-            message: `Acaba de receber ${bonus.toFixed(2)} MZN de Bónus no seu primeiro depósito!`,
-            type: "promo"
-          });
-        }
-        
-        await supabaseAdmin.from("users").update({
-          balance: newBalance,
-          ...(bonus > 0 && { bonus_balance: newBonusBalance }),
-          has_deposited: true
-        }).eq("id", decoded.id);
-      }
-
-      return NextResponse.json({ 
-        success: true,
-        status: "COMPLETED",
-        message: "Depósito concluído com sucesso!",
-        newBalance,
-        transactionId: transaction.id
-      }, { status: 200 });
-
     } else {
-      // ===== MODO SIMULAÇÃO (Sem chaves — Dev/Testes) =====
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Marca como completo
-      await supabaseAdmin.from("transactions").update({ status: "COMPLETED" }).eq("id", transaction.id);
-      
-      // Notificação: Depósito Concluído
-      await supabaseAdmin.from('notifications').insert({
-        user_id: decoded.id,
-        message: `O seu depósito de ${numAmount.toFixed(2)} MZN foi aprovado com sucesso e creditado na sua conta. Boas apostas!`,
-        type: "deposit_success"
-      });
-      
-      // Adiciona o saldo à conta
-      const { data: user } = await supabaseAdmin.from("users").select("balance, has_deposited").eq("id", decoded.id).single();
-      
-      if (user) {
-        let finalBalance = Number(user.balance) + numAmount;
-        
-        // Aplica o Bónus de 500% se for o 1º depósito
-        if (!user.has_deposited) {
-          const bonus = Math.min(numAmount * 5, 25000);
-          finalBalance += bonus;
-          
-          await supabaseAdmin.from("transactions").insert([{
-            user_id: decoded.id, type: "BONUS", amount: bonus, status: "COMPLETED", phone: decoded.phone
-          }]);
-          
-          await supabaseAdmin.from('notifications').insert({
-            user_id: decoded.id,
-            message: `Acaba de receber ${bonus.toFixed(2)} MZN de Bónus no seu primeiro depósito!`,
-            type: "promo"
-          });
-        }
-        
-        await supabaseAdmin.from("users").update({
-          balance: finalBalance,
-          has_deposited: true
-        }).eq("id", decoded.id);
-      }
+      // ===== MODO DESENVOLVIMENTO / TESTES =====
+      // Apenas simulamos um pequeno atraso de 1.5s e aprovamos
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      paymentSuccess = true;
     }
 
-    return NextResponse.json({ 
+    if (!paymentSuccess) {
+      // Registrar falha no banco de dados
+      await supabaseAdmin.from("transactions").update({ status: "FAILED" }).eq("id", transaction.id);
+      
+      // Notificação de falha para o usuário
+      await supabaseAdmin.from('notifications').insert({
+        user_id: decoded.id,
+        message: `Falha no depósito de ${numAmount.toFixed(2)} MZN: ${errorMessage} Tente novamente.`,
+        type: "deposit_failed"
+      });
+
+      return NextResponse.json({ error: errorMessage }, { status: 400 });
+    }
+
+    // ===== PROCESSO DE SUCESSO UNIFICADO (Saldo Real + Bónus Real) =====
+    // 1. Atualizar transação de depósito para COMPLETED
+    await supabaseAdmin.from("transactions").update({ status: "COMPLETED" }).eq("id", transaction.id);
+
+    // 2. Notificação de sucesso do depósito
+    await supabaseAdmin.from('notifications').insert({
+      user_id: decoded.id,
+      message: `O seu depósito de ${numAmount.toFixed(2)} MZN foi aprovado com sucesso e creditado na sua conta. Boas apostas!`,
+      type: "deposit_success"
+    });
+
+    // 3. Buscar os dados do utilizador
+    const { data: user } = await supabaseAdmin
+      .from("users")
+      .select("balance, bonus_balance, has_deposited")
+      .eq("id", decoded.id)
+      .single();
+
+    let newBalance = numAmount;
+    let newBonusBalance = 0;
+
+    if (user) {
+      newBalance = Number(user.balance) + numAmount;
+      newBonusBalance = Number(user.bonus_balance || 0);
+      let bonus = 0;
+
+      // Aplica o Bónus se for o 1º depósito (500% ou dinâmico)
+      if (!user.has_deposited) {
+        const multiplier = bonusPercent / 100;
+        bonus = numAmount * multiplier; // bónus real entregue de facto
+        newBonusBalance += bonus;
+
+        // Inserir registro do bónus nas transações
+        await supabaseAdmin.from("transactions").insert([{
+          user_id: decoded.id,
+          type: "BONUS",
+          amount: bonus,
+          status: "COMPLETED",
+          phone: decoded.phone
+        }]);
+
+        // Notificação de bónus para o usuário
+        await supabaseAdmin.from('notifications').insert({
+          user_id: decoded.id,
+          message: `Acaba de receber ${bonus.toFixed(2)} MZN de Bónus (${bonusPercent}%) no seu primeiro depósito!`,
+          type: "promo"
+        });
+      }
+
+      // Atualizar o saldo real, bónus e flag de depósito do usuário no banco
+      await supabaseAdmin.from("users").update({
+        balance: newBalance,
+        bonus_balance: newBonusBalance,
+        has_deposited: true
+      }).eq("id", decoded.id);
+    }
+
+    return NextResponse.json({
       success: true,
+      status: "COMPLETED",
       message: "Depósito concluído com sucesso!",
+      newBalance,
       transactionId: transaction.id
     }, { status: 200 });
 

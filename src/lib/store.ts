@@ -35,6 +35,7 @@ interface AppState {
   registerOpen: boolean;
   authMode: "login" | "register";
   depositOpen: boolean;
+  depositTab: "deposit" | "withdraw";
   chatOpen: boolean;
   supportOpen: boolean;
   helpOpen: boolean;
@@ -43,6 +44,7 @@ interface AppState {
   openLogin: () => void;
   openRegister: () => void;
   setDepositOpen: (open: boolean) => void;
+  setDepositTab: (tab: "deposit" | "withdraw") => void;
   setChatOpen: (open: boolean) => void;
   setSupportOpen: (open: boolean) => void;
   setHelpOpen: (open: boolean) => void;
@@ -96,6 +98,7 @@ export const useAppStore = create<AppState>((set) => ({
   registerOpen: false,
   authMode: "register",
   depositOpen: false,
+  depositTab: "deposit",
   chatOpen: false,
   supportOpen: false,
   helpOpen: false,
@@ -104,6 +107,7 @@ export const useAppStore = create<AppState>((set) => ({
   openLogin: () => set({ registerOpen: true, authMode: "login" }),
   openRegister: () => set({ registerOpen: true, authMode: "register" }),
   setDepositOpen: (open) => set({ depositOpen: open }),
+  setDepositTab: (tab) => set({ depositTab: tab }),
   setChatOpen: (open) => set({ chatOpen: open }),
   setSupportOpen: (open) => set({ supportOpen: open }),
   setHelpOpen: (open) => set({ helpOpen: open }),

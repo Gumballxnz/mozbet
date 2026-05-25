@@ -120,3 +120,19 @@ body {
   from { width: 100%; }
   to { width: 0%; }
 }
+
+/* ================================================
+   CORREÇÃO GLOBAL DE CURSOR POINTER
+   ================================================ */
+button,
+a,
+select,
+input[type="submit"],
+input[type="button"],
+[role="button"],
+.cursor-pointer,
+.btn,
+.clickable,
+[onClick] {
+  cursor: pointer !important;
+}

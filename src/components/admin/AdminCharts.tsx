@@ -13,9 +13,16 @@ interface Props {
   usersRaw: { created_at: string; balance: number }[];
   withdrawalsRaw: { created_at: string; amount: number }[];
   failedRaw?: { created_at: string; amount: number }[];
+  usersCount?: number;
 }
 
-export function AdminCharts({ depositsRaw: initialDeposits, usersRaw: initialUsers, withdrawalsRaw: initialWithdrawals, failedRaw: initialFailed = [] }: Props) {
+export function AdminCharts({ 
+  depositsRaw: initialDeposits, 
+  usersRaw: initialUsers, 
+  withdrawalsRaw: initialWithdrawals, 
+  failedRaw: initialFailed = [],
+  usersCount: initialUsersCount = 0
+}: Props) {
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
@@ -27,6 +34,7 @@ export function AdminCharts({ depositsRaw: initialDeposits, usersRaw: initialUse
   const [withdrawals, setWithdrawals] = useState(initialWithdrawals);
   const [failed, setFailed] = useState(initialFailed);
   const [users, setUsers] = useState(initialUsers);
+  const [totalUsersCount, setTotalUsersCount] = useState(initialUsersCount || initialUsers.length);
 
   // Subscrever ao Realtime para Gráficos
   useEffect(() => {
@@ -44,6 +52,10 @@ export function AdminCharts({ depositsRaw: initialDeposits, usersRaw: initialUse
       })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'users' }, payload => {
         setUsers(prev => [...prev, { created_at: payload.new.created_at, balance: payload.new.balance || 0 }]);
+        setTotalUsersCount(prev => prev + 1);
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'users' }, payload => {
+        setTotalUsersCount(prev => Math.max(0, prev - 1));
       })
       .subscribe();
 
@@ -246,7 +258,7 @@ export function AdminCharts({ depositsRaw: initialDeposits, usersRaw: initialUse
             <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Base de Utilizadores</span>
           </div>
           <div>
-            <span className="text-3xl font-black text-white">{totalUsers.toLocaleString('pt-BR')} <span className="text-lg text-gray-500 font-medium">Contas</span></span>
+            <span className="text-3xl font-black text-white">{totalUsersCount.toLocaleString('pt-BR')} <span className="text-lg text-gray-500 font-medium">Contas</span></span>
             <div className="flex items-center gap-2 mt-2">
                <span className="text-xs font-bold text-purple-500 bg-purple-500/10 px-2 py-0.5 rounded-full flex items-center gap-1">
                  Total

@@ -45,6 +45,7 @@ export default async function AdminDashboard() {
         usersRaw={usersRaw || []} 
         withdrawalsRaw={withdrawalsRaw || []}
         failedRaw={failedRaw || []}
+        usersCount={usersCount || 0}
       />
     </div>
   );

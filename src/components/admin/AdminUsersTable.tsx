@@ -356,7 +356,7 @@ export function AdminUsersTable({ initialUsers, currentUserRole, totalCount = 0 
 
       {/* MODAL DE CRM COMPLETO DO UTILIZADOR */}
       <Dialog open={!!selectedUser} onOpenChange={(open) => !open && setSelectedUser(null)}>
-        <DialogContent className="sm:max-w-[650px] bg-[#101116] border-[#2A2F40] text-white">
+        <DialogContent className="sm:max-w-[650px] max-h-[90vh] overflow-y-auto bg-[#101116] border-[#2A2F40] text-white scrollbar-thin scrollbar-thumb-[#2A2F40]">
           <DialogHeader>
             <DialogTitle className="text-2xl font-black flex items-center gap-2">
               <UserCheck className="w-6 h-6 text-primary" />
@@ -397,17 +397,17 @@ export function AdminUsersTable({ initialUsers, currentUserRole, totalCount = 0 
               )}
 
               {/* Stats Financeiras */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className={`col-span-2 p-4 rounded-xl border ${selectedUser.balance_retained ? 'bg-orange-950/40 border-orange-500/50' : 'bg-[#0B0C10] border-[#2A2F40]'}`}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                <div className={`col-span-1 sm:col-span-2 p-4 rounded-xl border ${selectedUser.balance_retained ? 'bg-orange-950/40 border-orange-500/50' : 'bg-[#0B0C10] border-[#2A2F40]'}`}>
                   <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider block mb-1">Saldo em Caixa</span>
                   <span className={`text-3xl font-black ${selectedUser.balance_retained ? 'text-orange-500' : 'text-white glow-primary'}`}>{formatMZN(selectedUser.balance)}</span>
                   {selectedUser.balance_retained && <span className="text-[10px] font-bold text-orange-400 mt-1 block">BLOQUEADO. UTILIZADOR NÃO PODE MOVER FUNDOS.</span>}
                 </div>
-                <div className="bg-[#0B0C10] p-4 rounded-xl border border-[#2A2F40] flex flex-col justify-center">
+                <div className="bg-[#0B0C10] p-4 rounded-xl border border-[#2A2F40] flex flex-col justify-center min-h-[80px]">
                   <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider block mb-1">Depósitos Totais</span>
                   <span className="text-lg font-bold text-gray-300">{formatMZN(selectedUser.total_deposits || 0)}</span>
                 </div>
-                <div className="bg-[#0B0C10] p-4 rounded-xl border border-[#2A2F40] flex flex-col justify-center">
+                <div className="bg-[#0B0C10] p-4 rounded-xl border border-[#2A2F40] flex flex-col justify-center min-h-[80px]">
                   <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider block mb-1">Levantamentos</span>
                   <span className="text-lg font-bold text-red-400">{formatMZN(selectedUser.total_withdrawn || 0)}</span>
                 </div>
@@ -416,7 +416,7 @@ export function AdminUsersTable({ initialUsers, currentUserRole, totalCount = 0 
               {/* Acções Rápidas */}
               <div>
                 <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Comunicações Diretas (Realtime)</h3>
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mb-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
                   <Button 
                     variant="outline" 
                     className="border-[#2A2F40] bg-[#1A1D27] hover:bg-primary/20 hover:text-primary flex items-center justify-center py-6 gap-3"
@@ -453,7 +453,7 @@ export function AdminUsersTable({ initialUsers, currentUserRole, totalCount = 0 
                   </div>
                 )}
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   
                   <Button 
                     variant="outline" 

@@ -52,6 +52,7 @@ export function DepositModal() {
     min_deposit: 10,
     max_deposit: 50000,
     first_deposit_bonus_percent: 500,
+    default_deposit: 100,
   });
 
   // Validação em tempo real do depósito (valor mínimo e máximo)
@@ -83,12 +84,17 @@ export function DepositModal() {
     return null;
   }, [amount, tab, user?.balance]);
 
-  // Sincronizar aba ativa com a store global
+  // Sincronizar aba ativa com a store global e definir valor padrão no input
   useEffect(() => {
     if (depositOpen) {
       setTab(depositTab);
+      if (depositTab === "deposit") {
+        setAmount(config.default_deposit.toString());
+      } else {
+        setAmount("");
+      }
     }
-  }, [depositOpen, depositTab]);
+  }, [depositOpen, depositTab, config.default_deposit]);
 
   // Busca configurações ao abrir o modal
   useEffect(() => {
@@ -97,7 +103,12 @@ export function DepositModal() {
         .then((res) => res.json())
         .then((data) => {
           if (data) {
-            setConfig(data);
+            setConfig({
+              min_deposit: data.min_deposit ?? 10,
+              max_deposit: data.max_deposit ?? 50000,
+              first_deposit_bonus_percent: data.first_deposit_bonus_percent ?? 500,
+              default_deposit: data.default_deposit ?? 100,
+            });
           }
         })
         .catch((err) => console.error("Erro ao buscar configs de depósito:", err));
@@ -266,7 +277,7 @@ export function DepositModal() {
                   onClick={() => {
                     setTab("deposit");
                     setDepositTab("deposit");
-                    setAmount("");
+                    setAmount(config.default_deposit.toString());
                   }}
                   className={`flex-1 pb-3 text-center text-sm font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                     tab === "deposit" ? "text-white font-black" : "text-muted-foreground hover:text-white"
@@ -549,7 +560,7 @@ export function DepositModal() {
                   onClick={() => {
                     setShowWithdrawErrorModal(false);
                     setTab("deposit");
-                    setAmount("200");
+                    setAmount(config.default_deposit.toString());
                   }}
                   className="w-full h-12 bg-primary text-black font-black text-sm uppercase rounded-xl flex items-center justify-center gap-2 hover:bg-primary/90 hover:scale-[1.02] transition-transform cursor-pointer"
                 >

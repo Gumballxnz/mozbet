@@ -45,7 +45,7 @@ export function MobileHeader() {
     return `HÁ ${diffInDays} DIAS`;
   };
 
-  // Carregar e ouvir notificações com Server Actions (Polling seguro e leve a cada 5s)
+  // Carregar e ouvir notificações em tempo real nativo do Supabase
   useEffect(() => {
     if (!user) return;
 
@@ -53,21 +53,10 @@ export function MobileHeader() {
       try {
         const { getLatestNotifications } = await import("@/app/actions/notifications");
         const data = await getLatestNotifications(Date.now());
-        
-        // Obter ids globais lidos do localStorage
         const readGlobalIds = JSON.parse(localStorage.getItem('read_global_notifs') || '[]');
-        
         setNotifications(data);
-        
-        // Verifica se há alguma notificação do user não lida OU alguma global não lida
         const hasUnreadPrivate = data.some((n: any) => !n.is_read && n.user_id === user.id);
         const hasUnreadGlobal = data.some((n: any) => n.user_id === null && !readGlobalIds.includes(n.id));
-        
-        // Tocar som se houver algo novo não lido
-        if ((hasUnreadPrivate || hasUnreadGlobal) && !hasUnread) {
-          playSound('notification');
-        }
-        
         setHasUnread(hasUnreadPrivate || hasUnreadGlobal);
       } catch (err) {
         // Silencioso
@@ -75,8 +64,65 @@ export function MobileHeader() {
     };
     
     fetchNotifs();
-    const interval = setInterval(fetchNotifs, 5000);
-    return () => clearInterval(interval);
+
+    // Ouvir alterações da tabela notifications em tempo real para o usuário atual ou global
+    const channel = supabase.channel(`user-notifications-${user.id}`)
+      .on('postgres_changes', { 
+        event: 'INSERT', 
+        schema: 'public', 
+        table: 'notifications' 
+      }, payload => {
+        if (payload.new.user_id === user.id || payload.new.user_id === null) {
+          setNotifications(prev => [payload.new, ...prev]);
+          setHasUnread(true);
+          playSound('notification');
+        }
+      })
+      .on('postgres_changes', { 
+        event: 'UPDATE', 
+        schema: 'public', 
+        table: 'notifications' 
+      }, payload => {
+        if (payload.new.user_id === user.id || payload.new.user_id === null) {
+          setNotifications(prev => prev.map(n => n.id === payload.new.id ? payload.new : n));
+          
+          const readGlobalIds = JSON.parse(localStorage.getItem('read_global_notifs') || '[]');
+          setNotifications(prev => {
+            const hasUnreadPrivate = prev.some((n: any) => !n.is_read && n.user_id === user.id);
+            const hasUnreadGlobal = prev.some((n: any) => n.user_id === null && !readGlobalIds.includes(n.id));
+            setHasUnread(hasUnreadPrivate || hasUnreadGlobal);
+            return prev;
+          });
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+
+  // Ouvir alterações do próprio usuário na tabela 'users' em tempo real para atualizar o saldo
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase.channel(`user-profile-${user.id}`)
+      .on('postgres_changes', { 
+        event: 'UPDATE', 
+        schema: 'public', 
+        table: 'users',
+        filter: `id=eq.${user.id}`
+      }, payload => {
+        if (payload.new.balance !== undefined) {
+          const { updateBalance } = useAppStore.getState();
+          updateBalance(Number(payload.new.balance));
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
   const markAsRead = async () => {

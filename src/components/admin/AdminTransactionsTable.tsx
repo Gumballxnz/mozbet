@@ -68,13 +68,36 @@ export function AdminTransactionsTable({ initialTransactions, initialTotalCount 
 
 
   useEffect(() => {
-    // Polling seguro usando Server Actions a cada 3 segundos
-    // Isso ignora o bloqueio do RLS porque usa o supabaseAdmin no backend
+    // 1. Escuta realtime do Supabase para transações (atualização instantânea)
+    const channel = supabase.channel('admin-transactions')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'transactions' }, async (payload) => {
+        const { data: u } = await supabase.from("users").select("phone").eq("id", payload.new.user_id).single();
+        const newTx = {
+          ...payload.new,
+          phone: u?.phone || "Desconhecido"
+        } as Transaction;
+
+        setTransactions(prev => {
+          // Evita duplicar se já foi adicionado pelo polling
+          if (prev.some(t => t.id === newTx.id)) return prev;
+          return [newTx, ...prev];
+        });
+        setTotalCount(prev => prev + 1);
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'transactions' }, payload => {
+        setTransactions(prev => prev.map(t => t.id === payload.new.id ? { ...t, ...payload.new } : t));
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'transactions' }, payload => {
+        setTransactions(prev => prev.filter(t => t.id !== payload.old.id));
+        setTotalCount(prev => Math.max(0, prev - 1));
+      })
+      .subscribe();
+
+    // 2. Polling de redundância a cada 10 segundos para garantir consistência
     const interval = setInterval(async () => {
       try {
         const latest = await getLatestTransactions();
         if (latest && latest.length > 0) {
-          // Atualiza apenas os novos (os primeiros 30) e preserva o resto
           setTransactions(prev => {
             const newTxsMap = new Map(latest.map(t => [t.id, t]));
             const merged = [...latest as Transaction[]];
@@ -85,11 +108,14 @@ export function AdminTransactionsTable({ initialTransactions, initialTotalCount 
           });
         }
       } catch (err) {
-        console.error("Erro ao buscar transações em realtime:", err);
+        console.error("Erro no polling de redundância das transações:", err);
       }
-    }, 5000); // Polling a cada 5s
+    }, 10000);
 
-    return () => clearInterval(interval);
+    return () => {
+      supabase.removeChannel(channel);
+      clearInterval(interval);
+    };
   }, []);
 
   const handleLoadMore = async () => {

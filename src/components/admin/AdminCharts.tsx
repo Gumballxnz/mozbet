@@ -14,6 +14,11 @@ interface Props {
   withdrawalsRaw: { created_at: string; amount: number }[];
   failedRaw?: { created_at: string; amount: number }[];
   usersCount?: number;
+  initialTotalDeposits?: number;
+  initialTotalWithdrawals?: number;
+  initialTotalFailed?: number;
+  initialFailedCount?: number;
+  initialTotalRetained?: number;
 }
 
 export function AdminCharts({ 
@@ -21,7 +26,12 @@ export function AdminCharts({
   usersRaw: initialUsers, 
   withdrawalsRaw: initialWithdrawals, 
   failedRaw: initialFailed = [],
-  usersCount: initialUsersCount = 0
+  usersCount: initialUsersCount = 0,
+  initialTotalDeposits = 0,
+  initialTotalWithdrawals = 0,
+  initialTotalFailed = 0,
+  initialFailedCount = 0,
+  initialTotalRetained = 0
 }: Props) {
   const [isMounted, setIsMounted] = useState(false);
 
@@ -36,23 +46,35 @@ export function AdminCharts({
   const [users, setUsers] = useState(initialUsers);
   const [totalUsersCount, setTotalUsersCount] = useState(initialUsersCount || initialUsers.length);
 
-  // Subscrever ao Realtime para Gráficos
+  // Estados para os totais de cards gerais históricos
+  const [totalDeposits, setTotalDeposits] = useState(initialTotalDeposits);
+  const [totalWithdrawals, setTotalWithdrawals] = useState(initialTotalWithdrawals);
+  const [totalFailed, setTotalFailed] = useState(initialTotalFailed);
+  const [failedCount, setFailedCount] = useState(initialFailedCount);
+  const [totalRetained, setTotalRetained] = useState(initialTotalRetained);
+
+  // Subscrever ao Realtime para Gráficos e atualizar os totais acumulados dos cards
   useEffect(() => {
     const channel = supabase.channel('admin-charts')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'transactions' }, payload => {
         if (payload.new.status === 'COMPLETED') {
            if (payload.new.type === 'DEPOSIT') {
              setDeposits(prev => [...prev, { created_at: payload.new.created_at, amount: payload.new.amount }]);
-           } else if (payload.new.type === 'WITHDRAWAL') {
+             setTotalDeposits(prev => prev + Number(payload.new.amount));
+           } else if (payload.new.type === 'WITHDRAW' || payload.new.type === 'WITHDRAWAL') {
              setWithdrawals(prev => [...prev, { created_at: payload.new.created_at, amount: payload.new.amount }]);
+             setTotalWithdrawals(prev => prev + Number(payload.new.amount));
            }
         } else if (payload.new.status === 'FAILED' && payload.new.type === 'DEPOSIT') {
              setFailed(prev => [...prev, { created_at: payload.new.created_at, amount: payload.new.amount }]);
+             setTotalFailed(prev => prev + Number(payload.new.amount));
+             setFailedCount(prev => prev + 1);
         }
       })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'users' }, payload => {
         setUsers(prev => [...prev, { created_at: payload.new.created_at, balance: payload.new.balance || 0 }]);
         setTotalUsersCount(prev => prev + 1);
+        setTotalRetained(prev => prev + Number(payload.new.balance || 0));
       })
       .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'users' }, payload => {
         setTotalUsersCount(prev => Math.max(0, prev - 1));
@@ -62,16 +84,9 @@ export function AdminCharts({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [initialTotalDeposits, initialTotalWithdrawals, initialTotalFailed, initialFailedCount, initialTotalRetained]);
 
-  // Dados globais para as caixas de resumo
-  const totalDeposits = useMemo(() => deposits.reduce((acc, curr) => acc + Number(curr.amount), 0), [deposits]);
-  const totalWithdrawals = useMemo(() => withdrawals.reduce((acc, curr) => acc + Number(curr.amount), 0), [withdrawals]);
-  const totalFailed = useMemo(() => failed.reduce((acc, curr) => acc + Number(curr.amount), 0), [failed]);
-  const failedCount = failed.length;
   const ggr = totalDeposits - totalWithdrawals; // Gross Gaming Revenue
-  const totalRetained = useMemo(() => users.reduce((acc, curr) => acc + Number(curr.balance || 0), 0), [users]);
-  const totalUsers = users.length;
 
   const chartData = useMemo(() => {
     const now = new Date();

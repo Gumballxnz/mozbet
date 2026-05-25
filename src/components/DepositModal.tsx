@@ -41,7 +41,7 @@ export function DepositModal() {
   const { depositOpen, setDepositOpen, depositTab, setDepositTab, user } = useAppStore();
 
   const [tab, setTab] = useState<"deposit" | "withdraw">("deposit");
-  const [amount, setAmount] = useState<string>("200");
+  const [amount, setAmount] = useState<string>("");
   const [step, setStep] = useState<"form" | "sent">("form");
   const [isLoading, setIsLoading] = useState(false);
   const [showWithdrawErrorModal, setShowWithdrawErrorModal] = useState(false);
@@ -127,7 +127,7 @@ export function DepositModal() {
       setStep("form");
       setTab("deposit");
       setDepositTab("deposit");
-      setAmount("200");
+      setAmount("");
     }, 300);
   };
 
@@ -266,7 +266,7 @@ export function DepositModal() {
                   onClick={() => {
                     setTab("deposit");
                     setDepositTab("deposit");
-                    setAmount("200");
+                    setAmount("");
                   }}
                   className={`flex-1 pb-3 text-center text-sm font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                     tab === "deposit" ? "text-white font-black" : "text-muted-foreground hover:text-white"
@@ -282,7 +282,7 @@ export function DepositModal() {
                   onClick={() => {
                     setTab("withdraw");
                     setDepositTab("withdraw");
-                    setAmount("200");
+                    setAmount("");
                   }}
                   className={`flex-1 pb-3 text-center text-sm font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                     tab === "withdraw" ? "text-white font-black" : "text-muted-foreground hover:text-white"

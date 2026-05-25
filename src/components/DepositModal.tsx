@@ -229,14 +229,6 @@ export function DepositModal() {
                     <div className="absolute bottom-0 right-0 w-1/2 h-[3px] bg-white rounded-t-full transition-all duration-300" />
                   )}
                 </button>
-                
-                {/* Botão de Fechar no canto */}
-                <button 
-                  onClick={handleClose}
-                  className="absolute right-0 -top-2 w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-colors cursor-pointer"
-                >
-                  ✕
-                </button>
               </div>
 
               {/* Seção 1: Método de Pagamento Detectado */}
@@ -245,7 +237,7 @@ export function DepositModal() {
                   Método de Pagamento Detectado
                 </span>
                 
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 gap-3">
                   {/* M-PESA BUTTON */}
                   <div
                     className={`relative flex items-center justify-center p-2 h-14 rounded-2xl transition-all bg-white/5 border ${
@@ -276,16 +268,6 @@ export function DepositModal() {
                         ✓
                       </div>
                     )}
-                  </div>
-
-                  {/* mKesh (mcel) BUTTON */}
-                  <div
-                    className="relative flex flex-col items-center justify-center p-1.5 h-14 rounded-2xl bg-white/5 border border-[#2A2F40]/30 opacity-40 grayscale cursor-not-allowed select-none"
-                    title="mKesh temporariamente indisponível"
-                  >
-                    <div className="flex items-baseline gap-1 font-bold text-[9px] text-yellow-500 uppercase tracking-tighter">
-                      <span className="text-gray-400">tm</span>cel <span className="text-yellow-600 font-black">mKesh</span>
-                    </div>
                   </div>
                 </div>
                 <p className="text-[10px] text-muted-foreground text-center italic mt-1.5">

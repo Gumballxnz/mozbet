@@ -1,17 +1,18 @@
 import { io } from "socket.io-client";
 
-// Em produção, usamos um path relativo ("") para que os requests passem pelo proxy (rewrites)
-// do Next.js (Vercel) e não causem erro de Mixed Content (HTTPS -> HTTP).
-// A Vercel não suporta proxy de WebSockets puros, portanto forçamos "polling".
-// SEGURANÇA: IP do servidor nunca hardcoded — vem de variável de ambiente em dev
-const SOCKET_URL = process.env.NODE_ENV === "production" ? "" : (process.env.NEXT_PUBLIC_VPS_SOCKET_URL || "http://localhost:3001");
+// Em produção, conectamos diretamente ao subdomínio HTTPS gerenciado pelo Cloudflare na VPS
+// Isso evita os timeouts e limitações de WebSockets das Serverless Functions da Vercel.
+const SOCKET_URL = process.env.NODE_ENV === "production" 
+  ? "https://api.mozbet.online" 
+  : (process.env.NEXT_PUBLIC_VPS_SOCKET_URL || "http://localhost:3001");
 
 export const socket = io(SOCKET_URL, {
   autoConnect: true,
   reconnection: true,
-  reconnectionAttempts: 10,
+  reconnectionAttempts: 15,
   reconnectionDelay: 2000,
-  transports: ["polling"], // Forçado polling porque Vercel não suporta WS Rewrites
+  // Ativamos WebSockets e polling como fallback, pois a VPS e o Cloudflare suportam WebSockets nativos!
+  transports: ["websocket", "polling"],
   withCredentials: true,
 });
 

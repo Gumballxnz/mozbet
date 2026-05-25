@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { verifyToken, supabaseAdmin } from "@/lib/auth-server";
-import { processDebitoPayment, type DebitoPaymentMethod } from "@/lib/debitopay";
-import { forceApproveDeposit } from "@/app/admin/transactions/actions";
+import { processE2Payment, type E2PaymentMethod } from "@/lib/e2payments";
 
 export async function POST(req: Request) {
   try {
@@ -25,7 +24,7 @@ export async function POST(req: Request) {
     // 2. Extrair valor, método de pagamento e validar
     const { amount, method = "mpesa" } = await req.json();
     const numAmount = Number(amount);
-    const paymentMethod: DebitoPaymentMethod = method === "emola" ? "emola" : "mpesa";
+    const paymentMethod: E2PaymentMethod = method === "emola" ? "emola" : "mpesa";
 
     if (isNaN(numAmount) || numAmount < 10 || numAmount > 25000) {
       return NextResponse.json({ error: "O valor mínimo de depósito é 10 MZN." }, { status: 400 });
@@ -51,9 +50,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Erro interno ao iniciar depósito." }, { status: 500 });
     }
 
-    const hasKeys = !!process.env.DEBITOPAY_API_KEY;
+    const hasKeys = !!process.env.E2PAY_CLIENT_ID;
     
-    // UX-07: Em produção, nunca permitir o modo simulação se as chaves estiverem em falta
+    // Em produção, nunca permitir o modo simulação se as chaves estiverem em falta
     if (!hasKeys && process.env.NODE_ENV === "production") {
       await supabaseAdmin.from("transactions").update({ status: "FAILED" }).eq("id", transaction.id);
       return NextResponse.json(
@@ -75,14 +74,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Falha simulada no M-pesa (Depósito de 2MT)." }, { status: 400 });
     }
 
-    // Em integrações síncronas, não enviamos a notificação de 'Aguardando'
-    // pois o depósito será resolvido (Sucesso ou Falha) neste mesmo request.
-    
     if (hasKeys) {
-      const debitopayRes = await processDebitoPayment(decoded.phone, numAmount, transaction.id, paymentMethod);
+      // ===== MODO E2PAYMENTS — PAGAMENTO INSTANTÂNEO =====
+      const e2payRes = await processE2Payment(decoded.phone, numAmount, transaction.id, paymentMethod);
       
-      if (!debitopayRes.success) {
-        // Se a API deles falhar ou o cliente colocar PIN errado (síncrono)
+      if (!e2payRes.success) {
+        // Pagamento falhou (PIN errado, saldo insuficiente, etc.)
         await supabaseAdmin
           .from("transactions")
           .update({ status: "FAILED" })
@@ -91,34 +88,69 @@ export async function POST(req: Request) {
         // Notificação: Depósito Falhou
         await supabaseAdmin.from('notifications').insert({
           user_id: decoded.id,
-          message: `Falha no depósito de ${numAmount.toFixed(2)} MZN: ${debitopayRes.error || "Ocorreu um erro no processamento."} Tente novamente.`,
+          message: `Falha no depósito de ${numAmount.toFixed(2)} MZN: ${e2payRes.error || "Ocorreu um erro no processamento."} Tente novamente.`,
           type: "deposit_failed"
         });
           
-        return NextResponse.json({ error: debitopayRes.error }, { status: 400 });
-      } else {
-        const status = debitopayRes.data?.status;
-        const paymentId = debitopayRes.data?.payment_id;
+        return NextResponse.json({ error: e2payRes.error }, { status: 400 });
+      }
+
+      // ===== PAGAMENTO APROVADO INSTANTANEAMENTE =====
+      // A E2Payments confirma na hora — marcamos como COMPLETED e creditamos o saldo imediatamente
+      await supabaseAdmin
+        .from("transactions")
+        .update({ status: "COMPLETED" })
+        .eq("id", transaction.id);
+
+      // Notificação: Depósito Concluído
+      await supabaseAdmin.from('notifications').insert({
+        user_id: decoded.id,
+        message: `O seu depósito de ${numAmount.toFixed(2)} MZN foi aprovado com sucesso e creditado na sua conta. Boas apostas!`,
+        type: "deposit_success"
+      });
+
+      // Adiciona o saldo à conta
+      const { data: user } = await supabaseAdmin.from("users").select("balance, bonus_balance, has_deposited").eq("id", decoded.id).single();
+      
+      let newBalance = 0;
+      if (user) {
+        newBalance = Number(user.balance) + numAmount;
+        let newBonusBalance = Number(user.bonus_balance || 0);
+        let bonus = 0;
         
-        if (paymentId) {
-          await supabaseAdmin
-            .from("transactions")
-            .update({ reference: paymentId })
-            .eq("id", transaction.id);
+        // Aplica o Bónus de 500% se for o 1º depósito
+        if (!user.has_deposited) {
+          bonus = Math.min(numAmount * 5, 25000);
+          newBonusBalance += bonus;
+          
+          await supabaseAdmin.from("transactions").insert([{
+            user_id: decoded.id, type: "BONUS", amount: bonus, status: "COMPLETED", phone: decoded.phone
+          }]);
+          
+          await supabaseAdmin.from('notifications').insert({
+            user_id: decoded.id,
+            message: `Acaba de receber ${bonus.toFixed(2)} MZN de Bónus no seu primeiro depósito!`,
+            type: "promo"
+          });
         }
         
-        // ATENÇÃO: Nunca aprovar de forma síncrona, mesmo que a DebitoPay retorne "success".
-        // Isso evita a fraude de M-Pesa "confirmar sem cobrar nada".
-        // O depósito ficará PENDENTE e só será aprovado quando o Webhook (callback/route.ts) for disparado.
-        return NextResponse.json({ 
-          success: true,
-          status: "PENDING",
-          message: "Verifique o seu telemóvel para confirmar o pagamento.",
-          transactionId: transaction.id
-        }, { status: 200 });
+        await supabaseAdmin.from("users").update({
+          balance: newBalance,
+          ...(bonus > 0 && { bonus_balance: newBonusBalance }),
+          has_deposited: true
+        }).eq("id", decoded.id);
       }
+
+      return NextResponse.json({ 
+        success: true,
+        status: "COMPLETED",
+        message: "Depósito concluído com sucesso!",
+        newBalance,
+        transactionId: transaction.id
+      }, { status: 200 });
+
     } else {
-      // MODO SIMULAÇÃO (Enquanto esperamos chaves)
+      // ===== MODO SIMULAÇÃO (Sem chaves — Dev/Testes) =====
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       // Marca como completo
@@ -161,7 +193,8 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ 
-      message: "Verifique o seu telemóvel para confirmar o pagamento.",
+      success: true,
+      message: "Depósito concluído com sucesso!",
       transactionId: transaction.id
     }, { status: 200 });
 

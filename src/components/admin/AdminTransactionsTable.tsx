@@ -7,7 +7,7 @@ import { ArrowDownLeft, ArrowUpRight, CheckCircle2, XCircle, Search } from "luci
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { getLatestTransactions, getMoreTransactions } from "@/app/admin/transactions/actions";
+import { getLatestTransactions, getMoreTransactions, approveWithdraw, rejectWithdraw } from "@/app/admin/transactions/actions";
 
 interface Transaction {
   id: string;
@@ -29,6 +29,42 @@ export function AdminTransactionsTable({ initialTransactions, initialTotalCount 
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+
+  const handleApproveWithdraw = async (txId: string) => {
+    if (!confirm("Tem a certeza que deseja APROVAR este levantamento?")) return;
+    toast.loading("A processar aprovação...");
+    try {
+      const res = await approveWithdraw(txId);
+      toast.dismiss();
+      if (res.success) {
+        toast.success("Levantamento aprovado com sucesso!");
+        setTransactions(prev => prev.map(tx => tx.id === txId ? { ...tx, status: "COMPLETED" } : tx));
+      } else {
+        toast.error("Erro", { description: res.error });
+      }
+    } catch {
+      toast.dismiss();
+      toast.error("Erro interno ao processar levantamento.");
+    }
+  };
+
+  const handleRejectWithdraw = async (txId: string) => {
+    if (!confirm("Tem a certeza que deseja REJEITAR este levantamento?")) return;
+    toast.loading("A processar rejeição...");
+    try {
+      const res = await rejectWithdraw(txId);
+      toast.dismiss();
+      if (res.success) {
+        toast.success("Levantamento rejeitado e saldo devolvido!");
+        setTransactions(prev => prev.map(tx => tx.id === txId ? { ...tx, status: "FAILED" } : tx));
+      } else {
+        toast.error("Erro", { description: res.error });
+      }
+    } catch {
+      toast.dismiss();
+      toast.error("Erro interno ao rejeitar levantamento.");
+    }
+  };
 
 
   useEffect(() => {
@@ -146,6 +182,7 @@ export function AdminTransactionsTable({ initialTransactions, initialTotalCount 
             >
               <option value="ALL">Todos os Estados</option>
               <option value="COMPLETED">✅ Pago</option>
+              <option value="PENDING">⏳ Pendente</option>
               <option value="FAILED">❌ Falho</option>
             </select>
           </div>
@@ -204,17 +241,41 @@ export function AdminTransactionsTable({ initialTransactions, initialTotalCount 
                     {formatMZN(tx.amount)}
                   </td>
                   <td className="px-6 py-4 text-center">
-                    {tx.status === "COMPLETED" && (
-                      <span className="inline-flex items-center gap-1 bg-primary/10 text-primary px-2 py-1 rounded-md font-bold text-xs">
-                        <CheckCircle2 className="w-4 h-4" /> Pago
-                      </span>
-                    )}
-                    {tx.status === "FAILED" && (
-                      <span className="inline-flex items-center gap-1 bg-red-500/10 text-red-500 px-2 py-1 rounded-md font-bold text-xs">
-                        <XCircle className="w-4 h-4" /> Falho
-                      </span>
-                    )}
-
+                    <div className="flex items-center justify-center gap-2">
+                      {tx.status === "COMPLETED" && (
+                        <span className="inline-flex items-center gap-1 bg-primary/10 text-primary px-2 py-1 rounded-md font-bold text-xs">
+                          <CheckCircle2 className="w-4 h-4" /> Pago
+                        </span>
+                      )}
+                      {tx.status === "FAILED" && (
+                        <span className="inline-flex items-center gap-1 bg-red-500/10 text-red-500 px-2 py-1 rounded-md font-bold text-xs">
+                          <XCircle className="w-4 h-4" /> Falho
+                        </span>
+                      )}
+                      {tx.status === "PENDING" && (
+                        <div className="flex items-center gap-2">
+                          <span className="inline-flex items-center gap-1 bg-yellow-500/10 text-yellow-500 px-2 py-1 rounded-md font-bold text-xs">
+                            Pendente
+                          </span>
+                          {tx.type === "WITHDRAW" && (
+                            <div className="flex gap-1.5">
+                              <button
+                                onClick={() => handleApproveWithdraw(tx.id)}
+                                className="bg-green-600 hover:bg-green-700 text-white font-black text-[10px] uppercase px-2 py-1 rounded cursor-pointer transition-colors active:scale-95"
+                              >
+                                Aprovar
+                              </button>
+                              <button
+                                onClick={() => handleRejectWithdraw(tx.id)}
+                                className="bg-red-600 hover:bg-red-700 text-white font-black text-[10px] uppercase px-2 py-1 rounded cursor-pointer transition-colors active:scale-95"
+                              >
+                                Rejeitar
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </td>
 
                 </tr>

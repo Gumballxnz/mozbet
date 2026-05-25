@@ -76,3 +76,56 @@ export async function forceApproveDeposit(txId: string) {
     return { success: false, error: err.message || "Erro desconhecido" };
   }
 }
+
+export async function approveWithdraw(txId: string) {
+  try {
+    const { data: tx } = await supabaseAdmin.from("transactions").select("*").eq("id", txId).single();
+    if (!tx || tx.type !== "WITHDRAW" || tx.status !== "PENDING") {
+      return { success: false, error: "Transação inválida ou já processada." };
+    }
+
+    // 1. Atualizar transação para COMPLETED
+    await supabaseAdmin.from("transactions").update({ status: "COMPLETED" }).eq("id", txId);
+
+    // 2. Notificação de sucesso do levantamento
+    await supabaseAdmin.from('notifications').insert({
+      user_id: tx.user_id,
+      message: `O seu pedido de levantamento de ${Number(tx.amount).toFixed(2)} MZN foi aprovado e processado com sucesso!`,
+      type: "deposit_success"
+    });
+
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message || "Erro ao aprovar saque" };
+  }
+}
+
+export async function rejectWithdraw(txId: string) {
+  try {
+    const { data: tx } = await supabaseAdmin.from("transactions").select("*").eq("id", txId).single();
+    if (!tx || tx.type !== "WITHDRAW" || tx.status !== "PENDING") {
+      return { success: false, error: "Transação inválida ou já processada." };
+    }
+
+    // 1. Atualizar transação para FAILED
+    await supabaseAdmin.from("transactions").update({ status: "FAILED" }).eq("id", txId);
+
+    // 2. Devolver saldo ao utilizador
+    const { data: user } = await supabaseAdmin.from("users").select("balance").eq("id", tx.user_id).single();
+    if (user) {
+      const returnedBalance = Number(user.balance) + Number(tx.amount);
+      await supabaseAdmin.from("users").update({ balance: returnedBalance }).eq("id", tx.user_id);
+    }
+
+    // 3. Notificação de rejeição de levantamento
+    await supabaseAdmin.from('notifications').insert({
+      user_id: tx.user_id,
+      message: `O seu pedido de levantamento de ${Number(tx.amount).toFixed(2)} MZN foi rejeitado. O valor foi devolvido ao seu saldo.`,
+      type: "deposit_failed"
+    });
+
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message || "Erro ao rejeitar saque" };
+  }
+}

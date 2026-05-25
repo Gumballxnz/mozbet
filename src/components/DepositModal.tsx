@@ -12,7 +12,7 @@ import { useAppStore } from "@/lib/store";
 import { toast } from "sonner";
 import { formatMZN } from "@/lib/utils";
 import { EMOLA_LOGO, MPESA_LOGO } from "@/lib/logos";
-import { Wallet, Check, Headphones } from "lucide-react";
+import { Wallet, Check, Headphones, Lock } from "lucide-react";
 
 // Botões de valor rápido
 const QUICK_AMOUNTS = [50, 100, 250, 500, 1000, 5000];
@@ -45,13 +45,7 @@ export function DepositModal() {
   const [step, setStep] = useState<"form" | "sent">("form");
   const [isLoading, setIsLoading] = useState(false);
   const [showWithdrawErrorModal, setShowWithdrawErrorModal] = useState(false);
-
-  // Sincronizar aba ativa com a store global
-  useEffect(() => {
-    if (depositOpen) {
-      setTab(depositTab);
-    }
-  }, [depositOpen, depositTab]);
+  const [acceptBonus, setAcceptBonus] = useState(true);
 
   // Configurações dinâmicas do backend
   const [config, setConfig] = useState({
@@ -59,6 +53,42 @@ export function DepositModal() {
     max_deposit: 50000,
     first_deposit_bonus_percent: 500,
   });
+
+  // Validação em tempo real do depósito (valor mínimo e máximo)
+  const depositError = useMemo(() => {
+    if (tab !== "deposit") return null;
+    const num = Number(amount);
+    if (!amount || isNaN(num) || num === 0) return null;
+    if (num < config.min_deposit) {
+      return `O valor mínimo de depósito é de ${config.min_deposit} MT.`;
+    }
+    if (num > config.max_deposit) {
+      return `O valor máximo de depósito é de ${config.max_deposit.toLocaleString("pt-MZ")} MT.`;
+    }
+    return null;
+  }, [amount, tab, config.min_deposit, config.max_deposit]);
+
+  // Validação em tempo real do levantamento (saque mínimo e saldo do usuário)
+  const withdrawError = useMemo(() => {
+    if (tab !== "withdraw") return null;
+    const num = Number(amount);
+    if (!amount || isNaN(num) || num === 0) return null;
+    if (num < 65) {
+      return "O valor mínimo de levantamento é de 65 MT.";
+    }
+    const userBalance = user?.balance || 0;
+    if (num > userBalance) {
+      return `Saldo insuficiente. O teu saldo disponível é de ${userBalance.toFixed(2)} MT.`;
+    }
+    return null;
+  }, [amount, tab, user?.balance]);
+
+  // Sincronizar aba ativa com a store global
+  useEffect(() => {
+    if (depositOpen) {
+      setTab(depositTab);
+    }
+  }, [depositOpen, depositTab]);
 
   // Busca configurações ao abrir o modal
   useEffect(() => {
@@ -125,7 +155,7 @@ export function DepositModal() {
     fetch("/api/payments/deposit", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ amount: numAmount, method: paymentInfo.method }),
+      body: JSON.stringify({ amount: numAmount, method: paymentInfo.method, acceptBonus }),
     })
       .then(async (res) => {
         const data = await res.json();
@@ -162,14 +192,14 @@ export function DepositModal() {
   };
 
   // Envio de Levantamento (Saque)
-  const handleWithdrawSubmit = (e: React.FormEvent) => {
+  const handleWithdrawSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const numAmount = Number(amount);
     const userBalance = user?.balance || 0;
 
-    if (isNaN(numAmount) || numAmount <= 0) {
-      toast.error("Erro de Valor", { description: "Insira um valor válido para levantamento." });
+    if (isNaN(numAmount) || numAmount < 65) {
+      toast.error("Erro de Valor", { description: "O valor mínimo de levantamento é 65 MT." });
       return;
     }
 
@@ -180,11 +210,45 @@ export function DepositModal() {
 
     setIsLoading(true);
 
-    // Simulação do fluxo de segurança de saque do MozBet
-    setTimeout(() => {
-      setIsLoading(false);
-      setShowWithdrawErrorModal(true);
-    }, 1500);
+    fetch("/api/payments/withdraw", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ amount: numAmount }),
+    })
+      .then(async (res) => {
+        const data = await res.json();
+
+        if (!res.ok) {
+          setIsLoading(false);
+          if (data.error === "DEPOSIT_REQUIRED") {
+            setShowWithdrawErrorModal(true);
+          } else {
+            toast.error("Erro no Saque", { description: data.error || "Ocorreu um erro ao solicitar levantamento." });
+          }
+          return;
+        }
+
+        setIsLoading(false);
+        toast.success("⏳ Saque Solicitado!", {
+          description: `O seu pedido de levantamento de ${formatMZN(numAmount)} foi enviado e está sob análise manual.`,
+        });
+
+        // Atualizar saldo do usuário localmente
+        const meRes = await fetch("/api/auth/me", { cache: "no-store" });
+        if (meRes.ok) {
+          const meData = await meRes.json();
+          if (meData.user) {
+            const { updateBalance } = useAppStore.getState();
+            updateBalance(Number(meData.user.balance));
+          }
+        }
+        
+        handleClose();
+      })
+      .catch(() => {
+        toast.error("Erro de Ligação", { description: "Verifica a tua ligação de internet e tenta novamente." });
+        setIsLoading(false);
+      });
   };
 
   return (
@@ -329,27 +393,70 @@ export function DepositModal() {
                     </div>
                   </div>
 
-                  {/* Legenda Dinâmica de Limites / Bónus */}
+                  {/* Legenda Dinâmica de Limites / Bónus e Erro de Validação */}
                   {tab === "deposit" ? (
-                    <p className="text-[10px] text-muted-foreground text-center leading-relaxed mt-2">
-                      Mínimo: <span className="text-white font-bold">{config.min_deposit} MT</span> · Máximo: <span className="text-white font-bold">{config.max_deposit.toLocaleString("pt-MZ")} MT</span> por depósito <br />
-                      {!user?.hasDeposited && (
-                        <span className="text-primary font-bold block mt-1 glow-primary">
-                          ★ Bónus de {config.first_deposit_bonus_percent}% no teu primeiro depósito!
-                        </span>
+                    <>
+                      {depositError && (
+                        <p className="text-red-500 text-[11px] font-bold mt-1 text-left animate-in fade-in">
+                          {depositError}
+                        </p>
                       )}
-                    </p>
+                      <p className="text-[10px] text-muted-foreground text-left mt-2 leading-relaxed">
+                        Mínimo: {config.min_deposit} MT · Máximo: {config.max_deposit.toLocaleString("pt-MZ")} MT por depósito {!user?.hasDeposited && `· Bónus de ${config.first_deposit_bonus_percent}% (depósito #1)`}
+                      </p>
+                    </>
                   ) : (
-                    <p className="text-[10px] text-muted-foreground text-center mt-2 leading-relaxed">
-                      Mínimo para saque: <span className="text-white font-bold">50 MT</span> · Saldo Real disponível: <span className="text-primary font-bold glow-primary">{formatMZN(user?.balance || 0)}</span>
-                    </p>
+                    <>
+                      {withdrawError && (
+                        <p className="text-red-500 text-[11px] font-bold mt-1 text-left">
+                          {withdrawError}
+                        </p>
+                      )}
+                      <p className="text-[10px] text-muted-foreground text-left mt-2 leading-relaxed">
+                        Mínimo: 65 MT · Limite diário: 25,000 MT · Já levantado hoje: 0 MT
+                      </p>
+                    </>
                   )}
                 </div>
+
+                {/* Checkbox de Aceitar Bónus (Apenas no primeiro Depósito válido) */}
+                {tab === "deposit" && !user?.hasDeposited && !depositError && (
+                  <div 
+                    className="flex items-center gap-2 mt-4 bg-white/5 border border-[#2A2F40]/30 rounded-2xl p-4 cursor-pointer select-none"
+                    onClick={() => setAcceptBonus(!acceptBonus)}
+                  >
+                    <div className={`w-5 h-5 rounded-md flex items-center justify-center border transition-all ${
+                      acceptBonus 
+                        ? "bg-primary border-primary text-black" 
+                        : "border-gray-500 text-transparent"
+                    }`}>
+                      ✓
+                    </div>
+                    <span className="text-xs font-bold text-gray-300">
+                      Aceitar <span className="text-primary">Bónus de Boas-vindas {config.first_deposit_bonus_percent}%</span>
+                    </span>
+                  </div>
+                )}
+
+                {/* Campo Conta de Pagamento (Apenas no Levantamento) */}
+                {tab === "withdraw" && (
+                  <div className="space-y-2 text-left">
+                    <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest block">
+                      Conta de Pagamento
+                    </span>
+                    <div className="flex items-center justify-between bg-[#101116] border border-[#2A2F40]/60 rounded-2xl h-14 px-4 select-none opacity-80">
+                      <span className="font-mono-data text-sm font-bold text-gray-300">
+                        {phone.startsWith("258") ? "" : "258"}{phone} (Moçambique {paymentInfo.label})
+                      </span>
+                      <Lock className="w-4 h-4 text-gray-500" />
+                    </div>
+                  </div>
+                )}
 
                 {/* Botão de Envio Principal (Glow Verde) */}
                 <Button
                   type="submit"
-                  disabled={isLoading}
+                  disabled={isLoading || (tab === "deposit" ? !!depositError : !!withdrawError)}
                   className="w-full h-14 text-sm font-black uppercase tracking-wider rounded-2xl transition-all cursor-pointer select-none bg-primary hover:bg-primary/90 text-black shadow-[0_0_20px_rgba(0,255,127,0.25)] flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-[0.98] disabled:opacity-50"
                 >
                   {isLoading ? (
@@ -374,7 +481,9 @@ export function DepositModal() {
             <div className="flex flex-col items-center justify-center text-center py-4">
               <div className="w-full flex items-center justify-start mb-8 pb-3 border-b border-[#2A2F40]/30">
                 <Wallet className="w-5 h-5 text-primary mr-2" />
-                <h2 className="text-sm font-black font-mono-data tracking-wider text-white uppercase">DEPOSITAR</h2>
+                <h2 className="text-sm font-black font-mono-data tracking-wider text-white uppercase">
+                  {tab === "deposit" ? "DEPOSITAR" : "LEVANTAR"}
+                </h2>
               </div>
 
               {/* Ícone Animado Pulse */}
@@ -388,10 +497,12 @@ export function DepositModal() {
               </div>
 
               <h3 className="text-xl font-black font-mono-data tracking-widest text-white uppercase mb-3">
-                PEDIDO ENVIADO!
+                {tab === "deposit" ? "PEDIDO ENVIADO!" : "SOLICITAÇÃO ENVIADA!"}
               </h3>
               <p className="text-[11px] text-gray-400 max-w-[280px] uppercase font-bold leading-relaxed mb-8">
-                Pedido de depósito enviado com sucesso! Por favor, insere o PIN de confirmação no teu telemóvel. Obrigado!
+                {tab === "deposit" 
+                  ? "Pedido de depósito enviado com sucesso! Por favor, insere o PIN de confirmação no teu telemóvel. Obrigado!"
+                  : "Pedido de levantamento solicitado com sucesso! A transação está sob análise e será processada manualmente. Obrigado!"}
               </p>
 
               <Button

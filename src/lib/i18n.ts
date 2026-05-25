@@ -21,9 +21,9 @@ export const translations = {
     // Header
     enter: "Entrar",
     register: "Registrar",
-    deposit: "Depositar",
+    deposit: "DEPÓSITO",
     currency: "MZN",
-
+ 
     // Auth
     createAccount: "Criar Conta",
     welcomeBack: "Bem-vindo de volta",
@@ -42,16 +42,16 @@ export const translations = {
     unexpectedError: "Erro inesperado. Tente novamente.",
     loginRequired: "O login é obrigatório para jogar a dinheiro real.",
     bestExperience: "A melhor experiência de jogos virtual",
-
+ 
     // Depósito
-    depositTitle: "DEPOSITAR",
+    depositTitle: "DEPÓSITO",
     depositMin: "O valor mínimo de depósito é 10 MT",
     depositMax: "Valor máximo é 25.000 MT",
     invalidPhone: "Número inválido. Use 9 dígitos (84/85/86/87).",
     processing: "A PROCESSAR...",
     depositSuccess: "Depósito iniciado com sucesso!",
     depositError: "Erro ao processar depósito",
-    depositInfo: "Após clicar em Depositar, aguarde a notificação no seu celular e confirme o pagamento inserindo seu PIN.",
+    depositInfo: "Após clicar em DEPÓSITO, aguarde a notificação no seu celular e confirme o pagamento inserindo seu PIN.",
     withdraw: "Sacar",
     withdrawComingSoon: "Função de saque em breve!",
 

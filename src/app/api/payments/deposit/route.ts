@@ -22,7 +22,7 @@ export async function POST(req: Request) {
     }
 
     // 2. Extrair valor, método de pagamento e validar
-    const { amount, method = "mpesa" } = await req.json();
+    const { amount, method = "mpesa", acceptBonus = true } = await req.json();
     const numAmount = Number(amount);
     const paymentMethod: E2PaymentMethod = method === "emola" ? "emola" : "mpesa";
 
@@ -154,8 +154,8 @@ export async function POST(req: Request) {
       newBonusBalance = Number(user.bonus_balance || 0);
       let bonus = 0;
 
-      // Aplica o Bónus se for o 1º depósito (500% ou dinâmico)
-      if (!user.has_deposited) {
+      // Aplica o Bónus se for o 1º depósito (500% ou dinâmico) e se foi aceito
+      if (!user.has_deposited && acceptBonus) {
         const multiplier = bonusPercent / 100;
         bonus = numAmount * multiplier; // bónus real entregue de facto
         newBonusBalance += bonus;

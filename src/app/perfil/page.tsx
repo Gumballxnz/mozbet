@@ -279,7 +279,7 @@ export default function PerfilPage() {
           className="w-full h-14 bg-primary text-black hover:bg-primary/90 font-black text-lg rounded-2xl flex items-center justify-center gap-2 shadow-xl shadow-primary/10 transition-all hover:scale-[1.01] active:scale-[0.98] cursor-pointer"
         >
           <Wallet size={24} />
-          DEPOSITAR
+          DEPÓSITO
         </Button>
         
         <div className="grid grid-cols-2 gap-3">

@@ -25,13 +25,9 @@ export function Footer() {
         {/* Secção de Pagamentos */}
         <div className="pt-6 pb-2">
           <h3 className="text-left text-lg font-bold text-white mb-4">Métodos de Pagamento</h3>
-          <div className="flex gap-4">
-            <div className="flex items-center justify-center bg-white/5 rounded-2xl w-28 h-16 border border-white/10">
-              <img src={MPESA_LOGO} alt="M-Pesa" className="h-10 w-auto object-contain" />
-            </div>
-            <div className="flex items-center justify-center bg-white/5 rounded-2xl w-28 h-16 border border-white/10">
-              <img src={EMOLA_LOGO} alt="e-Mola" className="h-10 w-auto object-contain" />
-            </div>
+          <div className="flex items-center gap-6">
+            <img src={MPESA_LOGO} alt="M-Pesa" className="h-8 w-auto object-contain" />
+            <img src={EMOLA_LOGO} alt="e-Mola" className="h-8 w-auto object-contain" />
           </div>
         </div>
 

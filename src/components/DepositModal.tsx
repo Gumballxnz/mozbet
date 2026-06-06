@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -48,6 +48,10 @@ export function DepositModal() {
   const [isLoading, setIsLoading] = useState(false);
   const [showWithdrawErrorModal, setShowWithdrawErrorModal] = useState(false);
   const [acceptBonus, setAcceptBonus] = useState(true);
+
+  // Contador regressivo de 60 segundos após envio do depósito
+  const [countdown, setCountdown] = useState(0);
+  const countdownRef = useRef<NodeJS.Timeout | null>(null);
 
   // Configurações dinâmicas do backend
   const [config, setConfig] = useState({
@@ -123,24 +127,46 @@ export function DepositModal() {
   // Detecção automática de operadora pelo número de telefone
   const paymentInfo = useMemo(() => detectPaymentMethod(phone), [phone]);
 
-  // Fechar automaticamente após sucesso do depósito
+  // Iniciar countdown de 60s quando o depósito for enviado com sucesso
   useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (step === "sent") {
-      timer = setTimeout(() => {
-        handleClose();
-      }, 5000);
+    if (step === "sent" && tab === "deposit") {
+      setCountdown(60);
+      countdownRef.current = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev <= 1) {
+            if (countdownRef.current) clearInterval(countdownRef.current);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      return () => {
+        if (countdownRef.current) clearInterval(countdownRef.current);
+      };
     }
-    return () => clearTimeout(timer);
-  }, [step]);
+    // Para levantamento, fechar automaticamente após 5s
+    if (step === "sent" && tab === "withdraw") {
+      const timer = setTimeout(() => handleClose(), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [step, tab]);
+
+  // Formatar segundos para M:SS
+  const formatCountdown = useCallback((seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, "0")}`;
+  }, []);
 
   const handleClose = () => {
     setDepositOpen(false);
+    if (countdownRef.current) clearInterval(countdownRef.current);
     setTimeout(() => {
       setStep("form");
       setTab("deposit");
       setDepositTab("deposit");
       setAmount("");
+      setCountdown(0);
     }, 300);
   };
 
@@ -516,22 +542,50 @@ export function DepositModal() {
               <h3 className="text-xl font-black font-mono-data tracking-widest text-white uppercase mb-3">
                 {tab === "deposit" ? "PEDIDO ENVIADO!" : "SOLICITAÇÃO ENVIADA!"}
               </h3>
-              <p className="text-[11px] text-gray-400 max-w-[280px] uppercase font-bold leading-relaxed mb-8">
+              <p className="text-[11px] text-gray-400 max-w-[280px] uppercase font-bold leading-relaxed mb-4">
                 {tab === "deposit" 
                   ? "Pedido de depósito enviado com sucesso! Por favor, insere o PIN de confirmação no teu telemóvel. Obrigado!"
                   : "Pedido de levantamento solicitado com sucesso! A transação está sob análise e será processada manualmente. Obrigado!"}
               </p>
 
-              <Button
-                onClick={handleClose}
-                className="relative w-full h-14 text-xs font-black bg-primary hover:bg-primary/90 text-black uppercase tracking-wider rounded-xl transition-all cursor-pointer overflow-hidden"
-              >
-                <span className="relative z-10">OK, ENTENDI</span>
-                <div
-                  className="absolute bottom-0 left-0 h-1 bg-black/30 w-full"
-                  style={{ animation: "progress-bar-shrink 5s linear forwards" }}
-                />
-              </Button>
+              {/* Botão com Countdown para Depósito */}
+              {tab === "deposit" && countdown > 0 ? (
+                <>
+                  <Button
+                    disabled
+                    className="relative w-full h-14 text-sm font-black bg-primary/80 text-black uppercase tracking-wider rounded-2xl cursor-default overflow-hidden flex items-center justify-center gap-2 mb-3"
+                  >
+                    <div className="w-5 h-5 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                    <span>AGUARDANDO... ({formatCountdown(countdown)})</span>
+                    <div
+                      className="absolute bottom-0 left-0 h-1 bg-black/30"
+                      style={{ width: `${(countdown / 60) * 100}%`, transition: "width 1s linear" }}
+                    />
+                  </Button>
+
+                  {/* Mensagem informativa com contagem */}
+                  <div className="w-full bg-[#1A1C24] border border-[#2A2F40]/40 rounded-2xl p-4 flex items-start gap-3 text-left">
+                    <div className="w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Headphones className="w-4 h-4 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-[11px] text-gray-300 font-bold leading-relaxed">
+                        Pedido enviado — confirme o PIN no seu telemóvel para concluir o depósito.
+                      </p>
+                      <p className="text-primary text-[11px] font-black uppercase mt-1">
+                        AGUARDE... ({formatCountdown(countdown)})
+                      </p>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <Button
+                  onClick={handleClose}
+                  className="relative w-full h-14 text-xs font-black bg-primary hover:bg-primary/90 text-black uppercase tracking-wider rounded-xl transition-all cursor-pointer overflow-hidden mt-4"
+                >
+                  <span className="relative z-10">OK, ENTENDI</span>
+                </Button>
+              )}
             </div>
           )}
         </DialogContent>

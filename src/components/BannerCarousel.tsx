@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import Image from "next/image";
 
 interface Banner {
   id: string;
@@ -128,9 +129,12 @@ export function BannerCarousel({ initialBanners }: { initialBanners: Banner[] })
             index === currentSlide ? "opacity-100 z-10" : "opacity-0 z-0"
           }`}
         >
-          <img
+          <Image
             src={slide.image_url}
             alt={slide.title}
+            fill
+            priority={index === 0}
+            sizes="(max-width: 768px) 100vw, 80vw"
             className="absolute inset-0 w-full h-full object-cover opacity-60 sm:opacity-80 transition-transform duration-[6000ms] ease-out scale-100 group-hover:scale-105"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-background via-background/90 to-transparent" />

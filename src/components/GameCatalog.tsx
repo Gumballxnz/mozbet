@@ -3,6 +3,7 @@
 import { useTranslation } from "@/hooks/useTranslation";
 import { Gamepad2, ChevronRight, Heart, LayoutGrid, Flame, Clock, Swords, Trophy, Cherry } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
+import NextImage from "next/image";
 import { useAppStore } from "@/lib/store";
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
@@ -174,10 +175,11 @@ export function GameCatalog() {
               onClick={() => handleGameClick(game.id)}
               className="relative rounded-[28px] overflow-hidden aspect-[4/5] group active:scale-[0.97] transition-all cursor-pointer text-left shadow-lg bg-card"
             >
-              <img
+              <NextImage
                 src={game.banner_url}
                 alt={game.name}
-                loading="lazy"
+                fill
+                sizes="(max-width: 768px) 50vw, 33vw"
                 className="absolute inset-0 w-full h-full object-cover"
               />
 

@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { ShieldCheck, SmartphoneNfc } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
+import { MPESA_LOGO, EMOLA_LOGO } from "@/lib/logos";
 
 export function Footer() {
   return (
@@ -25,13 +26,11 @@ export function Footer() {
         <div className="pt-6 pb-2">
           <h3 className="text-left text-lg font-bold text-white mb-4">Métodos de Pagamento</h3>
           <div className="flex gap-4">
-            <div className="flex flex-col items-center justify-center bg-red-600/10 rounded-2xl w-28 h-20 border border-red-500/20 shadow-inner">
-              <span className="text-red-500 font-extrabold text-lg tracking-tight mb-0.5">m-pesa</span>
-              <div className="w-8 h-1 bg-red-500 rounded-full opacity-50"></div>
+            <div className="flex items-center justify-center bg-white/5 rounded-2xl w-28 h-16 border border-white/10">
+              <img src={MPESA_LOGO} alt="M-Pesa" className="h-10 w-auto object-contain" />
             </div>
-            <div className="flex flex-col items-center justify-center bg-orange-500/10 rounded-2xl w-28 h-20 border border-orange-500/20 shadow-inner">
-              <span className="text-orange-500 font-extrabold text-lg tracking-tight mb-0.5 italic">e-Mola</span>
-              <div className="w-8 h-1 bg-orange-500 rounded-full opacity-50"></div>
+            <div className="flex items-center justify-center bg-white/5 rounded-2xl w-28 h-16 border border-white/10">
+              <img src={EMOLA_LOGO} alt="e-Mola" className="h-10 w-auto object-contain" />
             </div>
           </div>
         </div>

@@ -285,7 +285,7 @@ export function AdminUsersTable({ initialUsers, currentUserRole, totalCount = 0 
         </div>
       </div>
 
-      <div className="bg-[#101116] border border-[#2A2F40] rounded-2xl overflow-hidden shadow-xl">
+      <div className="bg-[#101116] border border-[#2A2F40] rounded-2xl overflow-hidden shadow-xl hidden md:block">
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
             <thead className="text-[10px] text-gray-500 uppercase bg-[#0B0C10] border-b border-[#2A2F40] font-black tracking-wider">
@@ -364,6 +364,85 @@ export function AdminUsersTable({ initialUsers, currentUserRole, totalCount = 0 
               disabled={loadingMore}
               variant="outline"
               className="border-[#2A2F40] text-gray-400 hover:text-white hover:bg-[#1A1D27] min-w-[200px]"
+            >
+              {loadingMore ? "A carregar..." : `Ver próximos utilizadores (${users.length} de ${totalCount})`}
+            </Button>
+          </div>
+        )}
+      </div>
+
+      {/* Layout de Cards para Mobile */}
+      <div className="space-y-4 md:hidden">
+        <div className="grid grid-cols-1 gap-4">
+          {filteredUsers.map((user) => (
+            <div key={user.id} className="bg-[#101116] border border-[#2A2F40]/60 rounded-2xl p-4 space-y-3 shadow-md text-left">
+              <div className="flex justify-between items-start">
+                <div className="flex flex-col">
+                  <span className="font-mono-data font-black text-white flex items-center gap-1.5 text-base">
+                    {user.is_admin && <ShieldAlert className="w-4 h-4 text-primary" />}
+                    #{user.id.substring(0, 8).toUpperCase()}
+                  </span>
+                  <span className="text-xs text-gray-400 font-mono-data tracking-wider">{maskPhone(user.phone)}</span>
+                  {user.email && <span className="text-[10px] text-sky-400/70 flex items-center gap-1 mt-1"><AtSign size={10}/>{maskEmail(user.email)}</span>}
+                </div>
+                <div className="flex flex-col items-end gap-1">
+                  {user.role === 'super_admin' && <span className="px-2 py-0.5 rounded text-[8px] font-black uppercase bg-purple-500/20 text-purple-400 border border-purple-500/30">Dono</span>}
+                  {user.role === 'admin' && <span className="px-2 py-0.5 rounded text-[8px] font-black uppercase bg-primary/20 text-primary border border-primary/30">Admin</span>}
+                  {user.role === 'user' && <span className="px-2 py-0.5 rounded text-[8px] font-black uppercase bg-gray-500/20 text-gray-400 border border-gray-500/30">Cliente</span>}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#2A2F40]/30 text-xs">
+                <div>
+                  <span className="text-gray-500 block">Saldo Real</span>
+                  <span className="font-mono-data font-black text-primary text-base">{formatMZN(user.balance)}</span>
+                </div>
+                <div>
+                  <span className="text-gray-500 block">Criado em</span>
+                  <span className="text-gray-300 font-medium">{new Date(user.created_at).toLocaleDateString('pt-BR')}</span>
+                </div>
+              </div>
+
+              <div className="flex justify-between items-center pt-2 border-t border-[#2A2F40]/30">
+                <div className="flex gap-1.5">
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                    user.is_active ? "bg-primary/10 text-primary border border-primary/20" : "bg-red-500/10 text-red-500 border border-red-500/20"
+                  }`}>
+                    {user.is_active ? "Ativo" : "Banido"}
+                  </span>
+                  {user.balance_retained && (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-orange-500/10 text-orange-500 border border-orange-500/20">
+                      Retido
+                    </span>
+                  )}
+                </div>
+                
+                <Button 
+                  onClick={() => setSelectedUser(user)}
+                  size="sm" 
+                  className="h-8 bg-[#2A2F40] hover:bg-primary hover:text-black font-bold text-xs text-white transition-all rounded-lg cursor-pointer"
+                >
+                  <Settings className="w-3.5 h-3.5 mr-1" />
+                  Gerir Conta
+                </Button>
+              </div>
+            </div>
+          ))}
+          
+          {filteredUsers.length === 0 && (
+            <div className="bg-[#101116] border border-[#2A2F40] rounded-2xl p-8 text-center text-muted-foreground">
+              Nenhum utilizador encontrado.
+            </div>
+          )}
+        </div>
+
+        {users.length < totalCount && (
+          <div className="flex justify-center pt-2 pb-4">
+            <Button 
+              onClick={loadMore} 
+              disabled={loadingMore}
+              variant="outline"
+              className="border-[#2A2F40] text-gray-400 hover:text-white hover:bg-[#1A1D27] w-full cursor-pointer"
             >
               {loadingMore ? "A carregar..." : `Ver próximos utilizadores (${users.length} de ${totalCount})`}
             </Button>

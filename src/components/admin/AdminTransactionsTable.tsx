@@ -257,7 +257,8 @@ export function AdminTransactionsTable({ initialTransactions, initialTotalCount 
         </div>
       </div>
 
-      <div className="bg-[#101116] border border-[#2A2F40] rounded-2xl overflow-hidden shadow-xl">
+      {/* Tabela para Desktop */}
+      <div className="bg-[#101116] border border-[#2A2F40] rounded-2xl overflow-hidden shadow-xl hidden md:block">
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
             <thead className="text-[10px] text-gray-500 uppercase bg-[#0B0C10] border-b border-[#2A2F40] font-black tracking-wider">
@@ -326,7 +327,6 @@ export function AdminTransactionsTable({ initialTransactions, initialTotalCount 
                       )}
                     </div>
                   </td>
-
                 </tr>
               ))}
               
@@ -342,18 +342,90 @@ export function AdminTransactionsTable({ initialTransactions, initialTotalCount 
         </div>
       </div>
 
+      {/* Layout de Cards para Mobile */}
+      <div className="grid grid-cols-1 gap-4 md:hidden">
+        {filtered.map((tx) => (
+          <div key={tx.id} className="bg-[#101116] border border-[#2A2F40]/60 rounded-2xl p-4 space-y-3 shadow-md text-left">
+            <div className="flex justify-between items-start">
+              <div className="flex flex-col">
+                <div className="flex items-center gap-1.5">
+                  {tx.type === "DEPOSIT" && <ArrowDownLeft className="w-4.5 h-4.5 text-primary" />}
+                  {tx.type === "WITHDRAW" && <ArrowUpRight className="w-4.5 h-4.5 text-red-500" />}
+                  {tx.type === "BONUS" && <div className="w-4.5 h-4.5 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-[9px]">B</div>}
+                  <span className="font-bold text-white text-base">{tx.type}</span>
+                </div>
+                <span className="text-[10px] text-gray-500 mt-1">{new Date(tx.created_at).toLocaleString("pt-MZ")}</span>
+              </div>
+              
+              <div className="text-right">
+                <span className="font-mono-data font-black text-white text-xl block">{formatMZN(tx.amount)}</span>
+              </div>
+            </div>
+
+            <div className="flex justify-between items-center pt-2 border-t border-[#2A2F40]/30">
+              <div>
+                <span className="text-gray-500 text-[10px] block">Telefone</span>
+                <span className="font-mono-data text-xs text-gray-300 font-bold">+258 {tx.phone}</span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {tx.status === "COMPLETED" && (
+                  <span className="inline-flex items-center gap-1 bg-primary/10 text-primary px-2.5 py-0.5 rounded-md font-bold text-[10px]">
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Pago
+                  </span>
+                )}
+                {tx.status === "FAILED" && (
+                  <span className="inline-flex items-center gap-1 bg-red-500/10 text-red-500 px-2.5 py-0.5 rounded-md font-bold text-[10px]">
+                    <XCircle className="w-3.5 h-3.5" /> Falho
+                  </span>
+                )}
+                {tx.status === "PENDING" && (
+                  <div className="flex flex-col items-end gap-2">
+                    <span className="inline-flex items-center gap-1 bg-yellow-500/10 text-yellow-500 px-2.5 py-0.5 rounded-md font-bold text-[10px] mb-1">
+                      Pendente
+                    </span>
+                    {tx.type === "WITHDRAW" && (
+                      <div className="flex gap-1.5">
+                        <button
+                          onClick={() => handleApproveWithdraw(tx.id)}
+                          className="bg-green-600 hover:bg-green-700 text-white font-black text-[9px] uppercase px-2 py-1 rounded cursor-pointer active:scale-95 transition-transform"
+                        >
+                          Aprovar
+                        </button>
+                        <button
+                          onClick={() => handleRejectWithdraw(tx.id)}
+                          className="bg-red-600 hover:bg-red-700 text-white font-black text-[9px] uppercase px-2 py-1 rounded cursor-pointer active:scale-95 transition-transform"
+                        >
+                          Rejeitar
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+        {filtered.length === 0 && (
+          <div className="bg-[#101116] border border-[#2A2F40] rounded-2xl p-8 text-center text-muted-foreground">
+            Nenhuma transação encontrada.
+          </div>
+        )}
+      </div>
+
       {/* Botão Carregar Mais */}
       {transactions.length < totalCount && (
-        <div className="flex justify-center mt-6 mb-8">
+        <div className="flex justify-center mt-6 mb-8 w-full">
           <Button
             onClick={handleLoadMore}
             disabled={loadingMore}
-            className="bg-primary/20 hover:bg-primary/30 text-primary border border-primary/50 font-bold px-8"
+            className="bg-primary/20 hover:bg-primary/30 text-primary border border-primary/50 font-bold px-8 w-full sm:w-auto cursor-pointer"
           >
             {loadingMore ? "A Carregar..." : "Carregar Mais Transações"}
           </Button>
         </div>
       )}
+
       {/* Modal de Confirmação Customizado (Substitui confirm do navegador) */}
       <Dialog open={!!confirmModal?.isOpen} onOpenChange={(open) => { if (!open) setConfirmModal(null); }}>
         <DialogContent className="sm:max-w-[400px] bg-[#141516] border border-[#2A2F40]/50 text-white rounded-3xl p-6 shadow-2xl focus:outline-none">

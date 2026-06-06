@@ -195,16 +195,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Main Content */}
       <main className="flex-1 flex flex-col overflow-hidden">
         {/* Mobile Topbar */}
-        <header className="h-16 border-b border-white/10 bg-surface-elevated flex md:hidden items-center px-4 justify-between">
-          <span className="text-lg font-extrabold tracking-tight">
-            MOZ<span className="text-primary glow-primary">ADMIN</span>
-          </span>
+        <header className="h-16 border-b border-white/10 bg-surface-elevated flex md:hidden items-center px-4 gap-3">
           <button
             onClick={() => setIsMobileMenuOpen(true)}
             className="p-2 hover:bg-white/5 rounded text-white flex items-center justify-center cursor-pointer transition-colors"
           >
             <Menu className="w-6 h-6" />
           </button>
+          <span className="text-lg font-extrabold tracking-tight">
+            MOZ<span className="text-primary glow-primary">ADMIN</span>
+          </span>
         </header>
 
         <div className="flex-1 overflow-auto p-4 md:p-8">

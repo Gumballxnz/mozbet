@@ -18,6 +18,7 @@ export function GameCatalog() {
   const catalogRef = useRef<HTMLDivElement>(null);
   
   const [games, setGames] = useState<any[]>([]);
+  const [featuredGames, setFeaturedGames] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState("all");
 
@@ -41,6 +42,9 @@ export function GameCatalog() {
         
         if (data.games) {
           setGames(data.games);
+          const activeGames = data.games.filter((g: any) => g.is_active !== false);
+          const shuffled = [...activeGames].sort(() => 0.5 - Math.random());
+          setFeaturedGames(shuffled.slice(0, 6));
         }
       } catch (err) {
         console.error("Erro ao carregar jogos:", err);
@@ -124,6 +128,55 @@ export function GameCatalog() {
 
   return (
     <div ref={catalogRef} className="px-3 pt-2 pb-6">
+      {/* 6 Jogos Recomendados (Destaques no topo) */}
+      {!loading && featuredGames.length > 0 && (
+        <div className="grid grid-cols-2 gap-3 mb-6">
+          {featuredGames.map((game) => (
+            <button
+              key={`featured-${game.id}`}
+              onClick={() => handleGameClick(game.id)}
+              className="relative rounded-[28px] overflow-hidden aspect-[4/5] group active:scale-[0.97] transition-all cursor-pointer text-left shadow-lg bg-card"
+            >
+              <NextImage
+                src={game.banner_url}
+                alt={game.name}
+                fill
+                sizes="(max-width: 768px) 50vw, 33vw"
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+
+              {/* Badge HOT */}
+              {game.is_hot && (
+                <div className="absolute top-0 left-0 w-20 h-20 overflow-hidden pointer-events-none z-10">
+                  <div className="absolute top-3 -left-6 rotate-[-45deg] bg-red-600 text-white text-[11px] font-extrabold px-7 py-0.5 shadow-md">
+                    HOT
+                  </div>
+                </div>
+              )}
+
+              {/* Botão de favorito */}
+              <div className="absolute top-2 right-2 w-8 h-8 bg-black/80 rounded-lg flex items-center justify-center z-10 shadow-md">
+                <Heart size={16} className="text-yellow-400" fill="none" />
+              </div>
+
+              {/* Percentagem RTP */}
+              <div className="absolute top-2 left-1/2 -translate-x-1/2 z-10">
+                <span className="text-[9px] font-bold bg-black/80 text-white px-2 py-0.5 rounded shadow-sm">
+                  {game.rtp_display}
+                </span>
+              </div>
+
+              {/* Nome do jogo */}
+              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent pt-8 pb-3 px-2">
+                <p className="text-center text-base font-extrabold text-white tracking-wider drop-shadow-lg">
+                  {game.name}
+                </p>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Filtros em Barra Horizontal com Scroll */}
       <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar pb-4 -mx-3 px-3">
         {filters.map((filter) => {

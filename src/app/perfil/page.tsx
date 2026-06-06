@@ -30,6 +30,14 @@ const maskPhone = (phone?: string) => {
   return `${cleaned.slice(0, 2)}•••••${cleaned.slice(-2)}`;
 };
 
+const maskEmail = (email?: string) => {
+  if (!email) return "";
+  const [local, domain] = email.split("@");
+  if (!domain) return email;
+  if (local.length <= 2) return `${local.slice(0, 1)}***@${domain}`;
+  return `${local.slice(0, 2)}***${local.slice(-1)}@${domain}`;
+};
+
 export default function PerfilPage() {
   const { user, logout, setDepositOpen, setDepositTab } = useAppStore();
   const balance = user?.balance || 0;
@@ -139,7 +147,7 @@ export default function PerfilPage() {
          const d = await res.json();
          throw new Error(d.error || "Erro ao enviar código.");
       }
-      toast.success("Código enviado via Resend!");
+      toast.success("Código de confirmação enviado para o teu e-mail!");
       setPasswordStep("verify");
     } catch (err: any) {
       toast.error(err.message);
@@ -473,8 +481,8 @@ export default function PerfilPage() {
                     <Mail size={20} />
                   </div>
                   <div className="text-left">
-                    <p className="text-sm font-bold text-white">Via E-mail (Resend)</p>
-                    <p className="text-[10px] text-muted-foreground">{user.email || "Não configurado"}</p>
+                    <p className="text-sm font-bold text-white">Via E-mail</p>
+                    <p className="text-[10px] text-muted-foreground">{maskEmail(user.email)}</p>
                   </div>
                 </Button>
               </div>

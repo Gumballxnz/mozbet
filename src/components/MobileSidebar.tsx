@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { 
   X, Gamepad2, Flame, Dices, Cherry, Rocket, 
-  Target, Headphones, HelpCircle, Shield, User, LogOut
+  Target, Headphones, HelpCircle, Shield, User
 } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useAppStore } from "@/lib/store";
@@ -16,7 +16,7 @@ export function MobileSidebar() {
   const { locale, setLocale } = useTranslation();
   const { 
     mobileSidebarOpen, setMobileSidebarOpen, 
-    setSupportOpen, isLoggedIn, user, logout 
+    setSupportOpen, isLoggedIn, user 
   } = useAppStore();
 
   // Fechar ao mudar de página
@@ -34,18 +34,7 @@ export function MobileSidebar() {
     return () => { document.body.style.overflow = ""; };
   }, [mobileSidebarOpen]);
 
-  const handleLogout = async () => {
-    const confirmLogout = window.confirm("Tens a certeza que desejas sair da tua conta?");
-    if (!confirmLogout) return;
 
-    try {
-      await fetch("/api/auth/logout", { method: "POST" });
-      logout();
-      setMobileSidebarOpen(false);
-    } catch {
-      console.error("Erro ao sair");
-    }
-  };
 
   // Jogos em destaque
   const featuredGames = [
@@ -146,16 +135,7 @@ export function MobileSidebar() {
 
           {/* Admin removido daqui - agora fica acima do menu */}
 
-          {/* Logout */}
-          {isLoggedIn && (
-            <button 
-              onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-red-400 hover:bg-red-500/10 transition-colors"
-            >
-              <LogOut className="w-5 h-5" />
-              <span className="text-sm font-medium">Sair da Conta</span>
-            </button>
-          )}
+
 
           {/* Toggle Idioma */}
           <button 

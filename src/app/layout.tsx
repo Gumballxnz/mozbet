@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/providers/AuthProvider";
 import { LayoutWrapper } from "@/components/LayoutWrapper";
-import { Suspense } from "react";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://mozbet.online"),
@@ -96,11 +95,9 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen bg-background text-foreground font-sans antialiased" suppressHydrationWarning>
         <AuthProvider>
-          <Suspense fallback={null}>
-            <LayoutWrapper>
-              {children}
-            </LayoutWrapper>
-          </Suspense>
+          <LayoutWrapper>
+            {children}
+          </LayoutWrapper>
         </AuthProvider>
       </body>
     </html>

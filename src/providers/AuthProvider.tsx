@@ -88,5 +88,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [login, logout]);
 
+  if (!isReady) {
+    return <div suppressHydrationWarning className="min-h-screen bg-black" />;
+  }
+
   return <>{children}</>;
 }

@@ -3,7 +3,7 @@
 import { useAppStore } from "@/lib/store";
 import { useTranslation } from "@/hooks/useTranslation";
 import { Button } from "@/components/ui/button";
-import { User, Wallet, LogOut, MessageCircle, Bell, Zap, AlertTriangle, ExternalLink, X } from "lucide-react";
+import { User, Wallet, LogOut, MessageCircle, Bell, Zap, AlertTriangle, ExternalLink, X, Menu } from "lucide-react";
 import { formatMZN } from "@/lib/utils";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -23,7 +23,7 @@ const AVATARS = [
 export function MobileHeader() {
   const { t } = useTranslation();
   const router = useRouter();
-  const { isLoggedIn, user, openLogin, openRegister, setChatOpen, setDepositOpen } = useAppStore();
+  const { isLoggedIn, user, openLogin, openRegister, setChatOpen, setDepositOpen, setMobileSidebarOpen } = useAppStore();
 
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -161,11 +161,20 @@ export function MobileHeader() {
   return (
     <>
       <header className="glass sticky top-0 z-40 w-full px-4 py-3 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-1 active:scale-95 transition-transform">
-          <span className="text-xl font-extrabold tracking-tight text-white">
-            MOZ<span className="text-primary glow-primary">BET</span>
-          </span>
-        </Link>
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={() => setMobileSidebarOpen(true)}
+            className="p-1 hover:bg-white/5 rounded text-white flex items-center justify-center cursor-pointer transition-colors"
+            title="Menu"
+          >
+            <Menu className="w-6 h-6" />
+          </button>
+          <Link href="/" className="flex items-center gap-1 active:scale-95 transition-transform">
+            <span className="text-xl font-extrabold tracking-tight text-white">
+              MOZ<span className="text-primary glow-primary">BET</span>
+            </span>
+          </Link>
+        </div>
 
         {/* Ações */}
         <div className="flex items-center gap-2">

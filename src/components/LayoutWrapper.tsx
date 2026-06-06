@@ -2,7 +2,6 @@
 import { useEffect, Suspense } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { MobileHeader } from "@/components/MobileHeader";
-import { MobileNavigation } from "@/components/MobileNavigation";
 import { Footer } from "@/components/Footer";
 import { DesktopSidebar } from "@/components/DesktopSidebar";
 import { useAppStore } from "@/lib/store";
@@ -43,11 +42,10 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
         </Suspense>
         <div className="flex-1 flex flex-col min-w-0">
           <MobileHeader />
-          <main className="flex-1 pb-24 lg:pb-0">
+          <main className="flex-1 pb-4 lg:pb-0">
             {children}
           </main>
           <Footer />
-          <MobileNavigation />
         </div>
         
         {/* Componentes Globais (Lazy Loaded) */}

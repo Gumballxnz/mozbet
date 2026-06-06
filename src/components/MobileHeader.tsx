@@ -164,7 +164,7 @@ export function MobileHeader() {
         <div className="flex items-center gap-1.5">
           <button
             onClick={() => setMobileSidebarOpen(true)}
-            className="p-1 hover:bg-white/5 rounded text-white flex items-center justify-center cursor-pointer transition-colors"
+            className="p-1 hover:bg-white/5 rounded text-white flex lg:hidden items-center justify-center cursor-pointer transition-colors"
             title="Menu"
           >
             <Menu className="w-6 h-6" />

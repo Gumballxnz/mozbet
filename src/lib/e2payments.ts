@@ -121,9 +121,9 @@ export async function processE2Payment(
 
     console.log(`[E2Payments] Iniciando pagamento C2B via ${method.toUpperCase()} | Transação=${transactionId} | Valor=${amount} MZN | Telefone=***${cleanPhone.slice(-3)}`);
 
-    // AbortController para timeout de segurança (30s — a E2Payments pode demorar enquanto espera o PIN)
+    // AbortController para timeout de segurança (60s — a E2Payments pode demorar enquanto espera o PIN)
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000);
+    const timeoutId = setTimeout(() => controller.abort(), 60000);
 
     let response;
     try {
@@ -141,7 +141,7 @@ export async function processE2Payment(
     } catch (err: any) {
       clearTimeout(timeoutId);
       if (controller.signal.aborted) {
-        console.error("[E2Payments] Timeout de 30s atingido.");
+        console.error("[E2Payments] Timeout de 60s atingido.");
         return { success: false, error: "O pagamento demorou mais do que o esperado. Tente novamente." };
       }
       throw err;

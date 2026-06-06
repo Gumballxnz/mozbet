@@ -350,7 +350,8 @@ export function RegisterModal() {
   return (
     <Dialog open={registerOpen} onOpenChange={(open) => { setRegisterOpen(open); if (!open) resetForm(); }}>
       <DialogContent className="sm:max-w-[420px] bg-[#1c1a24] border-white/5 p-6 rounded-2xl">
-        <DialogDescription className="hidden">Formulário de autenticação</DialogDescription>
+        <DialogTitle className="sr-only">Autenticação</DialogTitle>
+        <DialogDescription className="sr-only">Formulário de autenticação da MozBet</DialogDescription>
         
         {/* ════════ STEP: FORMULÁRIO DE LOGIN/REGISTO ════════ */}
         {step === "form" && (

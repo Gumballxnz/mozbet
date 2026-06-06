@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { verifyToken, supabaseAdmin } from "@/lib/auth-server";
 import { processE2Payment, type E2PaymentMethod } from "@/lib/e2payments";
 
+export const maxDuration = 60; // Permite timeout de até 60 segundos na Vercel
+
 export async function POST(req: Request) {
   try {
     // 1. Verificar se o utilizador está logado (segurança)
@@ -118,10 +120,14 @@ export async function POST(req: Request) {
       // Registrar falha no banco de dados
       await supabaseAdmin.from("transactions").update({ status: "FAILED" }).eq("id", transaction.id);
       
-      // Notificação de falha para o usuário
+      // Notificação de falha para o usuário (evita duplicar "Tente novamente")
+      const formattedErrorMessage = errorMessage.endsWith("Tente novamente.")
+        ? errorMessage
+        : `${errorMessage} Tente novamente.`;
+
       await supabaseAdmin.from('notifications').insert({
         user_id: decoded.id,
-        message: `Falha no depósito de ${numAmount.toFixed(2)} MZN: ${errorMessage} Tente novamente.`,
+        message: `Falha no depósito de ${numAmount.toFixed(2)} MZN: ${formattedErrorMessage}`,
         type: "deposit_failed"
       });
 

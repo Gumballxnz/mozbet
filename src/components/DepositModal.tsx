@@ -4,6 +4,8 @@ import { useState, useMemo, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
+  DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -268,6 +270,10 @@ export function DepositModal() {
         if (!open) handleClose();
       }}>
         <DialogContent className="sm:max-w-[450px] bg-[#141516] border border-[#2A2F40]/50 rounded-3xl p-6 shadow-2xl focus:outline-none">
+          <DialogTitle className="sr-only">Depositar ou Levantar</DialogTitle>
+          <DialogDescription className="sr-only">
+            Escolha um valor e faça seu depósito ou levantamento de fundos de forma rápida via M-Pesa ou e-Mola.
+          </DialogDescription>
           {step === "form" ? (
             <div className="flex flex-col w-full">
               {/* Abas Alternáveis (Depósito / Levantamento) */}

@@ -546,11 +546,15 @@ export function DepositModal() {
               </div>
 
               <h3 className="text-xl font-black font-mono-data tracking-widest text-white uppercase mb-3">
-                {tab === "deposit" ? "PEDIDO ENVIADO!" : "SOLICITAÇÃO ENVIADA!"}
+                {tab === "deposit" 
+                  ? (countdown > 0 ? "PEDIDO ENVIADO!" : "DEPÓSITO CONFIRMADO!") 
+                  : "SOLICITAÇÃO ENVIADA!"}
               </h3>
               <p className="text-[11px] text-gray-400 max-w-[280px] uppercase font-bold leading-relaxed mb-4">
                 {tab === "deposit" 
-                  ? "Pedido de depósito enviado com sucesso! Por favor, insere o PIN de confirmação no teu telemóvel. Obrigado!"
+                  ? (countdown > 0 
+                      ? "Pedido de depósito enviado com sucesso! Por favor, insere o PIN de confirmação no teu telemóvel. Obrigado!"
+                      : "O teu depósito foi processado com sucesso e o saldo já está disponível na tua conta. Boas apostas!")
                   : "Pedido de levantamento solicitado com sucesso! A transação está sob análise e será processada manualmente. Obrigado!"}
               </p>
 

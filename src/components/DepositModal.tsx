@@ -190,6 +190,8 @@ export function DepositModal() {
     }
 
     setIsLoading(true);
+    // Ir imediatamente para a tela de aguardando para mostrar o contador de 60s
+    setStep("sent");
 
     fetch("/api/payments/deposit", {
       method: "POST",
@@ -202,11 +204,13 @@ export function DepositModal() {
         if (!res.ok) {
           toast.error("Erro no Pagamento", { description: data.error || "Ocorreu um erro no processamento." });
           setIsLoading(false);
+          setStep("form"); // Volta para o formulário se falhar
+          setCountdown(0);
           return;
         }
 
-        setStep("sent");
         setIsLoading(false);
+        setCountdown(0); // Para o contador e exibe o botão "OK, ENTENDI"
 
         // Atualizar saldo do usuário no header
         const meRes = await fetch("/api/auth/me", { cache: "no-store" });
@@ -227,6 +231,8 @@ export function DepositModal() {
       .catch(() => {
         toast.error("Erro de Ligação", { description: "Verifica a tua ligação de internet e tenta novamente." });
         setIsLoading(false);
+        setStep("form");
+        setCountdown(0);
       });
   };
 

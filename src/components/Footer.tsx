@@ -15,11 +15,19 @@ export function Footer() {
           </p>
         </div>
 
-        <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
-          <Link href="/sobre-nos" className="hover:text-white transition-colors">Sobre Nós</Link>
-          <Link href="/termos-e-condicoes" className="hover:text-white transition-colors">Termos e Condições</Link>
-          <Link href="/politica-de-privacidade" className="hover:text-white transition-colors">Privacidade</Link>
-          <Link href="/jogo-responsavel" className="hover:text-white transition-colors">Jogo Responsável</Link>
+        <div className="flex flex-wrap justify-center gap-3 text-xs font-semibold">
+          <Link href="/sobre-nos" className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-muted-foreground hover:text-white hover:bg-white/10 hover:border-white/20 hover:scale-102 transition-all duration-200">
+            Sobre Nós
+          </Link>
+          <Link href="/termos-e-condicoes" className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-muted-foreground hover:text-white hover:bg-white/10 hover:border-white/20 hover:scale-102 transition-all duration-200">
+            Termos e Condições
+          </Link>
+          <Link href="/politica-de-privacidade" className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-muted-foreground hover:text-white hover:bg-white/10 hover:border-white/20 hover:scale-102 transition-all duration-200">
+            Privacidade
+          </Link>
+          <Link href="/jogo-responsavel" className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-muted-foreground hover:text-white hover:bg-white/10 hover:border-white/20 hover:scale-102 transition-all duration-200">
+            Jogo Responsável
+          </Link>
         </div>
 
         {/* Secção de Pagamentos */}

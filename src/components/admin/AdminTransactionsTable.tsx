@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { getLatestTransactions, getMoreTransactions, approveWithdraw, rejectWithdraw } from "@/app/admin/transactions/actions";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 interface Transaction {
   id: string;
@@ -30,12 +31,19 @@ export function AdminTransactionsTable({ initialTransactions, initialTotalCount 
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
-  const handleApproveWithdraw = async (txId: string) => {
-    if (!confirm("Tem a certeza que deseja APROVAR este levantamento?")) return;
-    toast.loading("A processar aprovação...");
+  // Modal de confirmação customizado para ações de aprovar/rejeitar
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    description: string;
+    onConfirm: () => void;
+  } | null>(null);
+
+  const executeApproveWithdraw = async (txId: string) => {
+    toast.loading("A processar aprovação...", { id: "tx-action" });
     try {
       const res = await approveWithdraw(txId);
-      toast.dismiss();
+      toast.dismiss("tx-action");
       if (res.success) {
         toast.success("Levantamento aprovado com sucesso!");
         setTransactions(prev => prev.map(tx => tx.id === txId ? { ...tx, status: "COMPLETED" } : tx));
@@ -43,17 +51,16 @@ export function AdminTransactionsTable({ initialTransactions, initialTotalCount 
         toast.error("Erro", { description: res.error });
       }
     } catch {
-      toast.dismiss();
+      toast.dismiss("tx-action");
       toast.error("Erro interno ao processar levantamento.");
     }
   };
 
-  const handleRejectWithdraw = async (txId: string) => {
-    if (!confirm("Tem a certeza que deseja REJEITAR este levantamento?")) return;
-    toast.loading("A processar rejeição...");
+  const executeRejectWithdraw = async (txId: string) => {
+    toast.loading("A processar rejeição...", { id: "tx-action" });
     try {
       const res = await rejectWithdraw(txId);
-      toast.dismiss();
+      toast.dismiss("tx-action");
       if (res.success) {
         toast.success("Levantamento rejeitado e saldo devolvido!");
         setTransactions(prev => prev.map(tx => tx.id === txId ? { ...tx, status: "FAILED" } : tx));
@@ -61,9 +68,27 @@ export function AdminTransactionsTable({ initialTransactions, initialTotalCount 
         toast.error("Erro", { description: res.error });
       }
     } catch {
-      toast.dismiss();
+      toast.dismiss("tx-action");
       toast.error("Erro interno ao rejeitar levantamento.");
     }
+  };
+
+  const handleApproveWithdraw = (txId: string) => {
+    setConfirmModal({
+      isOpen: true,
+      title: "Aprovar Levantamento",
+      description: "Tem a certeza que deseja APROVAR este levantamento e liberar o pagamento para o cliente?",
+      onConfirm: () => executeApproveWithdraw(txId)
+    });
+  };
+
+  const handleRejectWithdraw = (txId: string) => {
+    setConfirmModal({
+      isOpen: true,
+      title: "Rejeitar Levantamento",
+      description: "Tem a certeza que deseja REJEITAR este levantamento? O valor será devolvido ao saldo do cliente.",
+      onConfirm: () => executeRejectWithdraw(txId)
+    });
   };
 
 
@@ -183,28 +208,28 @@ export function AdminTransactionsTable({ initialTransactions, initialTotalCount 
           <p className="text-muted-foreground">Monitorização Realtime de M-Pesa e E-Mola. <span className="text-white font-bold ml-2">Total: {totalCount}</span></p>
         </div>
         
-        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-          <div className="flex items-center gap-2 bg-[#101116] border border-[#2A2F40] rounded-xl px-2">
+        <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 w-full xl:w-auto">
+          <div className="flex items-center justify-between gap-2 bg-[#101116] border border-[#2A2F40] rounded-xl px-2 h-10 w-full sm:w-auto">
             <input 
               type="date" 
               value={startDate} 
               onChange={(e) => setStartDate(e.target.value)} 
-              className="bg-transparent text-[10px] text-white outline-none p-2 h-9"
+              className="bg-transparent text-[10px] text-white outline-none p-2 h-9 flex-1 text-center"
             />
-            <span className="text-gray-500">até</span>
+            <span className="text-gray-500 text-xs">até</span>
             <input 
               type="date" 
               value={endDate} 
               onChange={(e) => setEndDate(e.target.value)} 
-              className="bg-transparent text-[10px] text-white outline-none p-2 h-9"
+              className="bg-transparent text-[10px] text-white outline-none p-2 h-9 flex-1 text-center"
             />
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex gap-2 w-full sm:w-auto">
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="bg-[#101116] border border-[#2A2F40] rounded-xl px-3 text-xs text-white outline-none h-10"
+              className="bg-[#101116] border border-[#2A2F40] rounded-xl px-3 text-xs text-white outline-none h-10 w-full sm:w-auto cursor-pointer"
             >
               <option value="ALL">Todos os Estados</option>
               <option value="COMPLETED">✅ Pago</option>
@@ -215,20 +240,18 @@ export function AdminTransactionsTable({ initialTransactions, initialTotalCount 
 
           <Button 
             onClick={handleDownloadCSV}
-            className="bg-primary/20 text-primary border border-primary/50 font-bold h-10 px-4"
+            className="bg-primary/20 text-primary border border-primary/50 font-bold h-10 px-4 w-full sm:w-auto cursor-pointer"
           >
             Baixar Extrato
           </Button>
 
-
-
-          <div className="relative flex-1 sm:w-60">
+          <div className="relative w-full sm:w-60">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input 
               placeholder="Procurar telemóvel..." 
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 bg-[#101116] border-[#2A2F40] h-10 text-white"
+              className="pl-9 bg-[#101116] border-[#2A2F40] h-10 text-white w-full"
             />
           </div>
         </div>
@@ -331,6 +354,35 @@ export function AdminTransactionsTable({ initialTransactions, initialTotalCount 
           </Button>
         </div>
       )}
+      {/* Modal de Confirmação Customizado (Substitui confirm do navegador) */}
+      <Dialog open={!!confirmModal?.isOpen} onOpenChange={(open) => { if (!open) setConfirmModal(null); }}>
+        <DialogContent className="sm:max-w-[400px] bg-[#141516] border border-[#2A2F40]/50 text-white rounded-3xl p-6 shadow-2xl focus:outline-none">
+          <DialogTitle className="text-lg font-black text-white uppercase tracking-wider">
+            {confirmModal?.title}
+          </DialogTitle>
+          <DialogDescription className="text-sm text-gray-400 mt-2 leading-relaxed">
+            {confirmModal?.description}
+          </DialogDescription>
+          <div className="flex justify-end gap-3 mt-6">
+            <Button
+              variant="outline"
+              onClick={() => setConfirmModal(null)}
+              className="bg-[#1A1C24] hover:bg-white/5 border-[#2A2F40] text-gray-300 hover:text-white rounded-xl h-11 px-4 cursor-pointer"
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => {
+                confirmModal?.onConfirm();
+                setConfirmModal(null);
+              }}
+              className="bg-primary hover:bg-primary/90 text-black font-black rounded-xl h-11 px-5 cursor-pointer shadow-[0_0_15px_rgba(0,255,127,0.2)]"
+            >
+              Confirmar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

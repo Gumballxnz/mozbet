@@ -29,6 +29,14 @@ export function AdminUsersTable({ initialUsers, currentUserRole, totalCount = 0 
   const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
   const [page, setPage] = useState(1);
   const [loadingMore, setLoadingMore] = useState(false);
+
+  // Modal de confirmação customizado para ações administrativas sensíveis (deletar utilizador)
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    description: string;
+    onConfirm: () => void;
+  } | null>(null);
   
   // Modais de envio de comunicação
   const [globalModalOpen, setGlobalModalOpen] = useState(false);
@@ -82,13 +90,8 @@ export function AdminUsersTable({ initialUsers, currentUserRole, totalCount = 0 
   };
 
   const filteredUsers = users.filter(u => u.phone.includes(search) || (u.id.includes(search)) || (u.email && u.email.includes(search)));
-  const handleAction = async (action: 'ban' | 'suspend' | 'activate' | 'delete' | 'promote' | 'demote', userId: string) => {
+  const executeAction = async (action: 'ban' | 'suspend' | 'activate' | 'delete' | 'promote' | 'demote', userId: string) => {
     try {
-      if (action === 'delete') {
-        const confirmed = confirm("Aviso: Apagar este utilizador removerá todos os seus dados e não tem volta. Continuar?");
-        if (!confirmed) return;
-      }
-
       toast.loading("A executar...", { id: "admin-action" });
       const res = await fetch("/api/admin/users/action", {
         method: "POST",
@@ -120,6 +123,20 @@ export function AdminUsersTable({ initialUsers, currentUserRole, totalCount = 0 
     } catch (err: any) {
       toast.error(err.message || "Erro ao executar ação", { id: "admin-action" });
     }
+  };
+
+  const handleAction = async (action: 'ban' | 'suspend' | 'activate' | 'delete' | 'promote' | 'demote', userId: string) => {
+    if (action === 'delete') {
+      setConfirmModal({
+        isOpen: true,
+        title: "Apagar Ficha de Utilizador",
+        description: "Aviso: Apagar este utilizador removerá permanentemente todos os seus dados e histórico. Esta ação é irreversível. Deseja continuar?",
+        onConfirm: () => executeAction('delete', userId)
+      });
+      return;
+    }
+    // Ações normais (bloqueio/desbloqueio/cargo) podem rodar diretamente
+    executeAction(action, userId);
   };
 
   const handleRetainBalance = async (userId: string, currentStatus?: boolean) => {
@@ -648,6 +665,36 @@ export function AdminUsersTable({ initialUsers, currentUserRole, totalCount = 0 
           <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 mt-4">
             <Button variant="outline" onClick={() => setEmailModalOpen(false)} className="bg-transparent border-[#2A2F40] mt-2 sm:mt-0">Cancelar</Button>
             <Button onClick={executeSendEmail} className="bg-sky-500 text-black font-bold">Lançar E-mail</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Confirmação Customizado para exclusão */}
+      <Dialog open={!!confirmModal?.isOpen} onOpenChange={(open) => { if (!open) setConfirmModal(null); }}>
+        <DialogContent className="sm:max-w-[400px] bg-[#141516] border border-[#2A2F40]/50 text-white rounded-3xl p-6 shadow-2xl focus:outline-none">
+          <DialogTitle className="text-lg font-black text-white uppercase tracking-wider">
+            {confirmModal?.title}
+          </DialogTitle>
+          <DialogDescription className="text-sm text-gray-400 mt-2 leading-relaxed">
+            {confirmModal?.description}
+          </DialogDescription>
+          <div className="flex justify-end gap-3 mt-6">
+            <Button
+              variant="outline"
+              onClick={() => setConfirmModal(null)}
+              className="bg-[#1A1C24] hover:bg-white/5 border-[#2A2F40] text-gray-300 hover:text-white rounded-xl h-11 px-4 cursor-pointer"
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => {
+                confirmModal?.onConfirm();
+                setConfirmModal(null);
+              }}
+              className="bg-red-600 hover:bg-red-700 text-white font-black rounded-xl h-11 px-5 cursor-pointer shadow-[0_0_15px_rgba(239,68,68,0.2)]"
+            >
+              Excluir
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

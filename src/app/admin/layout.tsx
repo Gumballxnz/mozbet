@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Users, Wallet, LogOut, Settings } from "lucide-react";
+import { LayoutDashboard, Users, Wallet, LogOut, Settings, Menu, X } from "lucide-react";
 import { useAppStore } from "@/lib/store";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAppStore();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Na página de login, renderizar SEM sidebar
   const isLoginPage = pathname === "/admin/login";
@@ -111,6 +112,86 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
       </aside>
 
+      {/* Sidebar Mobile (Drawer Overlay) */}
+      {isMobileMenuOpen && (
+        <div className="fixed inset-0 z-50 flex md:hidden">
+          {/* Background overlay desfocado */}
+          <div 
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm"
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+          
+          {/* Painel lateral do drawer */}
+          <aside className="relative w-64 max-w-[80vw] bg-surface-elevated border-r border-white/10 flex flex-col h-full animate-in slide-in-from-left duration-200">
+            <div className="h-16 flex items-center justify-between px-6 border-b border-white/10">
+              <span className="text-xl font-extrabold tracking-tight">
+                MOZ<span className="text-primary glow-primary">ADMIN</span>
+              </span>
+              <button 
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="p-1 hover:bg-white/5 rounded text-muted-foreground hover:text-white cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = pathname === item.href;
+                const isLoading = isNavigatingTo === item.href;
+                
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      if (pathname !== item.href) setIsNavigatingTo(item.href);
+                    }}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
+                      isActive 
+                        ? "bg-primary text-black font-bold" 
+                        : "text-muted-foreground hover:text-white hover:bg-white/5"
+                    }`}
+                  >
+                    {isLoading ? (
+                      <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <Icon className="w-5 h-5" />
+                    )}
+                    {item.name}
+                  </Link>
+                );
+              })}
+            </nav>
+            
+            <div className="p-4 border-t border-white/10">
+              <div className="flex items-center gap-3 mb-4 px-2">
+                <div className="w-8 h-8 bg-primary/20 text-primary rounded-full flex items-center justify-center font-bold">
+                  A
+                </div>
+                <div className="text-sm">
+                  <p className="font-bold text-white">Admin</p>
+                  <p className="text-xs text-muted-foreground">{user?.phone ? `+258 ${user.phone.substring(0, 2)} *** ** ${user.phone.substring(user.phone.length - 2)}` : ''}</p>
+                </div>
+              </div>
+              <Button 
+                variant="destructive" 
+                className="w-full justify-start text-red-500 bg-red-500/10 hover:bg-red-500/20 cursor-pointer"
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  handleLogout();
+                }}
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Sair do Painel
+              </Button>
+            </div>
+          </aside>
+        </div>
+      )}
+
       {/* Main Content */}
       <main className="flex-1 flex flex-col overflow-hidden">
         {/* Mobile Topbar */}
@@ -118,6 +199,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <span className="text-lg font-extrabold tracking-tight">
             MOZ<span className="text-primary glow-primary">ADMIN</span>
           </span>
+          <button
+            onClick={() => setIsMobileMenuOpen(true)}
+            className="p-2 hover:bg-white/5 rounded text-white flex items-center justify-center cursor-pointer transition-colors"
+          >
+            <Menu className="w-6 h-6" />
+          </button>
         </header>
 
         <div className="flex-1 overflow-auto p-4 md:p-8">

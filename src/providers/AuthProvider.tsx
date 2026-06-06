@@ -88,16 +88,5 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [login, logout]);
 
-  // Enquanto está verificando a sessão no servidor, mostramos nada ou um mini-loader.
-  // Isso previne que a UI mostre "Entrar" por 1 segundo e depois pisque para o perfil.
-  if (!isReady) {
-    return (
-      <div suppressHydrationWarning className="min-h-screen bg-background flex flex-col items-center justify-center">
-        <div className="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin mb-4" />
-        <p className="text-primary font-bold animate-pulse">MOZBET</p>
-      </div>
-    );
-  }
-
   return <>{children}</>;
 }

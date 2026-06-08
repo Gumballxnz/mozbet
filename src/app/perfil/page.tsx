@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { playSound } from "@/lib/sounds";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 const AVATARS = [
   "https://api.dicebear.com/7.x/adventurer/svg?seed=Felix&backgroundColor=f59e0b",
@@ -526,54 +527,54 @@ export default function PerfilPage() {
 
     
       {/* MODAL ERRO DE SAQUE CUSTOMIZADO (Spribe/Mozbet UI) */}
-      {showWithdrawErrorModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-[#141516] border border-[#2A2F40] rounded-2xl w-full max-w-[340px] shadow-2xl relative overflow-hidden">
-            <button 
-               onClick={() => setShowWithdrawErrorModal(false)}
-               className="absolute top-3 right-3 text-gray-400 hover:text-white"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-            </button>
-            <div className="p-6 text-center space-y-4">
-              <div className="flex items-center justify-center gap-2 text-white font-black text-lg italic tracking-widest mt-2 uppercase">
-                <div className="w-5 h-5 rounded-full border-2 border-white flex items-center justify-center">
-                  <ArrowUpCircle size={14} className="text-white" />
-                </div>
-                DEPÓSITO NECESSÁRIO
+      <Dialog open={showWithdrawErrorModal} onOpenChange={setShowWithdrawErrorModal}>
+        <DialogContent className="bg-[#141516] border border-[#2A2F40]/50 rounded-3xl p-6 shadow-2xl max-w-[340px] focus:outline-none">
+          <DialogTitle className="sr-only">Depósito Necessário</DialogTitle>
+          <DialogDescription className="sr-only">
+            Aviso de segurança: realize um depósito hoje para habilitar a função de levantamento.
+          </DialogDescription>
+          <div className="p-2 text-center space-y-4">
+            <div className="flex items-center justify-center gap-2 text-white font-black text-lg italic tracking-widest mt-2 uppercase">
+              <div className="w-5 h-5 rounded-full border-2 border-white flex items-center justify-center">
+                <ArrowUpCircle size={14} className="text-white" />
               </div>
-              <p className="text-[13px] text-gray-400 font-medium leading-relaxed mt-4 px-2">
-                Para garantir a segurança, você precisa realizar pelo menos um depósito hoje para habilitar a função de levantamento.
-              </p>
-              
-              <div className="pt-4 space-y-3">
-                <Button 
-                   onClick={() => {
-                     setShowWithdrawErrorModal(false);
-                     setDepositOpen(true);
-                   }}
-                   className="w-full h-12 bg-primary text-black font-black text-sm uppercase rounded-xl flex items-center justify-center gap-2 hover:bg-primary/90 hover:scale-[1.02] transition-transform"
-                >
-                  <ArrowUpCircle size={18} />
-                  DEPOSITAR AGORA
-                </Button>
-                <Button 
-                   onClick={() => setShowWithdrawErrorModal(false)}
-                   variant="ghost"
-                   className="w-full h-12 bg-[#1A1C24] text-gray-400 hover:text-white font-black text-xs uppercase rounded-xl"
-                >
-                  FECHAR
-                </Button>
-              </div>
+              DEPÓSITO NECESSÁRIO
+            </div>
+            <p className="text-[13px] text-gray-400 font-medium leading-relaxed mt-4 px-2">
+              Para garantir a segurança, você precisa realizar pelo menos um depósito hoje para habilitar a função de levantamento.
+            </p>
+            
+            <div className="pt-4 space-y-3">
+              <Button 
+                 onClick={() => {
+                   setShowWithdrawErrorModal(false);
+                   setDepositOpen(true);
+                 }}
+                 className="w-full h-12 bg-primary text-black font-black text-sm uppercase rounded-xl flex items-center justify-center gap-2 hover:bg-primary/90 hover:scale-[1.02] transition-transform cursor-pointer"
+              >
+                <ArrowUpCircle size={18} />
+                DEPOSITAR AGORA
+              </Button>
+              <Button 
+                 onClick={() => setShowWithdrawErrorModal(false)}
+                 variant="ghost"
+                 className="w-full h-12 bg-[#1A1C24] text-gray-400 hover:text-white font-black text-xs uppercase rounded-xl cursor-pointer"
+              >
+                FECHAR
+              </Button>
             </div>
           </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
 
       {/* MODAL DE LOGOUT CUSTOMIZADO */}
-      {showLogoutConfirm && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-[#141516] border border-[#2A2F40] rounded-2xl w-full max-w-[320px] p-6 text-center space-y-5 shadow-2xl">
+      <Dialog open={showLogoutConfirm} onOpenChange={setShowLogoutConfirm}>
+        <DialogContent className="bg-[#141516] border border-[#2A2F40]/50 rounded-3xl p-6 shadow-2xl max-w-[320px] focus:outline-none">
+          <DialogTitle className="sr-only">Sair da Conta</DialogTitle>
+          <DialogDescription className="sr-only">
+            Confirme se deseja sair da sua conta na MozBet.
+          </DialogDescription>
+          <div className="p-2 text-center space-y-5">
             <div className="mx-auto w-12 h-12 bg-red-500/10 rounded-full flex items-center justify-center mb-2">
               <LogOut className="w-6 h-6 text-red-500" />
             </div>
@@ -583,20 +584,20 @@ export default function PerfilPage() {
               <Button 
                 variant="ghost" 
                 onClick={() => setShowLogoutConfirm(false)}
-                className="flex-1 bg-[#1A1C24] text-white hover:bg-white/10 font-bold h-12 rounded-xl"
+                className="flex-1 bg-[#1A1C24] text-white hover:bg-white/10 font-bold h-12 rounded-xl cursor-pointer"
               >
                 CANCELAR
               </Button>
               <Button 
                 onClick={executeLogout}
-                className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold h-12 rounded-xl"
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold h-12 rounded-xl cursor-pointer"
               >
                 SAIR
               </Button>
             </div>
           </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

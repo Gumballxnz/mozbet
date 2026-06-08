@@ -266,6 +266,7 @@ export function DepositModal() {
         if (!res.ok) {
           setIsLoading(false);
           if (data.error === "DEPOSIT_REQUIRED") {
+            handleClose();
             setShowWithdrawErrorModal(true);
           } else {
             toast.error("Erro no Saque", { description: data.error || "Ocorreu um erro ao solicitar levantamento." });
@@ -602,51 +603,46 @@ export function DepositModal() {
       </Dialog>
 
       {/* MODAL DE ERRO DE SEGURANÇA NO LEVANTAMENTO (Fluxo original mantido) */}
-      {showWithdrawErrorModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-[#141516] border border-[#2A2F40] rounded-2xl w-full max-w-[340px] shadow-2xl relative overflow-hidden">
-            <button
-              onClick={() => setShowWithdrawErrorModal(false)}
-              className="absolute top-3 right-3 text-gray-400 hover:text-white transition-colors cursor-pointer"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-              </svg>
-            </button>
-            <div className="p-6 text-center space-y-4">
-              <div className="flex items-center justify-center gap-2 text-white font-black text-lg italic tracking-widest mt-2 uppercase">
-                <div className="w-5 h-5 rounded-full border-2 border-white flex items-center justify-center">
-                  <span className="text-[10px] leading-none">!</span>
-                </div>
-                DEPÓSITO NECESSÁRIO
+      <Dialog open={showWithdrawErrorModal} onOpenChange={setShowWithdrawErrorModal}>
+        <DialogContent className="bg-[#141516] border border-[#2A2F40]/50 rounded-3xl p-6 shadow-2xl max-w-[340px] focus:outline-none">
+          <DialogTitle className="sr-only">Depósito Necessário</DialogTitle>
+          <DialogDescription className="sr-only">
+            Aviso de segurança: realize um depósito hoje para habilitar a função de levantamento.
+          </DialogDescription>
+          <div className="p-2 text-center space-y-4">
+            <div className="flex items-center justify-center gap-2 text-white font-black text-lg italic tracking-widest mt-2 uppercase">
+              <div className="w-5 h-5 rounded-full border-2 border-white flex items-center justify-center">
+                <span className="text-[10px] leading-none">!</span>
               </div>
-              <p className="text-[13px] text-gray-400 font-medium leading-relaxed mt-4 px-2">
-                Para garantir a segurança, você precisa realizar pelo menos um depósito hoje para habilitar a função de levantamento.
-              </p>
+              DEPÓSITO NECESSÁRIO
+            </div>
+            <p className="text-[13px] text-gray-400 font-medium leading-relaxed mt-4 px-2">
+              Para garantir a segurança, você precisa realizar pelo menos um depósito hoje para habilitar a função de levantamento.
+            </p>
 
-              <div className="pt-4 space-y-3">
-                <Button
-                  onClick={() => {
-                    setShowWithdrawErrorModal(false);
-                    setTab("deposit");
-                    setAmount(config.default_deposit.toString());
-                  }}
-                  className="w-full h-12 bg-primary text-black font-black text-sm uppercase rounded-xl flex items-center justify-center gap-2 hover:bg-primary/90 hover:scale-[1.02] transition-transform cursor-pointer"
-                >
-                  DEPOSITAR AGORA
-                </Button>
-                <Button
-                  onClick={() => setShowWithdrawErrorModal(false)}
-                  className="w-full h-12 bg-[#1A1C24] text-gray-400 hover:text-white font-black text-xs uppercase rounded-xl cursor-pointer"
-                >
-                  FECHAR
-                </Button>
-              </div>
+            <div className="pt-4 space-y-3">
+              <Button
+                onClick={() => {
+                  setShowWithdrawErrorModal(false);
+                  setTab("deposit");
+                  setDepositTab("deposit");
+                  setAmount(config.default_deposit.toString());
+                  setDepositOpen(true);
+                }}
+                className="w-full h-12 bg-primary text-black font-black text-sm uppercase rounded-xl flex items-center justify-center gap-2 hover:bg-primary/90 hover:scale-[1.02] transition-transform cursor-pointer"
+              >
+                DEPOSITAR AGORA
+              </Button>
+              <Button
+                onClick={() => setShowWithdrawErrorModal(false)}
+                className="w-full h-12 bg-[#1A1C24] text-gray-400 hover:text-white font-black text-xs uppercase rounded-xl cursor-pointer"
+              >
+                FECHAR
+              </Button>
             </div>
           </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

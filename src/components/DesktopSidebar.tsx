@@ -86,7 +86,7 @@ export function DesktopSidebar() {
   ];
 
   return (
-    <aside className={`hidden lg:flex flex-col bg-surface border-r border-white/5 h-screen sticky top-0 overflow-y-auto custom-scrollbar transition-all duration-300 ${
+    <aside className={`hidden lg:flex flex-col bg-surface border-r border-white/5 h-screen sticky top-0 overflow-y-auto scrollbar-hide transition-all duration-300 ${
       collapsed ? "w-[70px]" : "w-64"
     }`}>
       {/* Logo + Botão Colapsar */}

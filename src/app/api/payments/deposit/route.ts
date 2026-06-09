@@ -30,7 +30,7 @@ export async function POST(req: Request) {
 
     // Carregar limites e bónus do banco de dados (settings)
     let minDeposit = 10;
-    let maxDeposit = 50000;
+    let maxDeposit = 17500;
     let bonusPercent = 500;
     try {
       const { data: settings } = await supabaseAdmin

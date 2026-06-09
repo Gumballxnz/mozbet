@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   // Valores padrão (fallbacks)
   let minDeposit = 10;
-  let maxDeposit = 50000;
+  let maxDeposit = 17500;
   let bonusPercent = 500;
   let defaultDeposit = 100;
 

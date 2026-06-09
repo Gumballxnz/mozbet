@@ -56,7 +56,7 @@ export function DepositModal() {
   // Configurações dinâmicas do backend
   const [config, setConfig] = useState({
     min_deposit: 10,
-    max_deposit: 50000,
+    max_deposit: 17500,
     first_deposit_bonus_percent: 500,
     default_deposit: 100,
   });
@@ -111,7 +111,7 @@ export function DepositModal() {
           if (data) {
             setConfig({
               min_deposit: data.min_deposit ?? 10,
-              max_deposit: data.max_deposit ?? 50000,
+              max_deposit: data.max_deposit ?? 17500,
               first_deposit_bonus_percent: data.first_deposit_bonus_percent ?? 500,
               default_deposit: data.default_deposit ?? 100,
             });

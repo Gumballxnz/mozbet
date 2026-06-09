@@ -7,7 +7,7 @@ import { ArrowDownLeft, ArrowUpRight, CheckCircle2, XCircle, Search } from "luci
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { getLatestTransactions, getMoreTransactions, approveWithdraw, rejectWithdraw } from "@/app/admin/transactions/actions";
+import { getLatestTransactions, getMoreTransactions, approveWithdraw, rejectWithdraw, approveAllPendingWithdrawals, rejectAllPendingWithdrawals } from "@/app/admin/transactions/actions";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 interface Transaction {
@@ -92,6 +92,7 @@ export function AdminTransactionsTable({
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const hasPendingWithdrawals = typeFilter === "WITHDRAW" && transactions.some(tx => tx.status === "PENDING");
 
   // Modal de confirmação customizado para ações de aprovar/rejeitar
   const [confirmModal, setConfirmModal] = useState<{
@@ -150,6 +151,58 @@ export function AdminTransactionsTable({
       title: "Rejeitar Levantamento",
       description: "Tem a certeza que deseja REJEITAR este levantamento? O valor será devolvido ao saldo do cliente.",
       onConfirm: () => executeRejectWithdraw(txId)
+    });
+  };
+
+  const executeApproveAllWithdrawals = async () => {
+    toast.loading("A aprovar todos os saques pendentes...", { id: "tx-bulk-action" });
+    try {
+      const res = await approveAllPendingWithdrawals();
+      toast.dismiss("tx-bulk-action");
+      if (res.success) {
+        toast.success(`Aprovados ${res.count} saques com sucesso!`);
+        setTransactions(prev => prev.map(tx => tx.type === "WITHDRAW" && tx.status === "PENDING" ? { ...tx, status: "COMPLETED" } : tx));
+      } else {
+        toast.error("Erro", { description: res.error });
+      }
+    } catch {
+      toast.dismiss("tx-bulk-action");
+      toast.error("Erro interno ao processar aprovação em lote.");
+    }
+  };
+
+  const executeRejectAllWithdrawals = async () => {
+    toast.loading("A rejeitar todos os saques pendentes...", { id: "tx-bulk-action" });
+    try {
+      const res = await rejectAllPendingWithdrawals();
+      toast.dismiss("tx-bulk-action");
+      if (res.success) {
+        toast.success(`Rejeitados ${res.count} saques e saldo devolvido aos clientes!`);
+        setTransactions(prev => prev.map(tx => tx.type === "WITHDRAW" && tx.status === "PENDING" ? { ...tx, status: "FAILED" } : tx));
+      } else {
+        toast.error("Erro", { description: res.error });
+      }
+    } catch {
+      toast.dismiss("tx-bulk-action");
+      toast.error("Erro interno ao processar rejeição em lote.");
+    }
+  };
+
+  const handleApproveAllWithdrawals = () => {
+    setConfirmModal({
+      isOpen: true,
+      title: "Aprovar Todos os Saques Pendentes",
+      description: "Tem a certeza que deseja APROVAR TODOS os saques com estado PENDENTE de uma só vez?",
+      onConfirm: () => executeApproveAllWithdrawals()
+    });
+  };
+
+  const handleRejectAllWithdrawals = () => {
+    setConfirmModal({
+      isOpen: true,
+      title: "Rejeitar Todos os Saques Pendentes",
+      description: "Tem a certeza que deseja REJEITAR TODOS os saques com estado PENDENTE? O valor de cada um será devolvido à conta de cada cliente.",
+      onConfirm: () => executeRejectAllWithdrawals()
     });
   };
 
@@ -339,6 +392,23 @@ export function AdminTransactionsTable({
           >
             Baixar Extrato
           </Button>
+
+          {hasPendingWithdrawals && (
+            <>
+              <Button 
+                onClick={handleApproveAllWithdrawals}
+                className="bg-green-600 hover:bg-green-700 text-white font-bold h-10 px-4 w-full sm:w-auto cursor-pointer shadow-md shadow-green-900/30"
+              >
+                Aprovar Todos
+              </Button>
+              <Button 
+                onClick={handleRejectAllWithdrawals}
+                className="bg-red-600 hover:bg-red-700 text-white font-bold h-10 px-4 w-full sm:w-auto cursor-pointer shadow-md shadow-red-900/30"
+              >
+                Rejeitar Todos
+              </Button>
+            </>
+          )}
 
           <div className="relative w-full sm:w-60">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />

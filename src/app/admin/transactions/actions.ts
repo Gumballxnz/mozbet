@@ -145,3 +145,79 @@ export async function rejectWithdraw(txId: string) {
     return { success: false, error: err.message || "Erro ao rejeitar saque" };
   }
 }
+
+export async function approveAllPendingWithdrawals() {
+  try {
+    const { data: pending } = await supabaseAdmin
+      .from("transactions")
+      .select("id, user_id, amount")
+      .eq("type", "WITHDRAW")
+      .eq("status", "PENDING");
+
+    if (!pending || pending.length === 0) {
+      return { success: false, error: "Nenhum saque pendente encontrado." };
+    }
+
+    const ids = pending.map(tx => tx.id);
+
+    await supabaseAdmin
+      .from("transactions")
+      .update({ status: "COMPLETED" })
+      .in("id", ids);
+
+    const notifications = pending.map(tx => ({
+      user_id: tx.user_id,
+      message: `O seu pedido de levantamento de ${Number(tx.amount).toFixed(2)} MZN foi aprovado e processado com sucesso!`,
+      type: "deposit_success"
+    }));
+
+    await supabaseAdmin.from("notifications").insert(notifications);
+
+    return { success: true, count: pending.length };
+  } catch (err: any) {
+    return { success: false, error: err.message || "Erro ao aprovar saques em lote" };
+  }
+}
+
+export async function rejectAllPendingWithdrawals() {
+  try {
+    const { data: pending } = await supabaseAdmin
+      .from("transactions")
+      .select("id, user_id, amount")
+      .eq("type", "WITHDRAW")
+      .eq("status", "PENDING");
+
+    if (!pending || pending.length === 0) {
+      return { success: false, error: "Nenhum saque pendente encontrado." };
+    }
+
+    const ids = pending.map(tx => tx.id);
+
+    await supabaseAdmin
+      .from("transactions")
+      .update({ status: "FAILED" })
+      .in("id", ids);
+
+    const promises = pending.map(async (tx) => {
+      const { data: user } = await supabaseAdmin.from("users").select("balance").eq("id", tx.user_id).single();
+      if (user) {
+        const returnedBalance = Number(user.balance) + Number(tx.amount);
+        await supabaseAdmin.from("users").update({ balance: returnedBalance }).eq("id", tx.user_id);
+      }
+    });
+
+    await Promise.all(promises);
+
+    const notifications = pending.map(tx => ({
+      user_id: tx.user_id,
+      message: `O seu pedido de levantamento de ${Number(tx.amount).toFixed(2)} MZN foi rejeitado. O valor foi devolvido ao seu saldo.`,
+      type: "deposit_failed"
+    }));
+
+    await supabaseAdmin.from("notifications").insert(notifications);
+
+    return { success: true, count: pending.length };
+  } catch (err: any) {
+    return { success: false, error: err.message || "Erro ao rejeitar saques em lote" };
+  }
+}

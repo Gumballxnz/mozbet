@@ -1,6 +1,7 @@
 "use server";
 
 import { supabaseAdmin } from "@/lib/auth-server";
+import { Resend } from "resend";
 
 export async function getLatestTransactions(typeFilter?: "DEPOSIT" | "WITHDRAW") {
   let query = supabaseAdmin
@@ -95,7 +96,12 @@ export async function forceApproveDeposit(txId: string) {
 
 export async function approveWithdraw(txId: string) {
   try {
-    const { data: tx } = await supabaseAdmin.from("transactions").select("*").eq("id", txId).single();
+    const { data: tx } = await supabaseAdmin
+      .from("transactions")
+      .select("*, users(email)")
+      .eq("id", txId)
+      .single();
+
     if (!tx || tx.type !== "WITHDRAW" || tx.status !== "PENDING") {
       return { success: false, error: "Transação inválida ou já processada." };
     }
@@ -103,12 +109,40 @@ export async function approveWithdraw(txId: string) {
     // 1. Atualizar transação para COMPLETED
     await supabaseAdmin.from("transactions").update({ status: "COMPLETED" }).eq("id", txId);
 
-    // 2. Notificação de sucesso do levantamento
+    // 2. Notificação de sucesso do levantamento (com aviso de até 48 horas)
+    const msg = `O seu pedido de levantamento de ${Number(tx.amount).toFixed(2)} MZN foi aprovado e processado com sucesso! O valor será creditado na sua conta cadastrada em até 48 horas.`;
     await supabaseAdmin.from('notifications').insert({
       user_id: tx.user_id,
-      message: `O seu pedido de levantamento de ${Number(tx.amount).toFixed(2)} MZN foi aprovado e processado com sucesso!`,
+      message: msg,
       type: "deposit_success"
     });
+
+    // 3. Enviar e-mail de aviso se o utilizador possuir e-mail cadastrado
+    const email = Array.isArray(tx.users) ? (tx.users[0] as any)?.email : (tx.users as any)?.email;
+    if (email) {
+      try {
+        const resend = new Resend(process.env.RESEND_API_KEY || "re_dummy_key");
+        await resend.emails.send({
+          from: "MozBet <suporte@mozbet.online>",
+          to: [email],
+          subject: "Levantamento Aprovado - MozBet",
+          html: `
+            <div style="font-family: sans-serif; max-width: 500px; margin: 0 auto; background-color: #0f172a; color: white; padding: 40px; border-radius: 20px;">
+              <h1 style="color: #00FF7F; text-align: center;">Levantamento Aprovado</h1>
+              <p>Olá,</p>
+              <p>O seu pedido de levantamento no valor de <strong>${Number(tx.amount).toFixed(2)} MZN</strong> foi aprovado e processado com sucesso.</p>
+              <div style="background-color: #1e293b; padding: 20px; border-radius: 12px; text-align: center; margin: 30px 0; border: 1px solid #00FF7F;">
+                <span style="font-size: 18px; font-weight: bold; color: #00FF7F;">Status: Aprovado (Até 48 horas)</span>
+              </div>
+              <p>O valor será creditado na sua conta móvel (M-Pesa / e-Mola) cadastrada no sistema em um prazo máximo de <strong>48 horas</strong>.</p>
+              <p style="font-size: 12px; color: #64748b; text-align: center; margin-top: 30px;">Obrigado por escolher a MozBet!</p>
+            </div>
+          `,
+        });
+      } catch (emailErr) {
+        console.error("Erro ao enviar e-mail de saque aprovado:", emailErr);
+      }
+    }
 
     return { success: true };
   } catch (err: any) {
@@ -150,7 +184,7 @@ export async function approveAllPendingWithdrawals() {
   try {
     const { data: pending } = await supabaseAdmin
       .from("transactions")
-      .select("id, user_id, amount")
+      .select("id, user_id, amount, users(email)")
       .eq("type", "WITHDRAW")
       .eq("status", "PENDING");
 
@@ -167,11 +201,50 @@ export async function approveAllPendingWithdrawals() {
 
     const notifications = pending.map(tx => ({
       user_id: tx.user_id,
-      message: `O seu pedido de levantamento de ${Number(tx.amount).toFixed(2)} MZN foi aprovado e processado com sucesso!`,
+      message: `O seu pedido de levantamento de ${Number(tx.amount).toFixed(2)} MZN foi aprovado e processado com sucesso! O valor será creditado na sua conta cadastrada em até 48 horas.`,
       type: "deposit_success"
     }));
 
     await supabaseAdmin.from("notifications").insert(notifications);
+
+    // Enviar e-mails em paralelo para quem tiver e-mail cadastrado
+    const getEmail = (tx: any) => {
+      if (!tx.users) return null;
+      if (Array.isArray(tx.users)) {
+        return tx.users[0]?.email || null;
+      }
+      return tx.users.email || null;
+    };
+
+    const emailPromises = pending
+      .filter(tx => getEmail(tx))
+      .map(async (tx) => {
+        const email = getEmail(tx);
+        try {
+          const resend = new Resend(process.env.RESEND_API_KEY || "re_dummy_key");
+          await resend.emails.send({
+            from: "MozBet <suporte@mozbet.online>",
+            to: [email],
+            subject: "Levantamento Aprovado - MozBet",
+            html: `
+              <div style="font-family: sans-serif; max-width: 500px; margin: 0 auto; background-color: #0f172a; color: white; padding: 40px; border-radius: 20px;">
+                <h1 style="color: #00FF7F; text-align: center;">Levantamento Aprovado</h1>
+                <p>Olá,</p>
+                <p>O seu pedido de levantamento no valor de <strong>${Number(tx.amount).toFixed(2)} MZN</strong> foi aprovado e processado com sucesso.</p>
+                <div style="background-color: #1e293b; padding: 20px; border-radius: 12px; text-align: center; margin: 30px 0; border: 1px solid #00FF7F;">
+                  <span style="font-size: 18px; font-weight: bold; color: #00FF7F;">Status: Aprovado (Até 48 horas)</span>
+                </div>
+                <p>O valor será creditado na sua conta móvel (M-Pesa / e-Mola) cadastrada no sistema em um prazo máximo de <strong>48 horas</strong>.</p>
+                <p style="font-size: 12px; color: #64748b; text-align: center; margin-top: 30px;">Obrigado por escolher a MozBet!</p>
+              </div>
+            `,
+          });
+        } catch (emailErr) {
+          console.error("Erro ao enviar e-mail de aprovação de saque em lote:", emailErr);
+        }
+      });
+
+    await Promise.all(emailPromises);
 
     return { success: true, count: pending.length };
   } catch (err: any) {

@@ -100,40 +100,77 @@ export default async function AdminDashboard() {
     }
   }
 
-  // 6. Buscar dados dos últimos 90 dias para os gráficos (evitando extrapolar o limite de 1000)
+  // 6. Buscar dados dos últimos 90 dias para os gráficos de forma paginada para evitar o limite de 1000 do Supabase
   const ninetyDaysAgo = new Date();
   ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
   const ninetyDaysAgoISO = ninetyDaysAgo.toISOString();
 
-  // Para o gráfico de usuários: registros criados nos últimos 90 dias
-  const { data: usersRaw } = await supabaseAdmin
-    .from("users")
-    .select("created_at, balance")
-    .gte("created_at", ninetyDaysAgoISO);
+  // Helper genérico para paginação segura
+  async function fetchPagedData<T>(
+    fetcher: (from: number, to: number) => Promise<{ data: T[] | null; error: any }>
+  ): Promise<T[]> {
+    let results: T[] = [];
+    let page = 0;
+    const limit = 1000;
+    let hasMore = true;
 
-  // Para o gráfico de depósitos: concluídos nos últimos 90 dias
-  const { data: depositsRaw } = await supabaseAdmin
-    .from("transactions")
-    .select("created_at, amount")
-    .eq("type", "DEPOSIT")
-    .eq("status", "COMPLETED")
-    .gte("created_at", ninetyDaysAgoISO);
+    while (hasMore) {
+      const { data, error } = await fetcher(page * limit, (page + 1) * limit - 1);
+      if (error || !data || data.length === 0) {
+        hasMore = false;
+      } else {
+        results = results.concat(data);
+        if (data.length < limit) {
+          hasMore = false;
+        } else {
+          page++;
+        }
+      }
+    }
+    return results;
+  }
 
-  // Para o gráfico de levantamentos: concluídos nos últimos 90 dias
-  const { data: withdrawalsRaw } = await supabaseAdmin
-    .from("transactions")
-    .select("created_at, amount")
-    .in("type", ["WITHDRAW", "WITHDRAWAL"])
-    .eq("status", "COMPLETED")
-    .gte("created_at", ninetyDaysAgoISO);
+  // Buscar usuários dos últimos 90 dias
+  const usersRaw = await fetchPagedData(async (from, to) => 
+    supabaseAdmin
+      .from("users")
+      .select("created_at, balance")
+      .gte("created_at", ninetyDaysAgoISO)
+      .range(from, to)
+  );
 
-  // Para o gráfico de falhas: falhos nos últimos 90 dias
-  const { data: failedRaw } = await supabaseAdmin
-    .from("transactions")
-    .select("created_at, amount")
-    .eq("type", "DEPOSIT")
-    .eq("status", "FAILED")
-    .gte("created_at", ninetyDaysAgoISO);
+  // Buscar depósitos concluídos dos últimos 90 dias
+  const depositsRaw = await fetchPagedData(async (from, to) => 
+    supabaseAdmin
+      .from("transactions")
+      .select("created_at, amount")
+      .eq("type", "DEPOSIT")
+      .eq("status", "COMPLETED")
+      .gte("created_at", ninetyDaysAgoISO)
+      .range(from, to)
+  );
+
+  // Buscar levantamentos concluídos dos últimos 90 dias
+  const withdrawalsRaw = await fetchPagedData(async (from, to) => 
+    supabaseAdmin
+      .from("transactions")
+      .select("created_at, amount")
+      .in("type", ["WITHDRAW", "WITHDRAWAL"])
+      .eq("status", "COMPLETED")
+      .gte("created_at", ninetyDaysAgoISO)
+      .range(from, to)
+  );
+
+  // Buscar depósitos que falharam nos últimos 90 dias
+  const failedRaw = await fetchPagedData(async (from, to) => 
+    supabaseAdmin
+      .from("transactions")
+      .select("created_at, amount")
+      .eq("type", "DEPOSIT")
+      .eq("status", "FAILED")
+      .gte("created_at", ninetyDaysAgoISO)
+      .range(from, to)
+  );
 
   return (
     <div className="space-y-8">

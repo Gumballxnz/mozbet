@@ -17,6 +17,7 @@ const SubwayCrashGame = lazy(() => import("@/components/games/SubwayCrashGame"))
 const MinesGame = lazy(() => import("@/components/games/MinesGame"));
 const MegaFruitsGame = lazy(() => import("@/components/games/MegaFruitsGame"));
 const LionZamaGame = lazy(() => import("@/components/games/LionZamaGame"));
+const SpaceCrashGame = lazy(() => import("@/components/games/SpaceCrashGame"));
 
 export default function GameEnginePage({
   params,
@@ -90,6 +91,7 @@ export default function GameEnginePage({
         {gameId === "mines" && <MinesGame {...altProps} />}
         {gameId === "mega-fruits" && <MegaFruitsGame {...gameProps} />}
         {gameId === "lion-zama" && <LionZamaGame {...gameProps} />}
+        {gameId === "space-crash" && <SpaceCrashGame {...altProps} />}
       </Suspense>
     </div>
   );

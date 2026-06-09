@@ -1,0 +1,229 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { X, Rocket, Users, History, Info, Play, TrendingUp } from "lucide-react";
+import { toast } from "sonner";
+import { playSound } from "@/lib/sounds";
+
+interface SpaceCrashGameProps {
+  onClose: () => void;
+  balance: number;
+  onBet: (amount: number) => void;
+}
+
+const SpaceCrashGame = ({ onClose, balance, onBet }: SpaceCrashGameProps) => {
+  const [betAmount, setBetAmount] = useState(10);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [multiplier, setMultiplier] = useState(1.0);
+  const [isCrashed, setIsCrashed] = useState(false);
+  const [history, setHistory] = useState([1.84, 1.12, 5.40, 2.05, 1.50]);
+  const [playersOnline, setPlayersOnline] = useState(1452);
+  const [targetCrash, setTargetCrash] = useState(0);
+
+  useEffect(() => {
+    let interval: any;
+    if (isPlaying && !isCrashed) {
+      interval = setInterval(() => {
+        setMultiplier((prev) => {
+          const next = prev + 0.01 * (prev > 2 ? 1.5 : 1);
+          if (next >= targetCrash) {
+            setIsCrashed(true);
+            setIsPlaying(false);
+            playSound('crash');
+            toast.error(`Explodiu no Espaço em ${targetCrash.toFixed(2)}x`);
+            setHistory(prevH => [targetCrash, ...prevH.slice(0, 5)]);
+            return targetCrash;
+          }
+          return next;
+        });
+      }, 100);
+    }
+    return () => clearInterval(interval);
+  }, [isPlaying, isCrashed, targetCrash]);
+
+  useEffect(() => {
+    const pInterval = setInterval(() => {
+      setPlayersOnline(prev => prev + Math.floor(Math.random() * 11) - 5);
+    }, 5000);
+    return () => clearInterval(pInterval);
+  }, []);
+
+  const handleStart = async () => {
+    if (balance < betAmount) {
+      toast.error("Saldo insuficiente");
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/game/crash/play", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ betAmount, gameId: "space-crash" })
+      });
+      const data = await res.json();
+      if (data.success) {
+        onBet(data.newBalance); 
+        setTargetCrash(data.crashPoint);
+        setIsPlaying(true);
+        setIsCrashed(false);
+        setMultiplier(1.0);
+        playSound('notification');
+      } else {
+        toast.error(data.error);
+      }
+    } catch (e) {
+      toast.error("Erro ao iniciar jogo.");
+    }
+  };
+
+  const handleCashout = async () => {
+    if (isPlaying && !isCrashed) {
+      try {
+        const res = await fetch("/api/game/crash/cashout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ betAmount, multiplier, gameId: "space-crash" })
+        });
+        const data = await res.json();
+        if (data.success) {
+          setHistory(prevH => [multiplier, ...prevH.slice(0, 5)]);
+          onBet(data.newBalance);
+          playSound('cashout');
+        }
+      } catch (e) {
+        toast.error("Erro na retirada.");
+      }
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[110] bg-[#070913] flex flex-col font-sans text-white overflow-hidden animate-in fade-in duration-300">
+      {/* Background Glows */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[60%] bg-[radial-gradient(circle_at_center,rgba(6,182,212,0.12)_0%,transparent_70%)] pointer-events-none" />
+      <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent_0%,rgba(0,0,0,0.9)_100%)] pointer-events-none" />
+
+      {/* Header */}
+      <div className="flex items-center justify-between p-4 bg-black/40 backdrop-blur-md border-b border-white/5 relative z-10">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-cyan-600 rounded-lg flex items-center justify-center shadow-[0_0_15px_rgba(6,182,212,0.4)]">
+            <Rocket className="text-white" size={16} />
+          </div>
+          <span className="font-black italic tracking-tighter text-xl text-cyan-400">SPACE <span className="text-white">CRASH</span></span>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="bg-green-500/10 border border-green-500/20 px-2.5 py-1 rounded-full flex items-center gap-1.5">
+            <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+            <span className="text-[10px] font-black text-green-500 tracking-wider">{playersOnline} Online</span>
+          </div>
+          <button onClick={onClose} className="p-1 hover:bg-white/10 rounded-full transition-colors">
+            <X size={24} />
+          </button>
+        </div>
+      </div>
+
+      {/* Game Stage */}
+      <div className="flex-1 relative flex flex-col items-center justify-center pt-8 overflow-hidden">
+        {/* History Caps */}
+        <div className="absolute top-4 left-0 right-0 flex justify-center gap-2 px-4 z-20">
+          {history.map((val, i) => (
+            <div key={i} className={`px-3 py-1 rounded-full text-[10px] font-black border backdrop-blur-md ${val >= 2 ? 'bg-cyan-600/30 border-cyan-500/40 text-cyan-300 shadow-[0_0_10px_rgba(6,182,212,0.2)]' : 'bg-white/5 border-white/10 text-gray-400'}`}>
+              {val.toFixed(2)}x
+            </div>
+          ))}
+        </div>
+
+        {/* Multiplier Center */}
+        <div className="relative z-20 text-center flex flex-col items-center gap-2">
+           <div className={`text-6xl sm:text-7xl font-black italic tracking-tighter drop-shadow-[0_0_30px_rgba(6,182,212,0.3)] transition-all duration-300 ${isCrashed ? 'text-red-500 scale-90' : 'text-cyan-400'}`}>
+             {multiplier.toFixed(2)}x
+           </div>
+           <div className={`px-4 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-bold text-gray-500 tracking-[0.2em] transition-opacity ${isPlaying ? 'opacity-100' : 'opacity-0'}`}>
+             DECOLANDO...
+           </div>
+        </div>
+
+        {/* Character Illustration - Styled Space Ship */}
+        <div className={`mt-8 relative transition-all duration-1000 transform ${isPlaying ? 'scale-110 -translate-y-12' : 'scale-100'}`}>
+          <div className="absolute -inset-10 bg-cyan-600/10 blur-[50px] rounded-full animate-pulse" />
+          <svg width="180" height="180" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" className="relative drop-shadow-[0_15px_30px_rgba(0,0,0,0.5)]">
+             <circle cx="100" cy="100" r="80" fill="#111528" stroke="#06b6d4" strokeWidth="2" />
+             {/* Saturn Planet Style */}
+             <circle cx="100" cy="100" r="28" fill="#0891b2" stroke="#22d3ee" strokeWidth="2" />
+             <ellipse cx="100" cy="100" rx="55" ry="10" stroke="#22d3ee" strokeWidth="3" fill="none" transform="rotate(-15 100 100)" />
+             {/* Tiny space stars */}
+             <circle cx="60" cy="65" r="2.5" fill="#fff" className="animate-pulse" />
+             <circle cx="140" cy="70" r="1.5" fill="#fff" />
+             <circle cx="75" cy="135" r="2" fill="#22d3ee" className="animate-pulse" />
+             <circle cx="130" cy="130" r="1.5" fill="#fff" />
+          </svg>
+        </div>
+
+        {/* Vertical Spotlight Beam */}
+        <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-48 bg-gradient-to-b from-cyan-600/10 via-transparent to-transparent opacity-50 blur-xl pointer-events-none" />
+      </div>
+
+      {/* Betting Panel */}
+      <div className="bg-[#0b0c16] p-5 pb-8 rounded-t-[2.5rem] border-t border-white/5 relative z-30 shadow-[0_-15px_50px_rgba(0,0,0,0.8)]">
+        <div className="flex gap-4 mb-5 border-b border-white/5">
+          <button className="pb-3 border-b-2 border-cyan-500 text-cyan-400 font-black tracking-wider text-xs px-2 uppercase">Aposta</button>
+          <button className="pb-3 text-gray-500 font-bold tracking-wider text-xs px-2 uppercase hover:text-gray-300">Auto</button>
+        </div>
+
+        <div className="flex flex-col gap-4">
+          <div className="grid grid-cols-2 gap-3">
+             <div className="bg-black/40 p-1.5 rounded-2xl border border-white/5 flex items-center">
+                 <button onClick={() => !isPlaying && setBetAmount(Math.max(1, betAmount - 1))} className="w-10 h-10 flex items-center justify-center text-xl font-bold text-gray-400 hover:text-white">-</button>
+                <input 
+                  type="number" 
+                  value={betAmount}
+                  disabled={isPlaying}
+                  onChange={(e) => setBetAmount(Number(e.target.value))}
+                  onBlur={(e) => {
+                    const val = Number(e.target.value);
+                    if (isNaN(val) || val < 1) setBetAmount(1);
+                  }}
+                  inputMode="numeric"
+                  className="flex-1 bg-transparent text-center font-black text-lg outline-none w-full"
+                />
+                <button onClick={() => !isPlaying && setBetAmount(betAmount + 1)} className="w-10 h-10 flex items-center justify-center text-xl font-bold text-gray-400 hover:text-white">+</button>
+             </div>
+             <div className="grid grid-cols-2 gap-2">
+                {[10, 20, 50, 100].slice(0, 4).map(val => (
+                  <button key={val} onClick={() => !isPlaying && setBetAmount(prev => prev + val)} disabled={isPlaying} className="bg-white/5 border border-white/5 rounded-xl py-1 text-[10px] font-black text-gray-400 hover:bg-white/10 disabled:opacity-40">{val}</button>
+                ))}
+             </div>
+          </div>
+
+          {!isPlaying ? (
+            <button 
+              onClick={handleStart}
+              className="w-full py-4.5 bg-gradient-to-r from-cyan-600 to-blue-600 rounded-2xl font-black text-lg tracking-wider shadow-[0_8px_30px_rgba(6,182,212,0.4)] active:scale-[0.98] transition-all"
+            >
+              APOSTA
+            </button>
+          ) : (
+            <button 
+              onClick={handleCashout}
+              className="w-full py-4.5 bg-gradient-to-r from-cyan-500 to-cyan-600 rounded-2xl font-black text-lg tracking-wider shadow-[0_8px_30px_rgba(34,211,238,0.4)] active:scale-[0.98] transition-all"
+            >
+              LEVANTAR {(betAmount * multiplier).toFixed(2)} MT
+            </button>
+          )}
+        </div>
+
+        <div className="mt-5 flex items-center justify-between px-2 opacity-50">
+          <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400">
+             <TrendingUp size={12} />
+             <span>MAX WIN: 100.00x</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400">
+             <Users size={12} />
+             <span>{playersOnline} JOGANDO</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default SpaceCrashGame;

@@ -11,6 +11,7 @@ const GAME_NAMES: Record<string, string> = {
   "taxi-crash": "Taxi Crash",
   "earplane": "Earplane",
   "purple-crash": "Purple Crash",
+  "space-crash": "Space Crash",
   "plinko": "Plinko",
   "chicken-highway": "Chicken Highway",
   "augustus-crash": "Augustus Crash",

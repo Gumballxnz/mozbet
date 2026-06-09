@@ -124,7 +124,6 @@ export function GamePlayer({
         src={iframeUrl}
         className={`w-full flex-1 border-none transition-opacity duration-500 ${isIframeLoaded ? "opacity-100" : "opacity-0"}`}
         allow="autoplay; fullscreen"
-        allowFullScreen
         onLoad={() => setIsIframeLoaded(true)}
       />
     </div>

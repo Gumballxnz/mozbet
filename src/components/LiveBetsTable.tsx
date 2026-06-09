@@ -30,8 +30,61 @@ function sanitizeBanner(icon: string, gameId?: string): string {
   return icon;
 }
 
+const MOCK_ACTIVITIES = [
+  {
+    game: "Aviator",
+    gameIcon: "https://objectstorage.ca-montreal-1.oraclecloud.com/n/ax44xafhjvwf/b/mozbet-assets/o/games/aviator.webp",
+    id: "MZ552***",
+    time: "16:08",
+    betAmount: 120,
+    multiplier: 1.85,
+    payout: 222,
+    isLoss: false
+  },
+  {
+    game: "Mines",
+    gameIcon: "https://objectstorage.ca-montreal-1.oraclecloud.com/n/ax44xafhjvwf/b/mozbet-assets/o/games/mines.webp",
+    id: "MZ913***",
+    time: "16:07",
+    betAmount: 50,
+    multiplier: 2.50,
+    payout: 125,
+    isLoss: false
+  },
+  {
+    game: "Plinko",
+    gameIcon: "https://objectstorage.ca-montreal-1.oraclecloud.com/n/ax44xafhjvwf/b/mozbet-assets/o/games/plinko.webp",
+    id: "MZ248***",
+    time: "16:05",
+    betAmount: 200,
+    multiplier: 0.50,
+    payout: 100,
+    isLoss: false
+  },
+  {
+    game: "Aviator",
+    gameIcon: "https://objectstorage.ca-montreal-1.oraclecloud.com/n/ax44xafhjvwf/b/mozbet-assets/o/games/aviator.webp",
+    id: "MZ774***",
+    time: "16:03",
+    betAmount: 1000,
+    multiplier: 1.20,
+    payout: 1200,
+    isLoss: false
+  },
+  {
+    game: "Mines",
+    gameIcon: "https://objectstorage.ca-montreal-1.oraclecloud.com/n/ax44xafhjvwf/b/mozbet-assets/o/games/mines.webp",
+    id: "MZ115***",
+    time: "16:01",
+    betAmount: 500,
+    multiplier: 0.00,
+    payout: 0,
+    isLoss: true
+  }
+];
+
 export function LiveBetsTable() {
-  const [activities, setActivities] = useState<any[]>([]);
+  const [activities, setActivities] = useState<any[]>(MOCK_ACTIVITIES);
   const [activeTab, setActiveTab] = useState<"all" | "high_rollers" | "biggest_wins">("all");
   const isMounted = useRef(true);
 
@@ -101,8 +154,6 @@ export function LiveBetsTable() {
       supabase.removeChannel(channel);
     };
   }, []);
-
-  if (activities.length === 0) return null;
 
   // Filtragem e Ordenação com base na Tab ativa
   const getDisplayData = () => {

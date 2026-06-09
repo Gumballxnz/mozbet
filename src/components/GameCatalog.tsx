@@ -10,16 +10,18 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { playSound } from "@/lib/sounds";
 
-export function GameCatalog() {
+export function GameCatalog({ initialGames = [] }: { initialGames?: any[] }) {
   const { t } = useTranslation();
   const { isLoggedIn, user } = useAppStore();
   const router = useRouter();
   const searchParams = useSearchParams();
   const catalogRef = useRef<HTMLDivElement>(null);
   
-  const [games, setGames] = useState<any[]>([]);
-  const [featuredGames, setFeaturedGames] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [games, setGames] = useState<any[]>(initialGames);
+  const [featuredGames, setFeaturedGames] = useState<any[]>(
+    initialGames.filter((g: any) => g.is_active !== false).slice(0, 6)
+  );
+  const [loading, setLoading] = useState(initialGames.length === 0);
   const [activeFilter, setActiveFilter] = useState("all");
 
   // Sincronizar filtro com a URL (Sidebar)
@@ -34,8 +36,18 @@ export function GameCatalog() {
     }
   }, [searchParams]);
 
+  // Sorteia os destaques no cliente para evitar hydration mismatch e garantir reatividade
+  useEffect(() => {
+    const activeGames = initialGames.filter((g: any) => g.is_active !== false);
+    if (activeGames.length > 0) {
+      const shuffled = [...activeGames].sort(() => 0.5 - Math.random());
+      setFeaturedGames(shuffled.slice(0, 6));
+    }
+  }, [initialGames]);
+
   useEffect(() => {
     async function loadGames() {
+      if (initialGames.length > 0) return; // Se já veio do SSR, não faz fetch no cliente
       try {
         const res = await fetch("/api/content/games");
         const data = await res.json();
@@ -53,7 +65,7 @@ export function GameCatalog() {
       }
     }
     loadGames();
-  }, []);
+  }, [initialGames]);
 
   // Realtime: quando o admin altera jogos, o catálogo actualiza ao vivo
   useEffect(() => {

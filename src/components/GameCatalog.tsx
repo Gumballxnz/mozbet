@@ -89,6 +89,25 @@ export function GameCatalog({ initialGames = [] }: { initialGames?: any[] }) {
       return;
     }
 
+    const totalBalance = (user?.balance || 0) + (user?.bonusBalance || 0);
+    if (!user?.isAdmin && totalBalance <= 0) {
+      playSound('notification');
+      toast.error("Saldo Insuficiente", {
+        description: "Adicione saldo à sua conta para jogar.",
+        action: {
+          label: "Depositar",
+          onClick: () => useAppStore.getState().setDepositOpen(true),
+        },
+        actionButtonStyle: {
+          backgroundColor: "#00ff7f",
+          color: "#000",
+          fontWeight: "bold",
+          padding: "10px 20px",
+        }
+      });
+      return;
+    }
+
     // Regra de segurança: Usuário comum precisa ter feito pelo menos um depósito para jogar (exceto aviator e mines)
     const isFreeAccessGame = gameId === "aviator" || gameId === "mines";
     if (!isFreeAccessGame && !user?.isAdmin && !user?.hasDeposited) {

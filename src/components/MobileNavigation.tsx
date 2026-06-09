@@ -22,7 +22,8 @@ export function MobileNavigation() {
       return;
     }
 
-    if (!user?.isAdmin && (user?.balance || 0) <= 0) {
+    const totalBalance = (user?.balance || 0) + (user?.bonusBalance || 0);
+    if (!user?.isAdmin && totalBalance <= 0) {
       playSound('notification');
       toast.error("Saldo Insuficiente", {
         description: "Adicione saldo à sua conta para jogar.",

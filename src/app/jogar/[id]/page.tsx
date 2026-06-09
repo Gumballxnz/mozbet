@@ -34,19 +34,20 @@ export default function PlayGamePage({
   const resolvedParams = use(params);
   const gameId = resolvedParams.id;
 
-  // Proteção: Se não estiver logado ou saldo for 0 (não admin), redirecionar
+  // Proteção: Se não estiver logado ou não tiver saldo (não admin), redirecionar
   useEffect(() => {
     if (!isLoggedIn) {
       useAppStore.getState().openRegister();
       router.push("/");
     } else {
-      const isFreeAccessGame = gameId === "aviator" || gameId === "mines";
-      if (!isFreeAccessGame && !user?.isAdmin && !user?.hasDeposited) {
-        // Bloqueio extra para acesso direto via URL
+      const totalBalance = (user?.balance || 0) + (user?.bonusBalance || 0);
+      if (!user?.isAdmin && totalBalance <= 0) {
+        // Bloqueio extra para acesso direto via URL sem saldo
+        useAppStore.getState().setDepositOpen(true);
         router.push("/");
       }
     }
-  }, [isLoggedIn, user, router]);
+  }, [isLoggedIn, user, router, gameId]);
 
   if (!isLoggedIn) {
     return (

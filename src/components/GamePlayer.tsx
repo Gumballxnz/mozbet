@@ -37,7 +37,7 @@ export function GamePlayer({
       } else if (e.data.type === 'ENGINE_READY' && mode === 'real' && user) {
         // Enviar o saldo atual para o Iframe assim que ele estiver pronto (restrito para a mesma origem)
         iframeRef.current?.contentWindow?.postMessage(
-          { type: 'SYNC_BALANCE', balance: user.balance },
+          { type: 'SYNC_BALANCE', balance: user.balance + (user.bonusBalance || 0) },
           window.location.origin
         );
       } else if (e.data.type === 'CLOSE_GAME') {

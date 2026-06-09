@@ -192,7 +192,7 @@ export function MobileHeader() {
                   {t("deposit")}
                 </Button>
                 <span className="ml-3 font-mono-data text-sm font-bold glow-primary text-primary">
-                  {formatMZN(user.balance)}
+                  {formatMZN(user.balance + (user.bonusBalance || 0))}
                 </span>
               </div>
 

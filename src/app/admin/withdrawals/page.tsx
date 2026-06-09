@@ -3,11 +3,11 @@ import { AdminTransactionsTable } from "@/components/admin/AdminTransactionsTabl
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminTransactionsPage() {
+export default async function AdminWithdrawalsPage() {
   const { data: transactionsRaw, count } = await supabaseAdmin
     .from("transactions")
     .select("*, users(phone)", { count: "exact" })
-    .in("type", ["DEPOSIT", "BONUS"])
+    .eq("type", "WITHDRAW")
     .order("created_at", { ascending: false })
     .limit(30);
 
@@ -20,7 +20,7 @@ export default async function AdminTransactionsPage() {
     <AdminTransactionsTable 
       initialTransactions={initialTransactions} 
       initialTotalCount={count || 0} 
-      typeFilter="DEPOSIT"
+      typeFilter="WITHDRAW"
     />
   );
 }

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Users, Wallet, LogOut, Settings, Menu, X } from "lucide-react";
+import { LayoutDashboard, Users, Wallet, ArrowUpRight, LogOut, Settings, Menu, X } from "lucide-react";
 import { useAppStore } from "@/lib/store";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -37,7 +37,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const navItems = [
     { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
     { name: "Utilizadores", href: "/admin/users", icon: Users },
-    { name: "Transações", href: "/admin/transactions", icon: Wallet },
+    { name: "Depósitos", href: "/admin/transactions", icon: Wallet },
+    { name: "Saques", href: "/admin/withdrawals", icon: ArrowUpRight },
     { name: "Carrossel de Destaques", href: "/admin/banners", icon: Settings },
     { name: "Catálogo de Jogos", href: "/admin/games", icon: Settings },
   ];

@@ -2,10 +2,18 @@
 
 import { supabaseAdmin } from "@/lib/auth-server";
 
-export async function getLatestTransactions() {
-  const { data: transactionsRaw } = await supabaseAdmin
+export async function getLatestTransactions(typeFilter?: "DEPOSIT" | "WITHDRAW") {
+  let query = supabaseAdmin
     .from("transactions")
-    .select("*, users(phone)")
+    .select("*, users(phone)");
+
+  if (typeFilter === "DEPOSIT") {
+    query = query.in("type", ["DEPOSIT", "BONUS"]);
+  } else if (typeFilter === "WITHDRAW") {
+    query = query.eq("type", "WITHDRAW");
+  }
+
+  const { data: transactionsRaw } = await query
     .order("created_at", { ascending: false })
     .limit(30);
 
@@ -15,10 +23,18 @@ export async function getLatestTransactions() {
   })) || [];
 }
 
-export async function getMoreTransactions(offset: number) {
-  const { data: transactionsRaw } = await supabaseAdmin
+export async function getMoreTransactions(offset: number, typeFilter?: "DEPOSIT" | "WITHDRAW") {
+  let query = supabaseAdmin
     .from("transactions")
-    .select("*, users(phone)")
+    .select("*, users(phone)");
+
+  if (typeFilter === "DEPOSIT") {
+    query = query.in("type", ["DEPOSIT", "BONUS"]);
+  } else if (typeFilter === "WITHDRAW") {
+    query = query.eq("type", "WITHDRAW");
+  }
+
+  const { data: transactionsRaw } = await query
     .order("created_at", { ascending: false })
     .range(offset, offset + 29);
 

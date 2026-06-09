@@ -20,9 +20,71 @@ interface Transaction {
   phone?: string;
 }
 
-export function AdminTransactionsTable({ initialTransactions, initialTotalCount }: { initialTransactions: Transaction[], initialTotalCount: number }) {
+export function AdminTransactionsTable({ 
+  initialTransactions, 
+  initialTotalCount,
+  typeFilter 
+}: { 
+  initialTransactions: Transaction[], 
+  initialTotalCount: number,
+  typeFilter: "DEPOSIT" | "WITHDRAW"
+}) {
   const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
   const [totalCount, setTotalCount] = useState(initialTotalCount);
+
+  const renderStatus = (tx: Transaction) => {
+    if (tx.status === "COMPLETED") {
+      let label = "Pago";
+      if (tx.type === "DEPOSIT") label = "Depósito Aceito";
+      else if (tx.type === "WITHDRAW") label = "Saque Aprovado";
+      else if (tx.type === "BONUS") label = "Bônus Pago";
+      return (
+        <span className="inline-flex items-center gap-1 bg-primary/10 text-primary px-2.5 py-1 rounded-md font-bold text-xs">
+          <CheckCircle2 className="w-3.5 h-3.5" /> {label}
+        </span>
+      );
+    }
+    if (tx.status === "FAILED") {
+      let label = "Falho";
+      if (tx.type === "DEPOSIT") label = "Depósito Recusado";
+      else if (tx.type === "WITHDRAW") label = "Saque Recusado";
+      else if (tx.type === "BONUS") label = "Bônus Cancelado";
+      return (
+        <span className="inline-flex items-center gap-1 bg-red-500/10 text-red-500 px-2.5 py-1 rounded-md font-bold text-xs">
+          <XCircle className="w-3.5 h-3.5" /> {label}
+        </span>
+      );
+    }
+    if (tx.status === "PENDING") {
+      let label = "Pendente";
+      if (tx.type === "DEPOSIT") label = "Aguardando PIN";
+      else if (tx.type === "WITHDRAW") label = "Saque Pendente";
+      return (
+        <div className="flex items-center justify-center gap-2">
+          <span className="inline-flex items-center gap-1 bg-yellow-500/10 text-yellow-500 px-2.5 py-1 rounded-md font-bold text-xs">
+            {label}
+          </span>
+          {tx.type === "WITHDRAW" && (
+            <div className="flex gap-1.5 ml-2">
+              <button
+                onClick={() => handleApproveWithdraw(tx.id)}
+                className="bg-green-600 hover:bg-green-700 text-white font-black text-[9px] uppercase px-2 py-1 rounded cursor-pointer transition-colors active:scale-95 shadow-md shadow-green-900/30"
+              >
+                Aprovar
+              </button>
+              <button
+                onClick={() => handleRejectWithdraw(tx.id)}
+                className="bg-red-600 hover:bg-red-700 text-white font-black text-[9px] uppercase px-2 py-1 rounded cursor-pointer transition-colors active:scale-95 shadow-md shadow-red-900/30"
+              >
+                Rejeitar
+              </button>
+            </div>
+          )}
+        </div>
+      );
+    }
+    return null;
+  };
   const [loadingMore, setLoadingMore] = useState(false);
   const [approvingId, setApprovingId] = useState<string | null>(null);
   const [approvingMultiple, setApprovingMultiple] = useState(false);
@@ -94,8 +156,14 @@ export function AdminTransactionsTable({ initialTransactions, initialTotalCount 
 
   useEffect(() => {
     // 1. Escuta realtime do Supabase para transações (atualização instantânea)
-    const channel = supabase.channel('admin-transactions')
+    const channel = supabase.channel(`admin-transactions-${typeFilter}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'transactions' }, async (payload) => {
+        const type = payload.new.type;
+        const isMatch = typeFilter === "DEPOSIT" 
+          ? (type === "DEPOSIT" || type === "BONUS")
+          : (type === "WITHDRAW");
+        if (!isMatch) return;
+
         const { data: u } = await supabase.from("users").select("phone").eq("id", payload.new.user_id).single();
         const newTx = {
           ...payload.new,
@@ -110,18 +178,28 @@ export function AdminTransactionsTable({ initialTransactions, initialTotalCount 
         setTotalCount(prev => prev + 1);
       })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'transactions' }, payload => {
+        const type = payload.new.type;
+        const isMatch = typeFilter === "DEPOSIT" 
+          ? (type === "DEPOSIT" || type === "BONUS")
+          : (type === "WITHDRAW");
+        if (!isMatch) return;
+
         setTransactions(prev => prev.map(t => t.id === payload.new.id ? { ...t, ...payload.new } : t));
       })
       .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'transactions' }, payload => {
-        setTransactions(prev => prev.filter(t => t.id !== payload.old.id));
-        setTotalCount(prev => Math.max(0, prev - 1));
+        setTransactions(prev => {
+          const exists = prev.some(t => t.id === payload.old.id);
+          if (!exists) return prev;
+          setTotalCount(c => Math.max(0, c - 1));
+          return prev.filter(t => t.id !== payload.old.id);
+        });
       })
       .subscribe();
 
     // 2. Polling de redundância a cada 10 segundos para garantir consistência
     const interval = setInterval(async () => {
       try {
-        const latest = await getLatestTransactions();
+        const latest = await getLatestTransactions(typeFilter);
         if (latest && latest.length > 0) {
           setTransactions(prev => {
             const newTxsMap = new Map(latest.map(t => [t.id, t]));
@@ -141,12 +219,12 @@ export function AdminTransactionsTable({ initialTransactions, initialTotalCount 
       supabase.removeChannel(channel);
       clearInterval(interval);
     };
-  }, []);
+  }, [typeFilter]);
 
   const handleLoadMore = async () => {
     setLoadingMore(true);
     try {
-      const moreTxs = await getMoreTransactions(transactions.length);
+      const moreTxs = await getMoreTransactions(transactions.length, typeFilter);
       if (moreTxs.length > 0) {
         setTransactions(prev => [...prev, ...moreTxs as Transaction[]]);
       }
@@ -204,8 +282,15 @@ export function AdminTransactionsTable({ initialTransactions, initialTotalCount 
     <div className="space-y-6">
       <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 flex-wrap">
         <div className="flex-shrink-0">
-          <h1 className="text-3xl font-bold text-white">Transações Financeiras</h1>
-          <p className="text-muted-foreground">Monitorização Realtime de M-Pesa e E-Mola. <span className="text-white font-bold ml-2">Total: {totalCount}</span></p>
+          <h1 className="text-3xl font-bold text-white">
+            {typeFilter === "DEPOSIT" ? "Depósitos Financeiros" : "Saques & Levantamentos"}
+          </h1>
+          <p className="text-muted-foreground">
+            {typeFilter === "DEPOSIT" 
+              ? "Monitorização Realtime de depósitos M-Pesa e E-Mola para Depósitos e Bónus." 
+              : "Monitorização e aprovação manual de levantamentos de fundos."}
+            <span className="text-white font-bold ml-2">Total: {totalCount}</span>
+          </p>
         </div>
         
         <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 w-full xl:w-auto">
@@ -232,9 +317,19 @@ export function AdminTransactionsTable({ initialTransactions, initialTotalCount 
               className="bg-[#101116] border border-[#2A2F40] rounded-xl px-3 text-xs text-white outline-none h-10 w-full sm:w-auto cursor-pointer"
             >
               <option value="ALL">Todos os Estados</option>
-              <option value="COMPLETED">✅ Pago</option>
-              <option value="PENDING">⏳ Pendente</option>
-              <option value="FAILED">❌ Falho</option>
+              {typeFilter === "DEPOSIT" ? (
+                <>
+                  <option value="COMPLETED">✅ Depósito Aceito</option>
+                  <option value="PENDING">⏳ Aguardando PIN</option>
+                  <option value="FAILED">❌ Depósito Recusado</option>
+                </>
+              ) : (
+                <>
+                  <option value="COMPLETED">✅ Saque Aprovado</option>
+                  <option value="PENDING">⏳ Saque Pendente</option>
+                  <option value="FAILED">❌ Saque Recusado</option>
+                </>
+              )}
             </select>
           </div>
 
@@ -291,41 +386,7 @@ export function AdminTransactionsTable({ initialTransactions, initialTotalCount 
                     {formatMZN(tx.amount)}
                   </td>
                   <td className="px-6 py-4 text-center">
-                    <div className="flex items-center justify-center gap-2">
-                      {tx.status === "COMPLETED" && (
-                        <span className="inline-flex items-center gap-1 bg-primary/10 text-primary px-2 py-1 rounded-md font-bold text-xs">
-                          <CheckCircle2 className="w-4 h-4" /> Pago
-                        </span>
-                      )}
-                      {tx.status === "FAILED" && (
-                        <span className="inline-flex items-center gap-1 bg-red-500/10 text-red-500 px-2 py-1 rounded-md font-bold text-xs">
-                          <XCircle className="w-4 h-4" /> Falho
-                        </span>
-                      )}
-                      {tx.status === "PENDING" && (
-                        <div className="flex items-center gap-2">
-                          <span className="inline-flex items-center gap-1 bg-yellow-500/10 text-yellow-500 px-2 py-1 rounded-md font-bold text-xs">
-                            Pendente
-                          </span>
-                          {tx.type === "WITHDRAW" && (
-                            <div className="flex gap-1.5">
-                              <button
-                                onClick={() => handleApproveWithdraw(tx.id)}
-                                className="bg-green-600 hover:bg-green-700 text-white font-black text-[10px] uppercase px-2 py-1 rounded cursor-pointer transition-colors active:scale-95"
-                              >
-                                Aprovar
-                              </button>
-                              <button
-                                onClick={() => handleRejectWithdraw(tx.id)}
-                                className="bg-red-600 hover:bg-red-700 text-white font-black text-[10px] uppercase px-2 py-1 rounded cursor-pointer transition-colors active:scale-95"
-                              >
-                                Rejeitar
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
+                    {renderStatus(tx)}
                   </td>
                 </tr>
               ))}
@@ -369,39 +430,7 @@ export function AdminTransactionsTable({ initialTransactions, initialTotalCount 
               </div>
 
               <div className="flex items-center gap-2">
-                {tx.status === "COMPLETED" && (
-                  <span className="inline-flex items-center gap-1 bg-primary/10 text-primary px-2.5 py-0.5 rounded-md font-bold text-[10px]">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> Pago
-                  </span>
-                )}
-                {tx.status === "FAILED" && (
-                  <span className="inline-flex items-center gap-1 bg-red-500/10 text-red-500 px-2.5 py-0.5 rounded-md font-bold text-[10px]">
-                    <XCircle className="w-3.5 h-3.5" /> Falho
-                  </span>
-                )}
-                {tx.status === "PENDING" && (
-                  <div className="flex flex-col items-end gap-2">
-                    <span className="inline-flex items-center gap-1 bg-yellow-500/10 text-yellow-500 px-2.5 py-0.5 rounded-md font-bold text-[10px] mb-1">
-                      Pendente
-                    </span>
-                    {tx.type === "WITHDRAW" && (
-                      <div className="flex gap-1.5">
-                        <button
-                          onClick={() => handleApproveWithdraw(tx.id)}
-                          className="bg-green-600 hover:bg-green-700 text-white font-black text-[9px] uppercase px-2 py-1 rounded cursor-pointer active:scale-95 transition-transform"
-                        >
-                          Aprovar
-                        </button>
-                        <button
-                          onClick={() => handleRejectWithdraw(tx.id)}
-                          className="bg-red-600 hover:bg-red-700 text-white font-black text-[9px] uppercase px-2 py-1 rounded cursor-pointer active:scale-95 transition-transform"
-                        >
-                          Rejeitar
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
+                {renderStatus(tx)}
               </div>
             </div>
           </div>

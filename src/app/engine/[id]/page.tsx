@@ -55,10 +55,9 @@ export default function GameEnginePage({
     window.parent.postMessage({ type: 'UPDATE_BALANCE', balance: newBal }, '*');
   };
 
-  const onBet = (amount: number) => {
-    const newBal = balance - amount;
-    setBalance(newBal);
-    window.parent.postMessage({ type: 'UPDATE_BALANCE', balance: newBal }, '*');
+  const onBet = (newBalance: number) => {
+    setBalance(newBalance);
+    window.parent.postMessage({ type: 'UPDATE_BALANCE', balance: newBalance }, '*');
   };
 
   const onBack = () => {

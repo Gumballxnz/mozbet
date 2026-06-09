@@ -1,9 +1,13 @@
 import { supabaseAdmin } from "@/lib/auth-server";
 import { AdminTransactionsTable } from "@/components/admin/AdminTransactionsTable";
+import { cleanupPendingDeposits } from "@/app/admin/transactions/actions";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminWithdrawalsPage() {
+  // Limpar depósitos pendentes expirados
+  await cleanupPendingDeposits();
+
   const { data: transactionsRaw, count } = await supabaseAdmin
     .from("transactions")
     .select("*, users(phone)", { count: "exact" })

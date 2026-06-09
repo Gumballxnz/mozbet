@@ -1,9 +1,13 @@
 import { supabaseAdmin } from "@/lib/auth-server";
 import { AdminCharts } from "@/components/admin/AdminCharts";
+import { cleanupPendingDeposits } from "@/app/admin/transactions/actions";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminDashboard() {
+  // Limpar depósitos pendentes antigos
+  await cleanupPendingDeposits();
+
   // 1. Contagem exata de usuários
   const { count: usersCount } = await supabaseAdmin
     .from("users")

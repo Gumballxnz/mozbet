@@ -3,7 +3,31 @@
 import { supabaseAdmin } from "@/lib/auth-server";
 import { Resend } from "resend";
 
+export async function cleanupPendingDeposits() {
+  try {
+    const threeMinutesAgo = new Date();
+    threeMinutesAgo.setMinutes(threeMinutesAgo.getMinutes() - 3);
+    const threeMinutesAgoISO = threeMinutesAgo.toISOString();
+
+    const { error } = await supabaseAdmin
+      .from("transactions")
+      .update({ status: "FAILED" })
+      .eq("type", "DEPOSIT")
+      .eq("status", "PENDING")
+      .lt("created_at", threeMinutesAgoISO);
+
+    if (error) {
+      console.error("Erro no update de limpeza de pendentes:", error);
+    }
+  } catch (err) {
+    console.error("Erro ao limpar depósitos pendentes antigos:", err);
+  }
+}
+
 export async function getLatestTransactions(typeFilter?: "DEPOSIT" | "WITHDRAW") {
+  // Limpar transações expiradas antes de listar
+  await cleanupPendingDeposits();
+
   let query = supabaseAdmin
     .from("transactions")
     .select("*, users(phone)");
@@ -25,6 +49,9 @@ export async function getLatestTransactions(typeFilter?: "DEPOSIT" | "WITHDRAW")
 }
 
 export async function getMoreTransactions(offset: number, typeFilter?: "DEPOSIT" | "WITHDRAW") {
+  // Limpar transações expiradas antes de listar mais
+  await cleanupPendingDeposits();
+
   let query = supabaseAdmin
     .from("transactions")
     .select("*, users(phone)");

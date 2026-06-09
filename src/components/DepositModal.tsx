@@ -31,7 +31,7 @@ function detectPaymentMethod(phone: string): { method: "mpesa" | "emola"; label:
   if (["84", "85"].includes(prefix)) {
     return { method: "mpesa", label: "M-Pesa" };
   }
-  if (["86", "87"].includes(prefix)) {
+  if (["86", "87", "88"].includes(prefix)) {
     return { method: "emola", label: "e-Mola" };
   }
   // Fallback

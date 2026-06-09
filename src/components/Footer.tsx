@@ -45,7 +45,7 @@ export function Footer() {
             <span>Plataforma 100% Segura</span>
           </div>
           <span className="hidden sm:inline">•</span>
-          <span>© {new Date().getFullYear()} MOZBET. Todos os direitos reservados.</span>
+          <span>© 2026 MOZBET. Todos os direitos reservados.</span>
           <span className="hidden sm:inline">•</span>
           <span>Apenas para maiores de 18 anos.</span>
         </div>

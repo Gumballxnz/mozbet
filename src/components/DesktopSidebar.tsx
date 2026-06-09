@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { 
@@ -20,8 +20,13 @@ export function DesktopSidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { setSupportOpen, isLoggedIn, user } = useAppStore();
+  const { setSupportOpen, isLoggedIn, user, onlineCount } = useAppStore();
   const [collapsed, setCollapsed] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Esconder a sidebar em certas páginas
   if (pathname && (pathname.startsWith("/admin") || pathname.startsWith("/jogar"))) return null;
@@ -186,7 +191,7 @@ export function DesktopSidebar() {
         <div className="flex items-center gap-2 px-3 py-1">
           <div className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(0,255,127,0.5)]" />
           <span className="text-[10px] font-bold text-primary uppercase tracking-widest">
-            {useAppStore.getState().onlineCount} Online
+            {mounted ? `${onlineCount} Online` : "200 Online"}
           </span>
         </div>
         <button 

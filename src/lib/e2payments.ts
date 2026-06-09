@@ -109,8 +109,9 @@ export async function processE2Payment(
     // Gera/reutiliza o token OAuth2
     const token = await getE2PayToken();
 
-    // Endpoint C2B: /v1/c2b/mpesa-payment/{wallet_id}
-    const endpoint = `${E2PAY_BASE_URL}/v1/c2b/mpesa-payment/${walletId}`;
+    // Endpoint C2B: /v1/c2b/mpesa-payment/{wallet_id} ou /v1/c2b/emola-payment/{wallet_id}
+    const paymentPath = method === "emola" ? "emola-payment" : "mpesa-payment";
+    const endpoint = `${E2PAY_BASE_URL}/v1/c2b/${paymentPath}/${walletId}`;
 
     const payload = {
       client_id: clientId,

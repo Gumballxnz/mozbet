@@ -385,7 +385,7 @@ export function AdminCharts({
             <div>
                <span className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1">Média Diária</span>
                <span className="text-2xl font-black text-purple-400">
-                 {Math.ceil(chartData.reduce((acc, curr) => acc + curr.usuarios, 0) / (filter === 'hoje' ? 1 : filter === '7d' ? 7 : filter === '30d' ? 30 : 90)).toLocaleString()} 
+                 {Math.ceil(users.length / 90).toLocaleString()} 
                  <span className="text-sm font-medium text-gray-500 ml-1">users/dia</span>
                </span>
             </div>

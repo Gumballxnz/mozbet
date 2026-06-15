@@ -23,10 +23,9 @@ export default function RegistarPage() {
     if (isLoggedIn) {
       router.replace("/");
     } else {
-      openRegister();
-      router.replace("/");
+      router.replace("/?openRegister=true");
     }
-  }, [isLoggedIn, openRegister, router]);
+  }, [isLoggedIn, router]);
  
   return null;
 }

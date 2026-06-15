@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/auth-server";
 
 export async function GET(req: NextRequest) {
   try {
@@ -6,10 +7,23 @@ export async function GET(req: NextRequest) {
     const pid = searchParams.get("pid");
     const redirectUrlStr = searchParams.get("redirectURL");
 
-    // Se não tem redirectURL, redirecionar para a página de registro por padrão
-    // Inclui o pid como query param para rastreamento visual na página de registo
     let finalRedirectUrl = "/registar";
-    
+    let isValidAffiliate = false;
+
+    if (pid) {
+      // Verificar no banco de dados se o afiliado de fato existe e está ativo
+      const { data: affiliateUser } = await supabaseAdmin
+        .from("users")
+        .select("id")
+        .eq("affiliate_code", pid)
+        .eq("is_affiliate", true)
+        .maybeSingle();
+
+      if (affiliateUser) {
+        isValidAffiliate = true;
+      }
+    }
+
     if (redirectUrlStr) {
       // Tratar redirectUrl seguro para evitar open redirect para sites maliciosos
       if (redirectUrlStr.startsWith("/") || redirectUrlStr.includes("mozbet.online")) {
@@ -17,15 +31,20 @@ export async function GET(req: NextRequest) {
       }
     }
 
+    // Se o afiliado for inválido, redireciona para a home por segurança
+    if (pid && !isValidAffiliate) {
+      return NextResponse.redirect(new URL("/", req.url));
+    }
+
     // Adicionar o pid como query param na URL de destino para rastreamento visual
-    if (pid) {
+    if (pid && isValidAffiliate) {
       const separator = finalRedirectUrl.includes("?") ? "&" : "?";
       finalRedirectUrl = `${finalRedirectUrl}${separator}ref=${pid}`;
     }
 
     const response = NextResponse.redirect(new URL(finalRedirectUrl, req.url));
 
-    if (pid) {
+    if (pid && isValidAffiliate) {
       // Injeta o cookie de indicação do afiliado (válido por 30 dias)
       response.cookies.set("affiliate_pid", pid, {
         path: "/",
@@ -39,7 +58,7 @@ export async function GET(req: NextRequest) {
     return response;
   } catch (error) {
     console.error("Erro no redirect de afiliados:", error);
-    return NextResponse.redirect(new URL("/registar", req.url));
+    return NextResponse.redirect(new URL("/", req.url));
   }
 }
 

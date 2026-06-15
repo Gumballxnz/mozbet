@@ -24,6 +24,20 @@ export function LayoutWrapper({ children, isAffiliate: isAffiliateProp }: { chil
   const isEngine = pathname?.startsWith("/engine");
   const isAffiliate = isAffiliateProp || pathname?.startsWith("/afiliados");
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("openRegister") === "true") {
+        useAppStore.getState().openRegister();
+        const cleanSearch = window.location.search
+          .replace(/[?&]openRegister=true/, "")
+          .replace(/^&/, "?");
+        const newUrl = window.location.pathname + (cleanSearch === "?" || cleanSearch === "" ? "" : cleanSearch);
+        window.history.replaceState({}, "", newUrl);
+      }
+    }
+  }, [pathname]);
+
   if (isAdmin || isEngine || isAffiliate) {
     return (
       <>

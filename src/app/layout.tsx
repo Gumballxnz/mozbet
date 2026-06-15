@@ -84,6 +84,8 @@ export default async function RootLayout({
   return (
     <html lang="pt" suppressHydrationWarning>
       <head>
+        <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+        <link rel="shortcut icon" href="/icon.svg" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />

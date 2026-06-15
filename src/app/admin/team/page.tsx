@@ -10,10 +10,12 @@ export default async function AdminTeamPage() {
   const cookieStore = await cookies();
   const token = cookieStore.get("mozbet_session")?.value;
   let currentUserRole = "admin";
+  let currentUserId = "";
   
   if (token) {
     const payload = await verifyToken<{ id: string; role: string }>(token);
     if (payload?.id) {
+       currentUserId = payload.id;
        const { data: adminUser } = await supabaseAdmin
          .from("users")
          .select("role")
@@ -48,6 +50,6 @@ export default async function AdminTeamPage() {
   });
 
   return (
-    <AdminTeamTable initialTeam={mappedTeam} currentUserRole={currentUserRole} />
+    <AdminTeamTable initialTeam={mappedTeam} currentUserRole={currentUserRole} currentUserId={currentUserId} />
   );
 }

@@ -70,6 +70,63 @@ export function AdminUsersTable({ initialUsers, currentUserRole, totalCount = 0 
       supabase.removeChannel(channel);
     };
   }, [selectedUser]);
+  // Busca Dinâmica no Banco de Dados com Debounce e suporte a termos em Português
+  useEffect(() => {
+    const delayDebounce = setTimeout(async () => {
+      const term = search.trim().toLowerCase();
+      if (!term) {
+        setUsers(initialUsers);
+        setPage(1);
+        return;
+      }
+
+      setLoadingMore(true);
+      try {
+        let roleFilter = "";
+        if ("administrador".includes(term) || "admin".includes(term)) {
+          roleFilter = "admin";
+        } else if ("proprietário".includes(term) || "proprietario".includes(term) || "dono".includes(term) || "super".includes(term)) {
+          roleFilter = "super_admin";
+        } else if ("utilizador".includes(term) || "user".includes(term) || "cliente".includes(term)) {
+          roleFilter = "user";
+        }
+
+        const cleanPhoneSearch = term.replace(/\D/g, "");
+
+        let query = supabase
+          .from("users")
+          .select("*")
+          .order("created_at", { ascending: false });
+
+        let orConditions = `id.ilike.%${term}%,phone.ilike.%${term}%,email.ilike.%${term}%`;
+        if (cleanPhoneSearch && cleanPhoneSearch.length > 2) {
+          orConditions += `,phone.ilike.%${cleanPhoneSearch}%`;
+        }
+        if (roleFilter) {
+          orConditions += `,role.eq.${roleFilter}`;
+        }
+        
+        query = query.or(orConditions);
+
+        const { data, error } = await query.limit(50);
+        if (error) throw error;
+
+        const mapped = (data || []).map(u => ({
+          ...u,
+          role: u.role || (u.is_admin ? 'super_admin' : 'user')
+        }));
+
+        setUsers(mapped as UserData[]);
+      } catch (err: any) {
+        console.error("Erro na busca dinâmica:", err);
+      } finally {
+        setLoadingMore(false);
+      }
+    }, 400);
+
+    return () => clearTimeout(delayDebounce);
+  }, [search, initialUsers]);
+
   const loadMore = async () => {
     setLoadingMore(true);
     const nextPage = page + 1;
@@ -89,7 +146,27 @@ export function AdminUsersTable({ initialUsers, currentUserRole, totalCount = 0 
     setLoadingMore(false);
   };
 
-  const filteredUsers = users.filter(u => u.phone.includes(search) || (u.id.includes(search)) || (u.email && u.email.includes(search)));
+  const filteredUsers = users.filter(u => {
+    if (!search.trim()) return true;
+    const searchLower = search.toLowerCase().trim();
+    
+    let roleText = "utilizador cliente user";
+    if (u.role === 'super_admin') roleText = "proprietário dono super admin super_admin";
+    else if (u.role === 'admin') roleText = "administrador admin";
+
+    const phoneClean = u.phone.replace(/\D/g, "");
+    const searchClean = search.replace(/\D/g, "");
+
+    const matchesPhone = u.phone.includes(search) || 
+                         (searchClean && phoneClean.includes(searchClean)) ||
+                         maskPhone(u.phone).toLowerCase().includes(searchLower);
+
+    const matchesId = u.id.toLowerCase().includes(searchLower);
+    const matchesEmail = u.email && u.email.toLowerCase().includes(searchLower);
+    const matchesRole = roleText.includes(searchLower);
+
+    return matchesPhone || matchesId || matchesEmail || matchesRole;
+  });
   const executeAction = async (action: 'ban' | 'suspend' | 'activate' | 'delete' | 'promote' | 'demote', userId: string) => {
     try {
       toast.loading("A executar...", { id: "admin-action" });

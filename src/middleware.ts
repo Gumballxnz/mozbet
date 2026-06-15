@@ -9,6 +9,7 @@ const ALLOWED_ORIGINS = [
   "http://localhost:3001",
   "https://mozbet.online",
   "https://www.mozbet.online",
+  "https://afiliados.mozbet.online",
   "https://mozbet-test.vercel.app",
 ];
 
@@ -25,9 +26,11 @@ export async function middleware(request: NextRequest) {
   
   let targetUrl = url;
   if (isAffiliatesSubdomain) {
+    // Evita reescrever caminhos de arquivos estáticos como favicon.ico, icon.svg, etc., ou requisições de API/_next
+    const isStaticFile = url.includes(".") || url.startsWith("/_next/") || url.includes("/api/") || url === "/icon.svg" || url === "/favicon.ico";
     if (url === "/") {
       targetUrl = "/afiliados";
-    } else if (!url.startsWith("/afiliados") && !url.startsWith("/api/")) {
+    } else if (!url.startsWith("/afiliados") && !url.startsWith("/api/") && !isStaticFile) {
       targetUrl = `/afiliados${url}`;
     }
   }
@@ -68,9 +71,11 @@ export async function middleware(request: NextRequest) {
     const isLocalhost = request.url.includes("localhost");
     // SEGURANÇA: Apenas aceitar deploys Vercel com prefixo "mozbet-" (evita clones em *.vercel.app)
     const isVercelAllowed = origin.startsWith("https://mozbet-") && origin.endsWith(".vercel.app");
+    // Aceitar qualquer subdomínio oficial da mozbet.online
+    const isOfficialDomain = origin.endsWith("mozbet.online");
     
     // Se for um pedido de outra origem e não estiver na lista permitida, bloqueia!
-    if (origin && !ALLOWED_ORIGINS.includes(origin) && !isLocalhost && !isVercelAllowed) {
+    if (origin && !ALLOWED_ORIGINS.includes(origin) && !isLocalhost && !isVercelAllowed && !isOfficialDomain) {
       console.warn(`[SEGURANÇA] Bloqueio de Clone/API Request externo: Origin=${origin} URL=${request.url}`);
       return new NextResponse(
         JSON.stringify({ error: "Acesso à API bloqueado por política CORS estrita.", origin }),

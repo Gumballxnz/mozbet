@@ -19,7 +19,7 @@ interface TeamMember {
   role: 'super_admin' | 'admin' | 'user';
 }
 
-export function AdminTeamTable({ initialTeam, currentUserRole }: { initialTeam: TeamMember[]; currentUserRole: string }) {
+export function AdminTeamTable({ initialTeam, currentUserRole, currentUserId }: { initialTeam: TeamMember[]; currentUserRole: string; currentUserId: string }) {
   const [team, setTeam] = useState<TeamMember[]>(initialTeam);
   const [search, setSearch] = useState("");
   
@@ -182,7 +182,7 @@ export function AdminTeamTable({ initialTeam, currentUserRole }: { initialTeam: 
                   {isOwner && (
                     <td className="px-6 py-4 text-right align-middle">
                       <div className="flex justify-end gap-2">
-                        {member.id !== member.id /* Evita que o dono atual remova a si mesmo se logado */ && (
+                        {member.id !== currentUserId && (
                           <>
                             <Button
                               onClick={() => {
@@ -270,7 +270,7 @@ export function AdminTeamTable({ initialTeam, currentUserRole }: { initialTeam: 
               </div>
             )}
 
-            {isOwner && (
+            {isOwner && member.id !== currentUserId && (
               <div className="flex justify-end gap-2 pt-2 border-t border-[#2A2F40]/30">
                 <Button
                   onClick={() => {

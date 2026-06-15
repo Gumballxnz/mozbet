@@ -45,19 +45,19 @@ export default function AffiliateLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col justify-center items-center px-4 relative overflow-hidden font-sans">
+    <div className="min-h-screen bg-[#1c1a24] flex flex-col justify-center items-center px-4 relative overflow-hidden font-sans">
       {/* Background glow effects */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl -z-10" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-green-500/5 rounded-full blur-3xl -z-10" />
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#a3ff12]/5 rounded-full blur-3xl -z-10" />
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#a3ff12]/3 rounded-full blur-3xl -z-10" />
 
-      <div className="w-full max-w-md bg-slate-900 border border-slate-800 p-8 rounded-2xl shadow-2xl space-y-6 backdrop-blur-md">
+      <div className="w-full max-w-md bg-[#1c1a24]/60 border border-white/5 p-8 rounded-2xl shadow-2xl space-y-6 backdrop-blur-md">
         
         {/* LOGO */}
         <div className="text-center space-y-2">
           <span className="text-3xl font-black text-white tracking-wider">
-            MOZ<span className="text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]">BET</span>
+            MOZ<span className="text-[#a3ff12] drop-shadow-[0_0_8px_rgba(163,255,18,0.4)]">BET</span>
           </span>
-          <p className="text-sm text-emerald-400 font-bold tracking-widest uppercase">
+          <p className="text-sm text-[#a3ff12] font-bold tracking-widest uppercase">
             Partners Program
           </p>
           <h2 className="text-xl font-bold text-slate-100 pt-2">
@@ -68,15 +68,15 @@ export default function AffiliateLogin() {
         {/* FORM */}
         <form onSubmit={handleLogin} className="space-y-4">
           <div className="space-y-1 text-left">
-            <label className="text-xs font-semibold text-slate-400">E-mail, Usuário ou Telefone *</label>
+            <label className="text-xs font-semibold text-muted-foreground">E-mail, Usuário ou Telefone *</label>
             <div className="relative">
-              <Mail className="absolute left-3.5 top-3.5 h-5 w-5 text-slate-500" />
+              <Mail className="absolute left-3.5 top-3.5 h-5 w-5 text-white/40" />
               <input
                 type="text"
                 placeholder="E-mail, utilizador ou número"
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
-                className="w-full pl-11 pr-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all duration-200 text-sm"
+                className="w-full pl-11 pr-4 py-3 bg-black/40 border border-white/10 rounded-xl text-white placeholder-white/20 focus:outline-none focus:border-[#a3ff12] focus:ring-1 focus:ring-[#a3ff12] transition-all duration-200 text-sm"
                 required
               />
             </div>
@@ -84,22 +84,22 @@ export default function AffiliateLogin() {
 
           <div className="space-y-1 text-left">
             <div className="flex justify-between items-center">
-              <label className="text-xs font-semibold text-slate-400">Palavra-passe *</label>
+              <label className="text-xs font-semibold text-muted-foreground">Palavra-passe *</label>
             </div>
             <div className="relative">
-              <Lock className="absolute left-3.5 top-3.5 h-5 w-5 text-slate-500" />
+              <Lock className="absolute left-3.5 top-3.5 h-5 w-5 text-white/40" />
               <input
                 type={showPassword ? "text" : "password"}
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-11 pr-12 py-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all duration-200 text-sm"
+                className="w-full pl-11 pr-12 py-3 bg-black/40 border border-white/10 rounded-xl text-white placeholder-white/20 focus:outline-none focus:border-[#a3ff12] focus:ring-1 focus:ring-[#a3ff12] transition-all duration-200 text-sm"
                 required
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3.5 top-3.5 text-slate-500 hover:text-slate-300 transition-colors cursor-pointer"
+                className="absolute right-3.5 top-3.5 text-white/40 hover:text-white transition-colors cursor-pointer"
               >
                 {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
               </button>
@@ -109,7 +109,7 @@ export default function AffiliateLogin() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3.5 bg-emerald-500 text-slate-950 rounded-xl font-extrabold hover:bg-emerald-400 active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 text-sm shadow-lg shadow-emerald-500/20 cursor-pointer pt-2"
+            className="w-full py-3.5 bg-[#a3ff12] text-black rounded-xl font-extrabold hover:bg-[#8ee600] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 text-sm shadow-lg shadow-[#a3ff12]/10 cursor-pointer pt-2"
           >
             {loading ? "A processar..." : "ENTRAR NO PAINEL"}
             {!loading && <ArrowRight className="h-4 w-4" />}
@@ -117,15 +117,15 @@ export default function AffiliateLogin() {
         </form>
 
         {/* REDIRECT TO REGISTER */}
-        <div className="text-center text-xs text-slate-500 pt-2 border-t border-slate-800/50">
+        <div className="text-center text-xs text-slate-500 pt-2 border-t border-white/5">
           <span>Ainda não é parceiro? </span>
-          <Link href="/registar" className="text-emerald-400 hover:text-emerald-300 font-bold underline transition-colors">
+          <Link href="/registar" className="text-[#a3ff12] hover:text-[#8ee600] font-bold underline transition-colors">
             Crie a sua conta de afiliado
           </Link>
         </div>
 
         <div className="flex items-center justify-center gap-1.5 text-[10px] text-slate-600">
-          <ShieldCheck className="h-4 w-4 text-emerald-500/50" />
+          <ShieldCheck className="h-4 w-4 text-[#a3ff12]/50" />
           <span>Conexão de segurança encriptada (128-bit SSL)</span>
         </div>
       </div>

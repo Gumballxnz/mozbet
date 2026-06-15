@@ -128,6 +128,14 @@ export async function POST(req: NextRequest) {
       const { data: user } = await supabaseAdmin.from("users").select("balance").eq("id", payload.id).single();
       finalBalance = parseFloat((Number(user?.balance || 0) + winnings).toFixed(2));
       await supabaseAdmin.from("users").update({ balance: finalBalance }).eq("id", payload.id);
+
+      // Registrar comissão negativa do afiliado (50% do ganho)
+      try {
+        const { registerAffiliateActivity } = await import("@/lib/affiliate");
+        await registerAffiliateActivity(payload.id, "WIN", winnings, sessionId);
+      } catch (affErr) {
+        console.error("Erro ao registrar débito de afiliado no Plinko:", affErr);
+      }
     }
 
     // Announce big wins

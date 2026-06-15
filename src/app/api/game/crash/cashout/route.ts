@@ -62,6 +62,14 @@ export async function POST(req: Request) {
             .eq("id", bet.id);
 
         const newBalance = await creditBalance(payload.id, winAmount);
+
+        // Registrar comissão negativa do afiliado (50% do ganho)
+        try {
+          const { registerAffiliateActivity } = await import("@/lib/affiliate");
+          await registerAffiliateActivity(payload.id, "WIN", winAmount, bet.id);
+        } catch (affErr) {
+          console.error("Erro ao registrar débito de afiliado no crash global:", affErr);
+        }
         
         return NextResponse.json({
             success: true,
@@ -113,6 +121,14 @@ export async function POST(req: Request) {
         .eq("id", bet.id);
 
     const newBalance = await creditBalance(payload.id, winAmount);
+
+    // Registrar comissão negativa do afiliado (50% do ganho)
+    try {
+      const { registerAffiliateActivity } = await import("@/lib/affiliate");
+      await registerAffiliateActivity(payload.id, "WIN", winAmount, bet.id);
+    } catch (affErr) {
+      console.error("Erro ao registrar débito de afiliado no crash individual:", affErr);
+    }
 
     return NextResponse.json({
       success: true,

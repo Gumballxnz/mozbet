@@ -17,7 +17,53 @@ export async function middleware(request: NextRequest) {
   const url = request.nextUrl.pathname;
   const origin = request.headers.get("origin") || "";
 
-  // 1. ROTAS DE API — Proteção CORS e Anti-Clone Estrita
+  // =======================================================
+  // 0. TRATAMENTO DE SUBDOMÍNIO DE AFILIADOS
+  // =======================================================
+  const host = request.headers.get("host") || "";
+  const isAffiliatesSubdomain = host.startsWith("afiliados.mozbet.online") || host.startsWith("afiliados.localhost");
+  
+  let targetUrl = url;
+  if (isAffiliatesSubdomain) {
+    if (url === "/") {
+      targetUrl = "/afiliados";
+    } else if (!url.startsWith("/afiliados") && !url.startsWith("/api/")) {
+      targetUrl = `/afiliados${url}`;
+    }
+  }
+
+  // =======================================================
+  // 1. PROTEÇÃO DE ROTAS DE AFILIADOS Restritas
+  // =======================================================
+  // Apenas a rota raiz /afiliados (Dashboard) e sub-páginas internas de config/dados são protegidas.
+  // /afiliados/login e /afiliados/registar são públicas.
+  const isAffiliateRoute = targetUrl === "/afiliados" || (targetUrl.startsWith("/afiliados/") && !targetUrl.startsWith("/afiliados/login") && !targetUrl.startsWith("/afiliados/registar"));
+
+  if (isAffiliateRoute) {
+    const affiliateToken = request.cookies.get("mozbet_affiliate_session")?.value;
+    if (!affiliateToken) {
+      const redirectPath = isAffiliatesSubdomain ? "/login" : "/afiliados/login";
+      return NextResponse.redirect(new URL(redirectPath, request.url));
+    }
+
+    try {
+      const secret = process.env.JWT_SECRET;
+      if (!secret) {
+        throw new Error("JWT_SECRET não definido no middleware!");
+      }
+      const { payload } = await jwtVerify(affiliateToken, new TextEncoder().encode(secret));
+      if (!payload.isAffiliate) {
+        throw new Error("Token não pertence a um afiliado");
+      }
+    } catch (error) {
+      const redirectPath = isAffiliatesSubdomain ? "/login" : "/afiliados/login";
+      const response = NextResponse.redirect(new URL(redirectPath, request.url));
+      response.cookies.delete("mozbet_affiliate_session");
+      return response;
+    }
+  }
+
+  // 2. ROTAS DE API — Proteção CORS e Anti-Clone Estrita
   if (url.startsWith("/api/")) {
     const isLocalhost = request.url.includes("localhost");
     // SEGURANÇA: Apenas aceitar deploys Vercel com prefixo "mozbet-" (evita clones em *.vercel.app)
@@ -36,7 +82,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // 2. PROTEÇÃO DE ROTAS (Autenticação Básica e Admin)
+  // 3. PROTEÇÃO DE ROTAS (Autenticação Básica e Admin do site principal)
   const isUserRoute = url.startsWith("/perfil") || url.startsWith("/depositar");
   const isAdminRoute = url.startsWith("/admin");
 
@@ -74,7 +120,9 @@ export async function middleware(request: NextRequest) {
   }
 
   // Permite o seguimento normal para rotas públicas e adiciona headers de segurança dinâmicos
-  const response = NextResponse.next();
+  const response = (isAffiliatesSubdomain && targetUrl !== url)
+    ? NextResponse.rewrite(new URL(targetUrl, request.url))
+    : NextResponse.next();
   
   // Reforço extra caso o NextConfig não consiga injetar nalgumas rotas
   response.headers.set("X-Frame-Options", "SAMEORIGIN"); // Permite embed apenas do próprio site (mesma origem)

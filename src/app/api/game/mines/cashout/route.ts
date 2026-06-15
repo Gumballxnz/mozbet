@@ -68,6 +68,14 @@ export async function POST(req: NextRequest) {
       .update({ balance: newBalance })
       .eq("id", payload.id);
 
+    // Registrar comissão negativa do afiliado (50% do ganho)
+    try {
+      const { registerAffiliateActivity } = await import("@/lib/affiliate");
+      await registerAffiliateActivity(payload.id, "WIN", winnings, sessionId);
+    } catch (affErr) {
+      console.error("Erro ao registrar débito de afiliado no Mines:", affErr);
+    }
+
     // 6. Encerrar sessão como vitória
     await supabaseAdmin
       .from("game_sessions")

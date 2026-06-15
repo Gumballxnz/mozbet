@@ -53,6 +53,31 @@ export async function POST(req: Request) {
 
     const cleanPhone = phone.replace(/\D/g, "");
 
+    // Ler o cookie de afiliado para vincular a conta
+    const cookieHeader = req.headers.get("cookie") || "";
+    const affiliatePidCookie = cookieHeader
+      ?.split("; ")
+      .find((row) => row.startsWith("affiliate_pid="));
+    const affiliateCode = affiliatePidCookie?.split("=")[1];
+
+    let referrerId: string | null = null;
+    if (affiliateCode) {
+      try {
+        const { data: affiliateUser } = await supabaseAdmin
+          .from("users")
+          .select("id")
+          .eq("affiliate_code", affiliateCode)
+          .eq("is_affiliate", true)
+          .single();
+
+        if (affiliateUser) {
+          referrerId = affiliateUser.id;
+        }
+      } catch (err) {
+        console.error("Erro ao buscar afiliado durante registro:", err);
+      }
+    }
+
     // Verificar se o número já existe
     const { data: existingUser } = await supabaseAdmin
       .from("users")
@@ -82,6 +107,7 @@ export async function POST(req: Request) {
           has_deposited: false,
           is_admin: false,
           is_verified: !OTP_ENABLED, // Se OTP está desativado, já fica verificado
+          referrer_id: referrerId,
         },
       ])
       .select("id, phone, balance, has_deposited, created_at, is_admin")

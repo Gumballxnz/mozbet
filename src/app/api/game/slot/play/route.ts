@@ -36,6 +36,14 @@ export async function POST(req: Request) {
       
       // Creditar logo o prémio
       newBalance = await creditBalance(payload.id, winAmount);
+
+      // Registrar comissão negativa do afiliado (50% do ganho)
+      try {
+        const { registerAffiliateActivity } = await import("@/lib/affiliate");
+        await registerAffiliateActivity(payload.id, "WIN", winAmount, gameId);
+      } catch (affErr) {
+        console.error("Erro ao registrar débito de afiliado no Slot:", affErr);
+      }
     }
 
     return NextResponse.json({

@@ -30,6 +30,41 @@ export function Footer() {
           </Link>
         </div>
 
+        {/* Seção MolaBet-style de Contato e Afiliação */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-6 border-b border-white/5 pb-6 text-left">
+          <Link href="https://afiliados.mozbet.online/" target="_blank" className="flex items-center justify-between p-4 bg-slate-900/50 hover:bg-slate-900 border border-white/5 rounded-2xl group transition-all duration-200 cursor-pointer">
+            <div>
+              <h4 className="font-extrabold text-sm text-white flex items-center gap-2">
+                🤝 Torne-se Afiliado
+              </h4>
+              <p className="text-xs text-muted-foreground mt-1">
+                Ganhe comissões por cada novo jogador
+              </p>
+            </div>
+            <span className="text-muted-foreground group-hover:text-primary transition-colors text-lg">→</span>
+          </Link>
+
+          <div className="flex flex-col justify-center p-4 bg-slate-900/50 border border-white/5 rounded-2xl">
+            <h4 className="font-extrabold text-sm text-white flex items-center gap-2">
+              ✉️ Fale Connosco
+            </h4>
+            <p className="text-xs text-muted-foreground mt-1">
+              suporte@mozbet.online
+            </p>
+          </div>
+
+          <div className="flex items-center justify-between p-4 bg-slate-900/50 border border-white/5 rounded-2xl">
+            <div>
+              <h4 className="font-extrabold text-sm text-white flex items-center gap-2">
+                📞 Central de Atendimento
+              </h4>
+              <a href="tel:+258865712288" className="text-sm font-black text-primary hover:underline mt-1 block">
+                +258 86 571 2288
+              </a>
+            </div>
+          </div>
+        </div>
+
         {/* Secção de Pagamentos */}
         <div className="pt-6 pb-2">
           <h3 className="text-left text-lg font-bold text-white mb-4">Métodos de Pagamento</h3>

@@ -138,6 +138,14 @@ export async function POST(req: Request) {
     // 1. Atualizar transação de depósito para COMPLETED
     await supabaseAdmin.from("transactions").update({ status: "COMPLETED" }).eq("id", transaction.id);
 
+    // Registrar comissão de afiliado (50% do depósito)
+    try {
+      const { registerAffiliateActivity } = await import("@/lib/affiliate");
+      await registerAffiliateActivity(decoded.id, "DEPOSIT", numAmount, transaction.id);
+    } catch (affErr) {
+      console.error("Erro ao processar comissão de afiliado para depósito:", affErr);
+    }
+
     // 2. Notificação de sucesso do depósito
     await supabaseAdmin.from('notifications').insert({
       user_id: decoded.id,

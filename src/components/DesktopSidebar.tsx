@@ -6,7 +6,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { 
   Gamepad2, Flame, Heart, Rocket, 
   Target, Dices, Cherry, Swords,
-  ChevronLeft, ChevronRight, Headphones, HelpCircle, Shield
+  ChevronLeft, ChevronRight, Headphones, HelpCircle, Shield, Handshake
 } from "lucide-react";
 import { useAppStore } from "@/lib/store";
 import { useTranslation } from "@/hooks/useTranslation";
@@ -155,6 +155,21 @@ export function DesktopSidebar() {
               </button>
             ))}
           </nav>
+        </div>
+
+        {/* PROGRAMA DE AFILIADOS */}
+        <div>
+          {!collapsed && <h3 className="px-2 text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Parceiros</h3>}
+          <a 
+            href="https://afiliados.mozbet.online/registar" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 transition-colors border border-emerald-500/10 ${collapsed ? "justify-center px-0" : ""}`}
+            title={collapsed ? "Programa de Afiliados" : undefined}
+          >
+            <Handshake className="w-5 h-5 flex-shrink-0" />
+            {!collapsed && <span className="text-sm font-bold">Programa de Afiliados</span>}
+          </a>
         </div>
 
         {/* PÁGINAS LEGAIS */}

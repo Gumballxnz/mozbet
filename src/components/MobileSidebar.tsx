@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { 
   X, Gamepad2, Flame, Dices, Cherry, Rocket, 
-  Target, Headphones, HelpCircle, Shield, User
+  Target, Headphones, HelpCircle, Shield, User, Handshake
 } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useAppStore } from "@/lib/store";
@@ -107,6 +107,22 @@ export function MobileSidebar() {
               {featuredGames.map(({ game, icon: Icon, color }) => (
                 <SidebarLink key={game.id} href={`/jogar/${game.id}?mode=demo`} icon={Icon} label={game.name} color={color} active={false} />
               ))}
+            </nav>
+          </div>
+
+          {/* PROGRAMA DE AFILIADOS */}
+          <div>
+            <h3 className="px-2 text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Parceiros</h3>
+            <nav className="space-y-0.5">
+              <a 
+                href="https://afiliados.mozbet.online/registar" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 transition-colors border border-emerald-500/10"
+              >
+                <Handshake className="w-5 h-5 flex-shrink-0" />
+                <span className="text-sm font-bold">Programa de Afiliados</span>
+              </a>
             </nav>
           </div>
 

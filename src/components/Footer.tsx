@@ -44,14 +44,14 @@ export function Footer() {
             <span className="text-muted-foreground group-hover:text-primary transition-colors text-lg">→</span>
           </Link>
 
-          <div className="flex flex-col justify-center p-4 bg-slate-900/50 border border-white/5 rounded-2xl">
+          <a href="mailto:suporte@mozbet.online" className="flex flex-col justify-center p-4 bg-slate-900/50 hover:bg-slate-900 border border-white/5 rounded-2xl group transition-all duration-200 cursor-pointer">
             <h4 className="font-extrabold text-sm text-white flex items-center gap-2">
               ✉️ Fale Connosco
             </h4>
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="text-xs text-muted-foreground mt-1 group-hover:text-primary transition-colors">
               suporte@mozbet.online
             </p>
-          </div>
+          </a>
 
           <div className="flex items-center justify-between p-4 bg-slate-900/50 border border-white/5 rounded-2xl">
             <div>

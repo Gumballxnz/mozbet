@@ -126,11 +126,12 @@ export function RegisterModal() {
         resetForm();
         setRegisterOpen(false);
       } else {
+        const affiliateCode = typeof window !== "undefined" ? localStorage.getItem("affiliate_ref") || undefined : undefined;
         // REGISTO
         const res = await fetch("/api/auth/register", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ phone, password }),
+          body: JSON.stringify({ phone, password, affiliateCode }),
         });
         const data = await res.json();
 
@@ -349,7 +350,7 @@ export function RegisterModal() {
 
   return (
     <Dialog open={registerOpen} onOpenChange={(open) => { setRegisterOpen(open); if (!open) resetForm(); }}>
-      <DialogContent className="sm:max-w-[420px] bg-[#1c1a24] border-white/5 p-6 rounded-2xl">
+      <DialogContent className="sm:max-w-[420px] bg-surface border-white/5 p-6 rounded-2xl">
         <DialogTitle className="sr-only">Autenticação</DialogTitle>
         <DialogDescription className="sr-only">Formulário de autenticação da MozBet</DialogDescription>
         
@@ -435,7 +436,7 @@ export function RegisterModal() {
               )}
 
               <Button type="submit"
-                className="w-full h-12 text-base font-bold bg-[#a3ff12] text-black hover:bg-[#8ee600] mt-2 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                className="w-full h-12 text-base font-bold bg-primary text-black hover:bg-primary/90 mt-2 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                 disabled={loading || !isFormValid}
               >
                 {loading ? "A processar..." : isLogin ? "Iniciar Sessão" : "Registar"}
@@ -482,7 +483,7 @@ export function RegisterModal() {
             <OtpInputs />
 
             <Button onClick={() => handleVerifyOtp("register")}
-              className="w-full h-12 text-base font-bold bg-[#a3ff12] text-black hover:bg-[#8ee600] disabled:opacity-30 disabled:cursor-not-allowed"
+              className="w-full h-12 text-base font-bold bg-primary text-black hover:bg-primary/90 disabled:opacity-30 disabled:cursor-not-allowed"
               disabled={loading || otpValues.join("").length < 6}>
               {loading ? "A verificar..." : "Confirmar Código"}
             </Button>
@@ -528,7 +529,7 @@ export function RegisterModal() {
             </div>
 
             <Button onClick={handleForgotSend}
-              className="w-full h-12 text-base font-bold bg-[#a3ff12] text-black hover:bg-[#8ee600] disabled:opacity-30 disabled:cursor-not-allowed"
+              className="w-full h-12 text-base font-bold bg-primary text-black hover:bg-primary/90 disabled:opacity-30 disabled:cursor-not-allowed"
               disabled={loading || phone.length < 8}>
               {loading ? "A enviar..." : "Enviar Código SMS"}
             </Button>
@@ -552,7 +553,7 @@ export function RegisterModal() {
             <OtpInputs />
 
             <Button onClick={() => handleVerifyOtp("reset")}
-              className="w-full h-12 text-base font-bold bg-[#a3ff12] text-black hover:bg-[#8ee600] disabled:opacity-30 disabled:cursor-not-allowed"
+              className="w-full h-12 text-base font-bold bg-primary text-black hover:bg-primary/90 disabled:opacity-30 disabled:cursor-not-allowed"
               disabled={loading || otpValues.join("").length < 6}>
               {loading ? "A verificar..." : "Verificar Código"}
             </Button>
@@ -605,7 +606,7 @@ export function RegisterModal() {
             </div>
 
             <Button onClick={handleResetPassword}
-              className="w-full h-12 text-base font-bold bg-[#a3ff12] text-black hover:bg-[#8ee600] mt-4 disabled:opacity-30 disabled:cursor-not-allowed"
+              className="w-full h-12 text-base font-bold bg-primary text-black hover:bg-primary/90 mt-4 disabled:opacity-30 disabled:cursor-not-allowed"
               disabled={loading || newPassword.length < 4 || newPassword !== confirmNewPassword}>
               {loading ? "A redefinir..." : "Redefinir Palavra-passe"}
             </Button>

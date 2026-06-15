@@ -105,7 +105,7 @@ function AffiliateRegisterForm() {
               placeholder="O seu nome completo"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full pl-11 pr-4 py-3 bg-black/40 border border-white/10 rounded-xl text-white placeholder-white/20 focus:outline-none focus:border-[#a3ff12] focus:ring-1 focus:ring-[#a3ff12] transition-all duration-200 text-sm"
+              className="w-full pl-11 pr-4 py-3 bg-black/40 border border-white/10 rounded-xl text-white placeholder-white/20 focus:outline-none focus:border-[#00FF7F] focus:ring-1 focus:ring-[#00FF7F] transition-all duration-200 text-sm"
               required
             />
           </div>
@@ -121,7 +121,7 @@ function AffiliateRegisterForm() {
               placeholder="ex: joaosilva"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="w-full pl-11 pr-4 py-3 bg-black/40 border border-white/10 rounded-xl text-white placeholder-white/20 focus:outline-none focus:border-[#a3ff12] focus:ring-1 focus:ring-[#a3ff12] transition-all duration-200 text-sm"
+              className="w-full pl-11 pr-4 py-3 bg-black/40 border border-white/10 rounded-xl text-white placeholder-white/20 focus:outline-none focus:border-[#00FF7F] focus:ring-1 focus:ring-[#00FF7F] transition-all duration-200 text-sm"
               required
             />
           </div>
@@ -139,7 +139,7 @@ function AffiliateRegisterForm() {
               placeholder="exemplo@email.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full pl-11 pr-4 py-3 bg-black/40 border border-white/10 rounded-xl text-white placeholder-white/20 focus:outline-none focus:border-[#a3ff12] focus:ring-1 focus:ring-[#a3ff12] transition-all duration-200 text-sm"
+              className="w-full pl-11 pr-4 py-3 bg-black/40 border border-white/10 rounded-xl text-white placeholder-white/20 focus:outline-none focus:border-[#00FF7F] focus:ring-1 focus:ring-[#00FF7F] transition-all duration-200 text-sm"
               required
             />
           </div>
@@ -155,7 +155,7 @@ function AffiliateRegisterForm() {
               placeholder="84XXXXXXX ou +258"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              className="w-full pl-11 pr-4 py-3 bg-black/40 border border-white/10 rounded-xl text-white placeholder-white/20 focus:outline-none focus:border-[#a3ff12] focus:ring-1 focus:ring-[#a3ff12] transition-all duration-200 text-sm"
+              className="w-full pl-11 pr-4 py-3 bg-black/40 border border-white/10 rounded-xl text-white placeholder-white/20 focus:outline-none focus:border-[#00FF7F] focus:ring-1 focus:ring-[#00FF7F] transition-all duration-200 text-sm"
               required
             />
           </div>
@@ -173,7 +173,7 @@ function AffiliateRegisterForm() {
               placeholder="Mínimo 6 caracteres"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full pl-11 pr-12 py-3 bg-black/40 border border-white/10 rounded-xl text-white placeholder-white/20 focus:outline-none focus:border-[#a3ff12] focus:ring-1 focus:ring-[#a3ff12] transition-all duration-200 text-sm"
+              className="w-full pl-11 pr-12 py-3 bg-black/40 border border-white/10 rounded-xl text-white placeholder-white/20 focus:outline-none focus:border-[#00FF7F] focus:ring-1 focus:ring-[#00FF7F] transition-all duration-200 text-sm"
               required
             />
             <button
@@ -196,7 +196,7 @@ function AffiliateRegisterForm() {
               placeholder="Repita a palavra-passe"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full pl-11 pr-12 py-3 bg-black/40 border border-white/10 rounded-xl text-white placeholder-white/20 focus:outline-none focus:border-[#a3ff12] focus:ring-1 focus:ring-[#a3ff12] transition-all duration-200 text-sm"
+              className="w-full pl-11 pr-12 py-3 bg-black/40 border border-white/10 rounded-xl text-white placeholder-white/20 focus:outline-none focus:border-[#00FF7F] focus:ring-1 focus:ring-[#00FF7F] transition-all duration-200 text-sm"
               required
             />
             <button
@@ -221,7 +221,7 @@ function AffiliateRegisterForm() {
               placeholder="Seu ID ou Telefone de jogador"
               value={playerId}
               onChange={(e) => setPlayerId(e.target.value)}
-              className="w-full pl-11 pr-4 py-3 bg-black/40 border border-white/10 rounded-xl text-white placeholder-white/20 focus:outline-none focus:border-[#a3ff12] focus:ring-1 focus:ring-[#a3ff12] transition-all duration-200 text-sm"
+              className="w-full pl-11 pr-4 py-3 bg-black/40 border border-white/10 rounded-xl text-white placeholder-white/20 focus:outline-none focus:border-[#00FF7F] focus:ring-1 focus:ring-[#00FF7F] transition-all duration-200 text-sm"
             />
           </div>
         </div>
@@ -234,7 +234,7 @@ function AffiliateRegisterForm() {
             <select
               value={saqueMethod}
               onChange={(e) => setSaqueMethod(e.target.value)}
-              className="w-full pl-11 pr-4 py-3 bg-black/40 border border-white/10 rounded-xl text-white focus:outline-none focus:border-[#a3ff12] focus:ring-1 focus:ring-[#a3ff12] transition-all duration-200 text-sm appearance-none cursor-pointer"
+              className="w-full pl-11 pr-4 py-3 bg-black/40 border border-white/10 rounded-xl text-white focus:outline-none focus:border-[#00FF7F] focus:ring-1 focus:ring-[#00FF7F] transition-all duration-200 text-sm appearance-none cursor-pointer"
             >
               <option value="mpesa">Vodacom M-Pesa</option>
               <option value="emola">Movitel e-Mola</option>
@@ -254,7 +254,7 @@ function AffiliateRegisterForm() {
               placeholder="Nome conforme registo M-Pesa / e-Mola"
               value={saqueName}
               onChange={(e) => setSaqueName(e.target.value)}
-              className="w-full pl-11 pr-4 py-3 bg-black/40 border border-white/10 rounded-xl text-white placeholder-white/20 focus:outline-none focus:border-[#a3ff12] focus:ring-1 focus:ring-[#a3ff12] transition-all duration-200 text-sm"
+              className="w-full pl-11 pr-4 py-3 bg-black/40 border border-white/10 rounded-xl text-white placeholder-white/20 focus:outline-none focus:border-[#00FF7F] focus:ring-1 focus:ring-[#00FF7F] transition-all duration-200 text-sm"
               required
             />
           </div>
@@ -270,7 +270,7 @@ function AffiliateRegisterForm() {
               placeholder="Número para levantamento M-Pesa / e-Mola"
               value={saqueNumber}
               onChange={(e) => setSaqueNumber(e.target.value)}
-              className="w-full pl-11 pr-4 py-3 bg-black/40 border border-white/10 rounded-xl text-white placeholder-white/20 focus:outline-none focus:border-[#a3ff12] focus:ring-1 focus:ring-[#a3ff12] transition-all duration-200 text-sm"
+              className="w-full pl-11 pr-4 py-3 bg-black/40 border border-white/10 rounded-xl text-white placeholder-white/20 focus:outline-none focus:border-[#00FF7F] focus:ring-1 focus:ring-[#00FF7F] transition-all duration-200 text-sm"
               required
             />
           </div>
@@ -279,7 +279,7 @@ function AffiliateRegisterForm() {
 
       {/* Código de subafiliado associado (Padrinho) */}
       {subCode && (
-        <div className="bg-[#a3ff12]/10 border border-[#a3ff12]/20 p-3 rounded-xl text-xs text-[#a3ff12]">
+        <div className="bg-[#00FF7F]/10 border border-[#00FF7F]/20 p-3 rounded-xl text-xs text-[#00FF7F]">
           Você está se cadastrando através do convite de subafiliação do parceiro **{subCode}**.
         </div>
       )}
@@ -287,7 +287,7 @@ function AffiliateRegisterForm() {
       <button
         type="submit"
         disabled={loading}
-        className="w-full py-3.5 bg-[#a3ff12] text-black rounded-xl font-extrabold hover:bg-[#8ee600] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 text-sm shadow-lg shadow-[#a3ff12]/10 cursor-pointer pt-2"
+        className="w-full py-3.5 bg-[#00FF7F] text-black rounded-xl font-extrabold hover:bg-[#00d66a] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 text-sm shadow-lg shadow-[#00FF7F]/10 cursor-pointer pt-2"
       >
         {loading ? "A processar..." : "CRIAR CONTA DE PARCEIRO"}
         {!loading && <ArrowRight className="h-4 w-4" />}
@@ -298,19 +298,19 @@ function AffiliateRegisterForm() {
 
 export default function AffiliateRegister() {
   return (
-    <div className="min-h-screen bg-[#1c1a24] flex flex-col justify-center items-center py-10 px-4 relative overflow-hidden font-sans">
+    <div className="min-h-screen bg-[#0b0c0f] flex flex-col justify-center items-center py-10 px-4 relative overflow-hidden font-sans">
       {/* Background glow effects */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#a3ff12]/5 rounded-full blur-3xl -z-10" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#a3ff12]/3 rounded-full blur-3xl -z-10" />
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#00FF7F]/5 rounded-full blur-3xl -z-10" />
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#00FF7F]/3 rounded-full blur-3xl -z-10" />
 
-      <div className="w-full max-w-2xl bg-[#1c1a24]/60 border border-white/5 p-8 rounded-2xl shadow-2xl space-y-6 backdrop-blur-md">
+      <div className="w-full max-w-2xl bg-[#12141c]/60 border border-white/5 p-8 rounded-2xl shadow-2xl space-y-6 backdrop-blur-md">
         
         {/* LOGO */}
         <div className="text-center space-y-2">
           <span className="text-3xl font-black text-white tracking-wider">
-            MOZ<span className="text-[#a3ff12] drop-shadow-[0_0_8px_rgba(163,255,18,0.4)]">BET</span>
+            MOZ<span className="text-[#00FF7F] drop-shadow-[0_0_8px_rgba(0,255,127,0.4)]">BET</span>
           </span>
-          <p className="text-sm text-[#a3ff12] font-bold tracking-widest uppercase">
+          <p className="text-sm text-[#00FF7F] font-bold tracking-widest uppercase">
             Partners Program
           </p>
           <h2 className="text-xl font-bold text-slate-100 pt-2">
@@ -329,13 +329,13 @@ export default function AffiliateRegister() {
         {/* REDIRECT TO LOGIN */}
         <div className="text-center text-xs text-slate-500 pt-2 border-t border-white/5">
           <span>Já tem conta de parceiro? </span>
-          <Link href="/login" className="text-[#a3ff12] hover:text-[#8ee600] font-bold underline transition-colors">
+          <Link href="/login" className="text-[#00FF7F] hover:text-[#00d66a] font-bold underline transition-colors">
             Faça login aqui
           </Link>
         </div>
 
         <div className="flex items-center justify-center gap-1.5 text-[10px] text-slate-600">
-          <ShieldCheck className="h-4 w-4 text-[#a3ff12]/50" />
+          <ShieldCheck className="h-4 w-4 text-[#00FF7F]/50" />
           <span>Segurança bancária garantida por encriptação ponta a ponta</span>
         </div>
       </div>

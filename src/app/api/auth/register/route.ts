@@ -31,7 +31,7 @@ export async function POST(req: Request) {
         { status: 429 }
       );
     }
-    const { phone, password } = await req.json();
+    const { phone, password, affiliateCode: bodyAffiliateCode } = await req.json();
 
     if (!phone || !password) {
       return NextResponse.json({ error: "Preencha todos os campos" }, { status: 400 });
@@ -39,7 +39,7 @@ export async function POST(req: Request) {
 
     if (!isValidPhone(phone)) {
       return NextResponse.json(
-        { error: "Número inválido. Use 9 dígitos (prefixos: 82/83/84/85/86/87/88)" },
+        { error: "Número inválido. Use 9 digits (prefixos: 82/83/84/85/86/87/88)" },
         { status: 400 }
       );
     }
@@ -53,12 +53,12 @@ export async function POST(req: Request) {
 
     const cleanPhone = phone.replace(/\D/g, "");
 
-    // Ler o cookie de afiliado para vincular a conta
+    // Ler o cookie de afiliado para vincular a conta ou usar o código enviado pelo body
     const cookieHeader = req.headers.get("cookie") || "";
     const affiliatePidCookie = cookieHeader
       ?.split("; ")
       .find((row) => row.startsWith("affiliate_pid="));
-    const affiliateCode = affiliatePidCookie?.split("=")[1];
+    const affiliateCode = affiliatePidCookie?.split("=")[1] || bodyAffiliateCode;
 
     let referrerId: string | null = null;
     if (affiliateCode) {

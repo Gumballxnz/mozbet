@@ -4,12 +4,23 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const pid = searchParams.get("pid");
-    const redirectUrlStr = searchParams.get("redirectURL") || "/";
+    const redirectUrlStr = searchParams.get("redirectURL");
 
-    // Tratar redirectUrlStr seguro para evitar open redirect para sites maliciosos
-    let finalRedirectUrl = "/";
-    if (redirectUrlStr.startsWith("/") || redirectUrlStr.includes("mozbet.online")) {
-      finalRedirectUrl = redirectUrlStr;
+    // Se não tem redirectURL, redirecionar para a página de registro por padrão
+    // Inclui o pid como query param para rastreamento visual na página de registo
+    let finalRedirectUrl = "/registar";
+    
+    if (redirectUrlStr) {
+      // Tratar redirectUrl seguro para evitar open redirect para sites maliciosos
+      if (redirectUrlStr.startsWith("/") || redirectUrlStr.includes("mozbet.online")) {
+        finalRedirectUrl = redirectUrlStr;
+      }
+    }
+
+    // Adicionar o pid como query param na URL de destino para rastreamento visual
+    if (pid) {
+      const separator = finalRedirectUrl.includes("?") ? "&" : "?";
+      finalRedirectUrl = `${finalRedirectUrl}${separator}ref=${pid}`;
     }
 
     const response = NextResponse.redirect(new URL(finalRedirectUrl, req.url));
@@ -28,6 +39,7 @@ export async function GET(req: NextRequest) {
     return response;
   } catch (error) {
     console.error("Erro no redirect de afiliados:", error);
-    return NextResponse.redirect(new URL("/", req.url));
+    return NextResponse.redirect(new URL("/registar", req.url));
   }
 }
+

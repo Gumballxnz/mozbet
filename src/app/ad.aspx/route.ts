@@ -25,9 +25,17 @@ export async function GET(req: NextRequest) {
     }
 
     // Caso contrário, funciona como redirecionamento
-    let finalRedirectUrl = "/";
-    if (redirectUrlStr.startsWith("/") || redirectUrlStr.includes("mozbet.online")) {
-      finalRedirectUrl = redirectUrlStr;
+    let finalRedirectUrl = "/registar";
+    if (redirectUrlStr && redirectUrlStr !== "/") {
+      if (redirectUrlStr.startsWith("/") || redirectUrlStr.includes("mozbet.online")) {
+        finalRedirectUrl = redirectUrlStr;
+      }
+    }
+
+    // Adicionar o pid como query param na URL de destino para rastreamento visual
+    if (pid) {
+      const separator = finalRedirectUrl.includes("?") ? "&" : "?";
+      finalRedirectUrl = `${finalRedirectUrl}${separator}ref=${pid}`;
     }
 
     const response = NextResponse.redirect(new URL(finalRedirectUrl, req.url));

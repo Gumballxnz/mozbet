@@ -45,26 +45,26 @@ export default function AffiliateLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-[#1c1a24] flex flex-col justify-center items-center px-4 relative overflow-hidden font-sans">
+    <div className="min-h-screen bg-[#0b0c0f] flex flex-col justify-center items-center px-4 relative overflow-hidden font-sans">
       {/* Background glow effects */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#a3ff12]/5 rounded-full blur-3xl -z-10" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#a3ff12]/3 rounded-full blur-3xl -z-10" />
-
-      <div className="w-full max-w-md bg-[#1c1a24]/60 border border-white/5 p-8 rounded-2xl shadow-2xl space-y-6 backdrop-blur-md">
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#00FF7F]/5 rounded-full blur-3xl -z-10" />
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#00FF7F]/3 rounded-full blur-3xl -z-10" />
+ 
+      <div className="w-full max-w-md bg-[#12141c]/60 border border-white/5 p-8 rounded-2xl shadow-2xl space-y-6 backdrop-blur-md">
         
         {/* LOGO */}
         <div className="text-center space-y-2">
           <span className="text-3xl font-black text-white tracking-wider">
-            MOZ<span className="text-[#a3ff12] drop-shadow-[0_0_8px_rgba(163,255,18,0.4)]">BET</span>
+            MOZ<span className="text-[#00FF7F] drop-shadow-[0_0_8px_rgba(0,255,127,0.4)]">BET</span>
           </span>
-          <p className="text-sm text-[#a3ff12] font-bold tracking-widest uppercase">
+          <p className="text-sm text-[#00FF7F] font-bold tracking-widest uppercase">
             Partners Program
           </p>
           <h2 className="text-xl font-bold text-slate-100 pt-2">
             Entra no teu Painel de Parceiro
           </h2>
         </div>
-
+ 
         {/* FORM */}
         <form onSubmit={handleLogin} className="space-y-4">
           <div className="space-y-1 text-left">
@@ -76,12 +76,12 @@ export default function AffiliateLogin() {
                 placeholder="E-mail, utilizador ou número"
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
-                className="w-full pl-11 pr-4 py-3 bg-black/40 border border-white/10 rounded-xl text-white placeholder-white/20 focus:outline-none focus:border-[#a3ff12] focus:ring-1 focus:ring-[#a3ff12] transition-all duration-200 text-sm"
+                className="w-full pl-11 pr-4 py-3 bg-black/40 border border-white/10 rounded-xl text-white placeholder-white/20 focus:outline-none focus:border-[#00FF7F] focus:ring-1 focus:ring-[#00FF7F] transition-all duration-200 text-sm"
                 required
               />
             </div>
           </div>
-
+ 
           <div className="space-y-1 text-left">
             <div className="flex justify-between items-center">
               <label className="text-xs font-semibold text-muted-foreground">Palavra-passe *</label>
@@ -93,7 +93,7 @@ export default function AffiliateLogin() {
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-11 pr-12 py-3 bg-black/40 border border-white/10 rounded-xl text-white placeholder-white/20 focus:outline-none focus:border-[#a3ff12] focus:ring-1 focus:ring-[#a3ff12] transition-all duration-200 text-sm"
+                className="w-full pl-11 pr-12 py-3 bg-black/40 border border-white/10 rounded-xl text-white placeholder-white/20 focus:outline-none focus:border-[#00FF7F] focus:ring-1 focus:ring-[#00FF7F] transition-all duration-200 text-sm"
                 required
               />
               <button
@@ -105,27 +105,27 @@ export default function AffiliateLogin() {
               </button>
             </div>
           </div>
-
+ 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3.5 bg-[#a3ff12] text-black rounded-xl font-extrabold hover:bg-[#8ee600] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 text-sm shadow-lg shadow-[#a3ff12]/10 cursor-pointer pt-2"
+            className="w-full py-3.5 bg-[#00FF7F] text-black rounded-xl font-extrabold hover:bg-[#00d66a] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 text-sm shadow-lg shadow-[#00FF7F]/10 cursor-pointer pt-2"
           >
             {loading ? "A processar..." : "ENTRAR NO PAINEL"}
             {!loading && <ArrowRight className="h-4 w-4" />}
           </button>
         </form>
-
+ 
         {/* REDIRECT TO REGISTER */}
         <div className="text-center text-xs text-slate-500 pt-2 border-t border-white/5">
           <span>Ainda não é parceiro? </span>
-          <Link href="/registar" className="text-[#a3ff12] hover:text-[#8ee600] font-bold underline transition-colors">
+          <Link href="/registar" className="text-[#00FF7F] hover:text-[#00d66a] font-bold underline transition-colors">
             Crie a sua conta de afiliado
           </Link>
         </div>
-
+ 
         <div className="flex items-center justify-center gap-1.5 text-[10px] text-slate-600">
-          <ShieldCheck className="h-4 w-4 text-[#a3ff12]/50" />
+          <ShieldCheck className="h-4 w-4 text-[#00FF7F]/50" />
           <span>Conexão de segurança encriptada (128-bit SSL)</span>
         </div>
       </div>

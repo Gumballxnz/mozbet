@@ -69,11 +69,18 @@ export const viewport: Viewport = {
 
 import Script from 'next/script';
 
-export default function RootLayout({
+import { headers } from "next/headers";
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const headersList = await headers();
+  const isAffiliateSubdomain = headersList.get("x-is-affiliate-subdomain") === "true";
+  const isAffiliateRoute = headersList.get("x-is-affiliate-route") === "true";
+  const isAffiliate = isAffiliateSubdomain || isAffiliateRoute;
+
   return (
     <html lang="pt" suppressHydrationWarning>
       <head>
@@ -97,7 +104,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen bg-background text-foreground font-sans antialiased" suppressHydrationWarning>
         <AuthProvider>
-          <LayoutWrapper>
+          <LayoutWrapper isAffiliate={isAffiliate}>
             {children}
           </LayoutWrapper>
         </AuthProvider>

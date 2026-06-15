@@ -16,13 +16,13 @@ const SupportChat = dynamic(() => import("@/components/SupportChat").then(m => m
 const ChatGlobal = dynamic(() => import("@/components/ChatGlobal"), { ssr: false });
 const MobileSidebar = dynamic(() => import("@/components/MobileSidebar").then(m => m.MobileSidebar), { ssr: false });
 
-export function LayoutWrapper({ children }: { children: React.ReactNode }) {
+export function LayoutWrapper({ children, isAffiliate: isAffiliateProp }: { children: React.ReactNode; isAffiliate?: boolean }) {
   const pathname = usePathname();
   const router = useRouter();
   const { chatOpen, setChatOpen } = useAppStore();
   const isAdmin = pathname?.startsWith("/admin");
   const isEngine = pathname?.startsWith("/engine");
-  const isAffiliate = pathname?.startsWith("/afiliados");
+  const isAffiliate = isAffiliateProp || pathname?.startsWith("/afiliados");
 
   if (isAdmin || isEngine || isAffiliate) {
     return (

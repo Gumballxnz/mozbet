@@ -119,10 +119,23 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // Injetar headers na requisição para que os Server Components saibam se é subdomínio de afiliados
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-is-affiliate-subdomain", isAffiliatesSubdomain ? "true" : "false");
+  requestHeaders.set("x-is-affiliate-route", targetUrl.startsWith("/afiliados") ? "true" : "false");
+
   // Permite o seguimento normal para rotas públicas e adiciona headers de segurança dinâmicos
   const response = (isAffiliatesSubdomain && targetUrl !== url)
-    ? NextResponse.rewrite(new URL(targetUrl, request.url))
-    : NextResponse.next();
+    ? NextResponse.rewrite(new URL(targetUrl, request.url), {
+        request: {
+          headers: requestHeaders,
+        }
+      })
+    : NextResponse.next({
+        request: {
+          headers: requestHeaders,
+        }
+      });
   
   // Reforço extra caso o NextConfig não consiga injetar nalgumas rotas
   response.headers.set("X-Frame-Options", "SAMEORIGIN"); // Permite embed apenas do próprio site (mesma origem)

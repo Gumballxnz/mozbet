@@ -87,31 +87,12 @@ export async function POST(req: Request) {
       affiliate_balance: 0.00
     };
 
-    // Tentar incluir affiliate_saque_name se a coluna existir (graceful fallback)
-    // Primeira tentativa: com a coluna
-    let newUser: { id: string; email: string; affiliate_code: string } | null = null;
-    let dbError: { message?: string; code?: string } | null = null;
-
-    const { data: d1, error: e1 } = await supabaseAdmin
+    // Inserção direta sem a coluna affiliate_saque_name para garantir compatibilidade com o esquema de BD
+    const { data: newUser, error: dbError } = await supabaseAdmin
       .from("users")
-      .insert([{ ...insertPayload, affiliate_saque_name: saqueName }])
+      .insert([insertPayload])
       .select("id, email, affiliate_code")
       .single();
-
-    if (e1 && e1.code === "42703") {
-      // Coluna não existe, tentar sem ela
-      console.warn("Coluna affiliate_saque_name não existe no BD. Inserindo sem ela.");
-      const { data: d2, error: e2 } = await supabaseAdmin
-        .from("users")
-        .insert([insertPayload])
-        .select("id, email, affiliate_code")
-        .single();
-      newUser = d2;
-      dbError = e2;
-    } else {
-      newUser = d1;
-      dbError = e1;
-    }
 
     if (dbError || !newUser) {
       console.error("Erro ao cadastrar afiliado no banco:", dbError);

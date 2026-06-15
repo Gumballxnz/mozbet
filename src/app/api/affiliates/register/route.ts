@@ -63,29 +63,54 @@ export async function POST(req: Request) {
     const hashedPassword = await bcrypt.hash(password, salt);
 
     // 5. Inserir novo afiliado na tabela users
-    const { data: newUser, error: dbError } = await supabaseAdmin
+    // NOTA: O nome do titular da conta móvel (saqueName) é armazenado no affiliate_name
+    // no formato "Nome do Afiliado | Titular: Nome do Titular" para preservar ambos os dados.
+    const affiliateDisplayName = saqueName && saqueName !== name
+      ? `${name} | Titular: ${saqueName}`
+      : name;
+
+    const insertPayload: Record<string, unknown> = {
+      email: email.toLowerCase(),
+      username: username.toLowerCase().trim(),
+      phone: cleanPhone,
+      password_hash: hashedPassword,
+      is_affiliate: true,
+      affiliate_code: affiliateCode,
+      affiliate_name: affiliateDisplayName,
+      affiliate_phone: cleanPhone,
+      affiliate_saque_number: cleanSaqueNumber,
+      affiliate_saque_method: saqueMethod,
+      parent_affiliate_id: parentAffiliateId,
+      is_verified: true, // Já é verificado por e-mail no ato do login/cadastro
+      balance: 0.00,
+      affiliate_balance: 0.00
+    };
+
+    // Tentar incluir affiliate_saque_name se a coluna existir (graceful fallback)
+    // Primeira tentativa: com a coluna
+    let newUser: { id: string; email: string; affiliate_code: string } | null = null;
+    let dbError: { message?: string; code?: string } | null = null;
+
+    const { data: d1, error: e1 } = await supabaseAdmin
       .from("users")
-      .insert([
-        {
-          email: email.toLowerCase(),
-          username: username.toLowerCase().trim(),
-          phone: cleanPhone,
-          password_hash: hashedPassword,
-          is_affiliate: true,
-          affiliate_code: affiliateCode,
-          affiliate_name: name,
-          affiliate_phone: cleanPhone,
-          affiliate_saque_number: cleanSaqueNumber,
-          affiliate_saque_method: saqueMethod,
-          affiliate_saque_name: saqueName,
-          parent_affiliate_id: parentAffiliateId,
-          is_verified: true, // Já é verificado por e-mail no ato do login/cadastro
-          balance: 0.00,
-          affiliate_balance: 0.00
-        }
-      ])
+      .insert([{ ...insertPayload, affiliate_saque_name: saqueName }])
       .select("id, email, affiliate_code")
       .single();
+
+    if (e1 && e1.code === "42703") {
+      // Coluna não existe, tentar sem ela
+      console.warn("Coluna affiliate_saque_name não existe no BD. Inserindo sem ela.");
+      const { data: d2, error: e2 } = await supabaseAdmin
+        .from("users")
+        .insert([insertPayload])
+        .select("id, email, affiliate_code")
+        .single();
+      newUser = d2;
+      dbError = e2;
+    } else {
+      newUser = d1;
+      dbError = e1;
+    }
 
     if (dbError || !newUser) {
       console.error("Erro ao cadastrar afiliado no banco:", dbError);

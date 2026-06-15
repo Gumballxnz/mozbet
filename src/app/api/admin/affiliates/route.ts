@@ -34,7 +34,7 @@ export async function GET(req: Request) {
     // 1. Obter todos os parceiros afiliados cadastrados
     const { data: affiliates, error: affError } = await supabaseAdmin
       .from("users")
-      .select("id, email, username, phone, created_at, is_active, affiliate_code, affiliate_name, affiliate_phone, affiliate_saque_number, affiliate_saque_method, affiliate_saque_name, affiliate_balance")
+      .select("id, email, username, phone, created_at, is_active, affiliate_code, affiliate_name, affiliate_phone, affiliate_saque_number, affiliate_saque_method, affiliate_balance")
       .eq("is_affiliate", true)
       .order("created_at", { ascending: false });
 
@@ -90,7 +90,17 @@ export async function GET(req: Request) {
       // Lucro líquido do parceiro (soma de comissões diretas, subcomissões e deduções negativas)
       const netEarnings = Number((depositCommissions + subCommissions + winDeductions).toFixed(2));
 
-      return {
+        // Extrair nome do titular da conta se estiver concatenado no affiliate_name (formato: "Nome | Titular: NomeTitular")
+        const rawName = aff.affiliate_name || aff.username || "Sem Nome";
+        let displayName = rawName;
+        let extractedSaqueName: string | null = null;
+        if (rawName.includes(" | Titular: ")) {
+          const parts = rawName.split(" | Titular: ");
+          displayName = parts[0];
+          extractedSaqueName = parts[1];
+        }
+
+        return {
         id: aff.id,
         email: aff.email,
         username: aff.username,
@@ -98,11 +108,11 @@ export async function GET(req: Request) {
         created_at: aff.created_at,
         is_active: aff.is_active,
         code: aff.affiliate_code,
-        name: aff.affiliate_name || aff.username || "Sem Nome",
+        name: displayName,
         affPhone: aff.affiliate_phone || aff.phone,
         saqueNumber: aff.affiliate_saque_number,
         saqueMethod: aff.affiliate_saque_method,
-        saqueName: aff.affiliate_saque_name,
+        saqueName: extractedSaqueName,
         balance: aff.affiliate_balance,
         referredCount: myReferrals.length,
         totalDeposits: Number(totalDeposits.toFixed(2)),

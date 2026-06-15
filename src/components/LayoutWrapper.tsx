@@ -22,11 +22,12 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const { chatOpen, setChatOpen } = useAppStore();
   const isAdmin = pathname?.startsWith("/admin");
   const isEngine = pathname?.startsWith("/engine");
+  const isAffiliate = pathname?.startsWith("/afiliados");
 
-  if (isAdmin || isEngine) {
+  if (isAdmin || isEngine || isAffiliate) {
     return (
       <>
-        <main className="min-h-screen bg-black">
+        <main className="min-h-screen bg-slate-950">
           {children}
         </main>
         <Toaster theme="dark" position="top-center" richColors />

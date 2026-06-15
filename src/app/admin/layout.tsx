@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Users, Wallet, ArrowUpRight, LogOut, Settings, Menu, X } from "lucide-react";
+import { LayoutDashboard, Users, Wallet, ArrowUpRight, LogOut, Settings, Menu, X, Percent, ShieldCheck } from "lucide-react";
 import { useAppStore } from "@/lib/store";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -37,6 +37,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const navItems = [
     { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
     { name: "Utilizadores", href: "/admin/users", icon: Users },
+    { name: "Parceiros (Afiliados)", href: "/admin/affiliates", icon: Percent },
+    { name: "Equipa (Admins/Donos)", href: "/admin/team", icon: ShieldCheck },
     { name: "Depósitos", href: "/admin/transactions", icon: Wallet },
     { name: "Saques", href: "/admin/withdrawals", icon: ArrowUpRight },
     { name: "Carrossel de Destaques", href: "/admin/banners", icon: Settings },
@@ -99,7 +101,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </div>
             <div className="text-sm">
               <p className="font-bold text-white">Admin</p>
-              <p className="text-xs text-muted-foreground">{user?.phone ? `+258 ${user.phone.substring(0, 2)} *** ** ${user.phone.substring(user.phone.length - 2)}` : ''}</p>
+              <p className="text-xs text-muted-foreground">{user?.phone ? `+258 ${user.phone}` : ''}</p>
             </div>
           </div>
           <Button 
@@ -174,7 +176,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 </div>
                 <div className="text-sm">
                   <p className="font-bold text-white">Admin</p>
-                  <p className="text-xs text-muted-foreground">{user?.phone ? `+258 ${user.phone.substring(0, 2)} *** ** ${user.phone.substring(user.phone.length - 2)}` : ''}</p>
+                  <p className="text-xs text-muted-foreground">{user?.phone ? `+258 ${user.phone}` : ''}</p>
                 </div>
               </div>
               <Button 

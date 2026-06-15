@@ -238,21 +238,13 @@ export function AdminUsersTable({ initialUsers, currentUserRole, totalCount = 0 
     }
   };
 
-  // Helper para ofuscar numero (+258 84 *** ** 12)
+  // Exibição dos dados do telefone e e-mail sem ofuscação (filtros removidos)
   const maskPhone = (phone: string) => {
-    if (!phone) return "";
-    const clean = phone.replace(/\D/g, "");
-    if (clean.length < 9) return phone;
-    return `+258 ${clean.substring(0, 2)} *** ** ${clean.substring(clean.length - 2)}`;
+    return phone ? `+258 ${phone}` : "";
   };
 
   const maskEmail = (email: string) => {
-    if (!email) return "";
-    const parts = email.split("@");
-    if (parts.length !== 2) return email;
-    const [name, domain] = parts;
-    if (name.length <= 3) return email;
-    return `${name.substring(0, 3)}***@${domain}`;
+    return email || "";
   };
 
   return (
@@ -301,9 +293,9 @@ export function AdminUsersTable({ initialUsers, currentUserRole, totalCount = 0 
               {filteredUsers.map((user) => (
                 <tr key={user.id} className="border-b border-[#2A2F40]/50 hover:bg-[#1A1D27] transition-colors">
                   <td className="px-6 py-4 flex flex-col gap-1">
-                    <span className="font-mono-data font-black text-white flex items-center gap-2 text-base">
+                    <span className="font-mono-data font-black text-white flex items-center gap-2 text-sm select-all">
                       {user.is_admin && <ShieldAlert className="w-4 h-4 text-primary" />}
-                      #{user.id.substring(0, 8).toUpperCase()}
+                      #{user.id}
                     </span>
                     <span className="text-xs text-gray-400 font-mono-data tracking-widest">{maskPhone(user.phone)}</span>
                     {user.email && <span className="text-[10px] text-sky-400/70 flex items-center gap-1 mt-1"><AtSign size={10}/>{maskEmail(user.email)}</span>}
@@ -377,10 +369,10 @@ export function AdminUsersTable({ initialUsers, currentUserRole, totalCount = 0 
           {filteredUsers.map((user) => (
             <div key={user.id} className="bg-[#101116] border border-[#2A2F40]/60 rounded-2xl p-4 space-y-3 shadow-md text-left">
               <div className="flex justify-between items-start">
-                <div className="flex flex-col">
-                  <span className="font-mono-data font-black text-white flex items-center gap-1.5 text-base">
+                <div className="flex flex-col min-w-0">
+                  <span className="font-mono-data font-black text-white flex items-center gap-1.5 text-xs select-all truncate">
                     {user.is_admin && <ShieldAlert className="w-4 h-4 text-primary" />}
-                    #{user.id.substring(0, 8).toUpperCase()}
+                    #{user.id}
                   </span>
                   <span className="text-xs text-gray-400 font-mono-data tracking-wider">{maskPhone(user.phone)}</span>
                   {user.email && <span className="text-[10px] text-sky-400/70 flex items-center gap-1 mt-1"><AtSign size={10}/>{maskEmail(user.email)}</span>}
@@ -454,9 +446,9 @@ export function AdminUsersTable({ initialUsers, currentUserRole, totalCount = 0 
       <Dialog open={!!selectedUser} onOpenChange={(open) => !open && setSelectedUser(null)}>
         <DialogContent className="sm:max-w-[650px] max-h-[90vh] overflow-y-auto bg-[#101116] border-[#2A2F40] text-white scrollbar-thin scrollbar-thumb-[#2A2F40]">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-black flex items-center gap-2">
+            <DialogTitle className="text-xl font-black flex items-center gap-2">
               <UserCheck className="w-6 h-6 text-primary" />
-              Jogador: <span className="font-mono-data text-primary">#{selectedUser?.id.substring(0,8).toUpperCase()}</span>
+              Jogador: <span className="font-mono-data text-primary text-sm select-all">#{selectedUser?.id}</span>
             </DialogTitle>
             <DialogDescription className="hidden">Painel de gestão do jogador</DialogDescription>
           </DialogHeader>

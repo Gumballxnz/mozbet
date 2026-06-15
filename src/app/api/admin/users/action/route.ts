@@ -26,67 +26,92 @@ export async function POST(req: NextRequest) {
     }
 
     // Ações exclusivas de Super Admin
-    if (action === 'promote' || action === 'demote') {
+    if (action === 'promote' || action === 'promote_owner' || action === 'demote') {
       if (adminUser?.role !== 'super_admin') {
          return NextResponse.json({ error: "Apenas proprietários (Super Admins) podem gerir a equipa" }, { status: 403 });
       }
       
-      const newRole = action === 'promote' ? 'admin' : 'user';
-      const newIsAdmin = action === 'promote' ? true : false;
+      let newRole = 'user';
+      let newIsAdmin = false;
+      if (action === 'promote') {
+        newRole = 'admin';
+        newIsAdmin = true;
+      } else if (action === 'promote_owner') {
+        newRole = 'super_admin';
+        newIsAdmin = true;
+      }
       
       const { error } = await supabaseAdmin.from("users").update({ role: newRole, is_admin: newIsAdmin }).eq("id", userId);
       if (error) throw error;
       
-      if (action === 'promote' || action === 'demote') {
-         const title = action === 'promote' ? "Promoção a Administrador" : "Aviso de Despromoção";
-         const siteMsg = action === 'promote' 
-           ? "Parabéns! Foi promovido a Administrador da MozBet." 
-           : "A sua conta foi rebaixada para Utilizador comum.";
-           
-         // Notificação no site
-         await supabaseAdmin.from("notifications").insert({
-            user_id: userId,
-            title: title,
-            message: siteMsg,
-            type: "SYSTEM"
-         });
-         
-         // Notificação por E-mail
-         const { data: targetUser } = await supabaseAdmin.from("users").select("email").eq("id", userId).single();
-         if (targetUser?.email) {
-            const RESEND_API_KEY = process.env.RESEND_API_KEY;
-            if (RESEND_API_KEY) {
-               const emailSubject = action === 'promote' ? "Promoção a Administrador - MozBet" : "Aviso de Conta - MozBet";
-               const emailHtml = action === 'promote'
-                 ? `<div style="font-family: sans-serif; padding: 20px;">
-                     <h2>Promoção a Administrador 🎉</h2>
-                     <p>Parabéns! A sua conta foi promovida a Administrador na plataforma MozBet pelo dono do projeto.</p>
-                     <p>Já tem os acesos necessários. Pode entrar no Painel de Controlo em <a href="https://mozbet.online/admin">mozbet.online/admin</a>.</p>
-                    </div>`
-                 : `<div style="font-family: sans-serif; padding: 20px;">
-                     <h2>Aviso de Privilégios ⚠️</h2>
-                     <p>Os seus privilégios de Administrador foram revogados pelo dono do projeto.</p>
-                     <p>A sua conta voltou ao estado de Utilizador comum e já não tem acesso ao Painel de Controlo.</p>
-                    </div>`;
+      let title = "Aviso de Conta - MozBet";
+      let siteMsg = "A sua conta foi atualizada.";
+      let emailSubject = "Aviso de Conta - MozBet";
+      let emailHtml = "";
 
-               await fetch("https://api.resend.com/emails", {
-                 method: "POST",
-                 headers: {
-                   "Authorization": `Bearer ${RESEND_API_KEY}`,
-                   "Content-Type": "application/json"
-                 },
-                 body: JSON.stringify({
-                   from: "MozBet RH <suporte@mozbet.online>",
-                   to: [targetUser.email],
-                   subject: emailSubject,
-                   html: emailHtml
-                 })
-               });
-            }
+      if (action === 'promote') {
+        title = "Promoção a Administrador";
+        siteMsg = "Parabéns! Foi promovido a Administrador da MozBet.";
+        emailSubject = "Promoção a Administrador - MozBet";
+        emailHtml = `<div style="font-family: sans-serif; padding: 20px;">
+                      <h2>Promoção a Administrador 🎉</h2>
+                      <p>Parabéns! A sua conta foi promovida a Administrador na plataforma MozBet pelo dono do projeto.</p>
+                      <p>Já tem os acessos necessários. Pode entrar no Painel de Controlo em <a href="https://mozbet.online/admin">mozbet.online/admin</a>.</p>
+                     </div>`;
+      } else if (action === 'promote_owner') {
+        title = "Promoção a Proprietário";
+        siteMsg = "Parabéns! Foi promovido a Proprietário (Dono) da MozBet.";
+        emailSubject = "Promoção a Proprietário - MozBet";
+        emailHtml = `<div style="font-family: sans-serif; padding: 20px;">
+                      <h2>Promoção a Proprietário 🎉</h2>
+                      <p>Parabéns! A sua conta foi promovida a Proprietário (Dono) na plataforma MozBet.</p>
+                      <p>Agora tem privilégios totais sobre a gestão da equipa. Acesse o Painel de Controlo em <a href="https://mozbet.online/admin">mozbet.online/admin</a>.</p>
+                     </div>`;
+      } else {
+        title = "Aviso de Despromoção";
+        siteMsg = "A sua conta foi rebaixada para Utilizador comum.";
+        emailSubject = "Aviso de Conta - MozBet";
+        emailHtml = `<div style="font-family: sans-serif; padding: 20px;">
+                      <h2>Aviso de Privilégios ⚠️</h2>
+                      <p>Os seus privilégios administrativos foram revogados pelo dono do projeto.</p>
+                      <p>A sua conta voltou ao estado de Utilizador comum e já não tem acesso ao Painel de Controlo.</p>
+                     </div>`;
+      }
+         
+      // Notificação no site
+      await supabaseAdmin.from("notifications").insert({
+         user_id: userId,
+         title: title,
+         message: siteMsg,
+         type: "SYSTEM"
+      });
+      
+      // Notificação por E-mail
+      const { data: targetUser } = await supabaseAdmin.from("users").select("email").eq("id", userId).single();
+      if (targetUser?.email && emailHtml) {
+         const RESEND_API_KEY = process.env.RESEND_API_KEY;
+         if (RESEND_API_KEY) {
+            await fetch("https://api.resend.com/emails", {
+              method: "POST",
+              headers: {
+                "Authorization": `Bearer ${RESEND_API_KEY}`,
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify({
+                from: "MozBet RH <suporte@mozbet.online>",
+                to: [targetUser.email],
+                subject: emailSubject,
+                html: emailHtml
+              })
+            });
          }
       }
       
-      return NextResponse.json({ success: true, message: action === 'promote' ? "Utilizador promovido a Admin!" : "Administrador despromovido a Utilizador." });
+      let returnMsg = "Utilizador promovido a Admin!";
+      if (action === 'promote_owner') returnMsg = "Utilizador promovido a Proprietário!";
+      if (action === 'demote') returnMsg = "Administrador despromovido a Utilizador.";
+
+      return NextResponse.json({ success: true, message: returnMsg });
     }
 
     if (action === 'delete') {

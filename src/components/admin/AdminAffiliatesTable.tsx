@@ -20,6 +20,7 @@ interface AffiliateData {
   affPhone: string;
   saqueNumber: string;
   saqueMethod: string;
+  saqueName: string;
   balance: number;
   referredCount: number;
   totalDeposits: number;
@@ -150,6 +151,7 @@ export function AdminAffiliatesTable({ initialAffiliates }: { initialAffiliates:
                   </td>
                   <td className="px-6 py-4 align-middle text-xs">
                     <span className="font-bold text-white uppercase">{aff.saqueMethod}</span>
+                    <span className="block text-[10px] text-emerald-400 font-bold">{aff.saqueName || "Sem Titular"}</span>
                     <span className="block text-gray-400 font-mono">+{aff.saqueNumber}</span>
                   </td>
                   <td className="px-6 py-4 text-right align-middle">
@@ -216,8 +218,11 @@ export function AdminAffiliatesTable({ initialAffiliates }: { initialAffiliates:
               </div>
             </div>
 
-            <div className="flex justify-between items-center pt-2 border-t border-[#2A2F40]/30">
-              <span className="text-xs text-gray-400 font-mono">+{aff.saqueNumber}</span>
+            <div className="flex justify-between items-center pt-2 border-t border-[#2A2F40]/30 text-xs">
+              <div className="flex flex-col text-left">
+                <span className="text-[9px] text-emerald-400 font-bold">{aff.saqueName || "Sem Titular"}</span>
+                <span className="text-xs text-gray-400 font-mono">+{aff.saqueNumber}</span>
+              </div>
               <Button 
                 onClick={() => setSelectedAffiliate(aff)}
                 size="sm" 
@@ -304,13 +309,17 @@ export function AdminAffiliatesTable({ initialAffiliates }: { initialAffiliates:
               {/* Informações Bancárias completas */}
               <div className="bg-[#0B0C10] border border-[#2A2F40] p-4 rounded-xl">
                 <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Dados Bancários para Pagamento</h4>
-                <div className="flex justify-between items-center text-sm">
+                <div className="grid grid-cols-3 gap-2 text-xs">
                   <div>
-                    <span className="text-[10px] text-gray-500 uppercase tracking-wider block">Método de Saque</span>
+                    <span className="text-[10px] text-gray-500 uppercase tracking-wider block mb-0.5">Método de Saque</span>
                     <span className="font-bold text-white uppercase">{selectedAffiliate.saqueMethod}</span>
                   </div>
+                  <div>
+                    <span className="text-[10px] text-gray-500 uppercase tracking-wider block mb-0.5">Titular da Conta</span>
+                    <span className="font-bold text-emerald-400">{selectedAffiliate.saqueName || "Sem Titular"}</span>
+                  </div>
                   <div className="text-right">
-                    <span className="text-[10px] text-gray-500 uppercase tracking-wider block">Número da Conta</span>
+                    <span className="text-[10px] text-gray-500 uppercase tracking-wider block mb-0.5">Número da Conta</span>
                     <span className="font-mono font-bold text-white select-all">+{selectedAffiliate.saqueNumber}</span>
                   </div>
                 </div>

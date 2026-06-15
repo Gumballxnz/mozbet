@@ -19,6 +19,7 @@ function AffiliateRegisterForm() {
   const [playerId, setPlayerId] = useState("");
   const [saqueMethod, setSaqueMethod] = useState("mpesa");
   const [saqueNumber, setSaqueNumber] = useState("");
+  const [saqueName, setSaqueName] = useState("");
   const [subCode, setSubCode] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -36,7 +37,7 @@ function AffiliateRegisterForm() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!name || !email || !username || !password || !confirmPassword || !phone || !saqueNumber) {
+    if (!name || !email || !username || !password || !confirmPassword || !phone || !saqueNumber || !saqueName) {
       toast.error("Por favor, preencha todos os campos obrigatórios.");
       return;
     }
@@ -70,6 +71,7 @@ function AffiliateRegisterForm() {
           playerId,
           saqueMethod,
           saqueNumber,
+          saqueName,
           subCode,
         }),
       });
@@ -241,19 +243,37 @@ function AffiliateRegisterForm() {
         </div>
       </div>
 
-      {/* Número de Saque */}
-      <div className="space-y-1">
-        <label className="text-xs font-semibold text-slate-400">Número de Saque das Comissões *</label>
-        <div className="relative">
-          <Phone className="absolute left-3.5 top-3.5 h-5 w-5 text-slate-500" />
-          <input
-            type="tel"
-            placeholder="Número para levantamento M-Pesa / e-Mola"
-            value={saqueNumber}
-            onChange={(e) => setSaqueNumber(e.target.value)}
-            className="w-full pl-11 pr-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all duration-200 text-sm"
-            required
-          />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Nome do Titular da Conta Móvel */}
+        <div className="space-y-1">
+          <label className="text-xs font-semibold text-slate-400">Nome do Titular da Conta Móvel *</label>
+          <div className="relative">
+            <User className="absolute left-3.5 top-3.5 h-5 w-5 text-slate-500" />
+            <input
+              type="text"
+              placeholder="Nome conforme registo M-Pesa / e-Mola"
+              value={saqueName}
+              onChange={(e) => setSaqueName(e.target.value)}
+              className="w-full pl-11 pr-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all duration-200 text-sm"
+              required
+            />
+          </div>
+        </div>
+
+        {/* Número de Saque */}
+        <div className="space-y-1">
+          <label className="text-xs font-semibold text-slate-400">Número de Saque das Comissões *</label>
+          <div className="relative">
+            <Phone className="absolute left-3.5 top-3.5 h-5 w-5 text-slate-500" />
+            <input
+              type="tel"
+              placeholder="Número para levantamento M-Pesa / e-Mola"
+              value={saqueNumber}
+              onChange={(e) => setSaqueNumber(e.target.value)}
+              className="w-full pl-11 pr-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all duration-200 text-sm"
+              required
+            />
+          </div>
         </div>
       </div>
 

@@ -34,7 +34,7 @@ export async function GET(req: Request) {
     // 1. Obter todos os parceiros afiliados cadastrados
     const { data: affiliates, error: affError } = await supabaseAdmin
       .from("users")
-      .select("id, email, username, phone, created_at, is_active, affiliate_code, affiliate_name, affiliate_phone, affiliate_saque_number, affiliate_saque_method, affiliate_balance")
+      .select("id, email, username, phone, created_at, is_active, affiliate_code, affiliate_name, affiliate_phone, affiliate_saque_number, affiliate_saque_method, affiliate_saque_name, affiliate_balance")
       .eq("is_affiliate", true)
       .order("created_at", { ascending: false });
 
@@ -102,6 +102,7 @@ export async function GET(req: Request) {
         affPhone: aff.affiliate_phone || aff.phone,
         saqueNumber: aff.affiliate_saque_number,
         saqueMethod: aff.affiliate_saque_method,
+        saqueName: aff.affiliate_saque_name,
         balance: aff.affiliate_balance,
         referredCount: myReferrals.length,
         totalDeposits: Number(totalDeposits.toFixed(2)),

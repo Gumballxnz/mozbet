@@ -7,7 +7,7 @@ export default async function AdminAffiliatesPage() {
   // 1. Buscar todos os afiliados
   const { data: users } = await supabaseAdmin
     .from("users")
-    .select("id, email, username, phone, created_at, is_active, affiliate_code, affiliate_name, affiliate_phone, affiliate_saque_number, affiliate_saque_method, affiliate_balance")
+    .select("id, email, username, phone, created_at, is_active, affiliate_code, affiliate_name, affiliate_phone, affiliate_saque_number, affiliate_saque_method, affiliate_saque_name, affiliate_balance")
     .eq("is_affiliate", true)
     .order("created_at", { ascending: false });
 
@@ -68,6 +68,7 @@ export default async function AdminAffiliatesPage() {
       affPhone: aff.affiliate_phone || aff.phone,
       saqueNumber: aff.affiliate_saque_number || "",
       saqueMethod: aff.affiliate_saque_method || "mpesa",
+      saqueName: aff.affiliate_saque_name || "",
       balance: aff.affiliate_balance || 0,
       referredCount: myReferrals.length,
       totalDeposits: Number(totalDeposits.toFixed(2)),

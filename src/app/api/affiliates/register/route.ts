@@ -8,9 +8,9 @@ const resend = new Resend(process.env.RESEND_API_KEY || "re_dummy_key");
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { name, email, username, password, phone, playerId, saqueMethod, saqueNumber, subCode } = body;
+    const { name, email, username, password, phone, playerId, saqueMethod, saqueNumber, saqueName, subCode } = body;
 
-    if (!name || !email || !username || !password || !phone || !saqueMethod || !saqueNumber) {
+    if (!name || !email || !username || !password || !phone || !saqueMethod || !saqueNumber || !saqueName) {
       return NextResponse.json({ error: "Preencha todos os campos obrigatórios." }, { status: 400 });
     }
 
@@ -77,6 +77,7 @@ export async function POST(req: Request) {
           affiliate_phone: cleanPhone,
           affiliate_saque_number: cleanSaqueNumber,
           affiliate_saque_method: saqueMethod,
+          affiliate_saque_name: saqueName,
           parent_affiliate_id: parentAffiliateId,
           is_verified: true, // Já é verificado por e-mail no ato do login/cadastro
           balance: 0.00,

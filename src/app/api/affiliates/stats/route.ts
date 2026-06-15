@@ -57,6 +57,7 @@ export async function GET(req: Request) {
     let totalDirectWins = 0;
     let totalSubCommission = 0;
     let totalRevenue = 0;
+    let totalPaid = 0;
 
     // Filtrar as transações do afiliado
     const { data: myTransactions } = await supabaseAdmin
@@ -77,12 +78,18 @@ export async function GET(req: Request) {
         const val = Number(tx.amount);
         if (tx.type === "DEPOSIT") {
           totalDirectDeposits += val;
+          totalRevenue += val;
         } else if (tx.type === "WIN") {
           totalDirectWins += val; // vitórias são negativas na tabela
+          totalRevenue += val;
         } else if (tx.type === "SUB_COMMISSION") {
           totalSubCommission += val;
+          totalRevenue += val;
+        } else if (tx.type === "WITHDRAW") {
+          const grossAmount = Math.abs(val);
+          const netAmount = grossAmount - (grossAmount >= 100 ? 20 : 0);
+          totalPaid += netAmount;
         }
-        totalRevenue += val;
       });
     }
 
@@ -104,7 +111,8 @@ export async function GET(req: Request) {
         playerWinsDebit: Number(totalDirectWins.toFixed(2)),
         subAffiliateRevenue: Number(totalSubCommission.toFixed(2)),
         totalRevenue: Number(totalRevenue.toFixed(2)),
-        subAffiliatesCount: totalSubAffiliates || 0
+        subAffiliatesCount: totalSubAffiliates || 0,
+        totalPaid: Number(totalPaid.toFixed(2))
       },
       recentTransactions: myTransactions || []
     });

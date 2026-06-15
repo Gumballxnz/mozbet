@@ -34,10 +34,10 @@ export async function registerAffiliateActivity(
 
     const affiliateId = user.referrer_id;
 
-    // 2. Calcular a comissão direta do afiliado (50%)
+    // 2. Calcular a comissão direta do afiliado (50% sobre o depósito líquido de 7% de gateway)
     let directCommission = 0;
     if (type === 'DEPOSIT') {
-      directCommission = Number((amount * 0.50).toFixed(2));
+      directCommission = Number(((amount * 0.93) * 0.50).toFixed(2));
     } else if (type === 'WIN') {
       directCommission = -Number((amount * 0.50).toFixed(2));
     }

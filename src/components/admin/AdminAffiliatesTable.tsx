@@ -28,6 +28,7 @@ interface AffiliateData {
   subCommissions: number;
   winDeductions: number;
   netEarnings: number;
+  totalPaid: number;
 }
 
 export function AdminAffiliatesTable({ initialAffiliates }: { initialAffiliates: AffiliateData[] }) {
@@ -108,7 +109,7 @@ export function AdminAffiliatesTable({ initialAffiliates }: { initialAffiliates:
                 <th className="px-6 py-4 text-center">Indicados</th>
                 <th className="px-6 py-4">Depósitos Jogadores</th>
                 <th className="px-6 py-4">Lucro do Parceiro</th>
-                <th className="px-6 py-4">Saldo Comissão</th>
+                <th className="px-6 py-4">Ganhos / Pago</th>
                 <th className="px-6 py-4">Dados de Saque</th>
                 <th className="px-6 py-4 text-right">Ações</th>
               </tr>
@@ -146,8 +147,9 @@ export function AdminAffiliatesTable({ initialAffiliates }: { initialAffiliates:
                       <div className="text-[10px] text-sky-400">Subafiliação: +{formatMZN(aff.subCommissions)}</div>
                     )}
                   </td>
-                  <td className="px-6 py-4 font-mono font-black text-primary text-base align-middle">
-                    {formatMZN(aff.balance)}
+                  <td className="px-6 py-4 align-middle font-mono text-xs">
+                    <div className="text-primary font-black text-sm">{formatMZN(aff.balance)} Ganhos</div>
+                    <div className="text-[10px] text-gray-400">Total Pago: {formatMZN(aff.totalPaid || 0)}</div>
                   </td>
                   <td className="px-6 py-4 align-middle text-xs">
                     <span className="font-bold text-white uppercase">{aff.saqueMethod}</span>
@@ -292,16 +294,14 @@ export function AdminAffiliatesTable({ initialAffiliates }: { initialAffiliates:
               <div className="grid grid-cols-3 gap-3">
                 <div className="bg-[#0B0C10] p-3 rounded-xl border border-[#2A2F40] text-center">
                   <span className="text-[9px] text-gray-500 font-bold uppercase tracking-wider block mb-1">Passivo de Subafiliação (15%)</span>
-                  <span className="text-sm font-mono font-bold text-sky-400">+{formatMZN(selectedAffiliate.subCommissions)}</span>
+                  <span className="text-xs font-mono font-bold text-sky-400">+{formatMZN(selectedAffiliate.subCommissions)}</span>
                 </div>
                 <div className="bg-[#0B0C10] p-3 rounded-xl border border-[#2A2F40] text-center">
-                  <span className="text-[9px] text-gray-500 font-bold uppercase tracking-wider block mb-1">Ganhos Líquidos</span>
-                  <span className={`text-sm font-mono font-black ${selectedAffiliate.netEarnings >= 0 ? 'text-emerald-400' : 'text-red-500'}`}>
-                    {selectedAffiliate.netEarnings >= 0 ? '+' : ''}{formatMZN(selectedAffiliate.netEarnings)}
-                  </span>
+                  <span className="text-[9px] text-gray-500 font-bold uppercase tracking-wider block mb-1">Histórico Pago (Saldo)</span>
+                  <span className="text-xs font-mono font-bold text-gray-300">{formatMZN(selectedAffiliate.totalPaid || 0)}</span>
                 </div>
                 <div className="bg-primary/5 p-3 rounded-xl border border-primary/20 text-center">
-                  <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider block mb-1">Saldo Disponível</span>
+                  <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider block mb-1">Acumulado a Pagar (Ganhos)</span>
                   <span className="text-sm font-mono font-black text-primary">{formatMZN(selectedAffiliate.balance)}</span>
                 </div>
               </div>
@@ -324,6 +324,74 @@ export function AdminAffiliatesTable({ initialAffiliates }: { initialAffiliates:
                   </div>
                 </div>
               </div>
+
+              {/* Efetuar Pagamento de Lucros */}
+              {selectedAffiliate.balance > 0 && (
+                <div className="bg-emerald-950/20 border border-emerald-500/30 p-4 rounded-xl space-y-3">
+                  <h4 className="text-xs font-bold text-emerald-400 uppercase tracking-wider">Efetuar Pagamento de Lucros</h4>
+                  <p className="text-[11px] text-gray-400 leading-relaxed font-semibold">
+                    O pagamento é efetuado manualmente. Ao confirmar abaixo, o saldo comissão acumulado será zerado no painel do parceiro e movido para o histórico de saques pagos ("Saldo").
+                  </p>
+                  
+                  <div className="grid grid-cols-3 gap-2 bg-[#0B0C10]/80 p-3 rounded-lg border border-[#2A2F40] text-xs font-mono">
+                    <div>
+                      <span className="text-gray-500 block text-[9px] font-bold">GANHOS BRUTOS</span>
+                      <span className="text-white font-bold">{formatMZN(selectedAffiliate.balance)}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500 block text-[9px] font-bold">TAXA DE GATEWAY</span>
+                      <span className="text-red-400 font-bold">
+                        {selectedAffiliate.balance >= 100 ? "-MT20.00" : "MT0.00"}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-emerald-400 block text-[9px] font-bold">VALOR LÍQUIDO A ENVIAR</span>
+                      <span className="text-emerald-400 font-black text-sm">
+                        {formatMZN(Math.max(0, selectedAffiliate.balance - (selectedAffiliate.balance >= 100 ? 20 : 0)))}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end pt-1">
+                    <Button
+                      onClick={async () => {
+                        const netAmount = selectedAffiliate.balance - (selectedAffiliate.balance >= 100 ? 20 : 0);
+                        const confirmMsg = `Confirmar pagamento manual de ${formatMZN(netAmount)} líquido (após taxa) para a conta M-Pesa/e-Mola de titular: "${selectedAffiliate.saqueName || 'Não Informado'}" no número +${selectedAffiliate.saqueNumber}?`;
+                        
+                        if (!window.confirm(confirmMsg)) return;
+
+                        try {
+                          toast.loading("A registrar liquidação...", { id: "payout-action" });
+                          const res = await fetch("/api/admin/affiliates/payout", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ affiliateId: selectedAffiliate.id, amount: selectedAffiliate.balance })
+                          });
+
+                          const data = await res.json();
+                          if (!res.ok) throw new Error(data.error || "Erro ao efetuar payout");
+
+                          toast.success(data.message || "Pagamento liquidado com sucesso!", { id: "payout-action" });
+                          
+                          // Atualiza o estado local
+                          const updated = {
+                            ...selectedAffiliate,
+                            balance: 0,
+                            totalPaid: (selectedAffiliate.totalPaid || 0) + netAmount
+                          };
+                          setAffiliates(prev => prev.map(a => a.id === selectedAffiliate.id ? updated : a));
+                          setSelectedAffiliate(updated);
+                        } catch (err: any) {
+                          toast.error(err.message || "Falha ao liquidar pagamento.", { id: "payout-action" });
+                        }
+                      }}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-9 text-xs w-full sm:w-auto cursor-pointer border-none"
+                    >
+                      Confirmar Pagamento Realizado
+                    </Button>
+                  </div>
+                </div>
+              )}
 
               {/* Ações Rápidas */}
               <div className="space-y-3">

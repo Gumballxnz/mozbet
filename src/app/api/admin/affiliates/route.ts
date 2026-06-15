@@ -72,6 +72,7 @@ export async function GET(req: Request) {
       let depositCommissions = 0;
       let subCommissions = 0;
       let winDeductions = 0;
+      let totalPaid = 0;
 
       myTxs.forEach(t => {
         const amt = Number(t.amount);
@@ -81,6 +82,11 @@ export async function GET(req: Request) {
           subCommissions += amt;
         } else if (t.type === 'WIN') {
           winDeductions += amt; // WIN grava valor negativo
+        } else if (t.type === 'WITHDRAW') {
+          // O valor é negativo no banco (débito). Calculamos o valor líquido real que foi enviado (com taxa)
+          const grossAmount = Math.abs(amt);
+          const netAmount = grossAmount - (grossAmount >= 100 ? 20 : 0);
+          totalPaid += netAmount;
         }
       });
 
@@ -119,7 +125,8 @@ export async function GET(req: Request) {
         depositCommissions: Number(depositCommissions.toFixed(2)),
         subCommissions: Number(subCommissions.toFixed(2)),
         winDeductions: Number(winDeductions.toFixed(2)),
-        netEarnings
+        netEarnings,
+        totalPaid: Number(totalPaid.toFixed(2))
       };
     });
 

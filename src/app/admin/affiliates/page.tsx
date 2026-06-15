@@ -41,6 +41,7 @@ export default async function AdminAffiliatesPage() {
     let depositCommissions = 0;
     let subCommissions = 0;
     let winDeductions = 0;
+    let totalPaid = 0;
 
     myTxs.forEach(t => {
       const amt = Number(t.amount);
@@ -50,6 +51,10 @@ export default async function AdminAffiliatesPage() {
         subCommissions += amt;
       } else if (t.type === 'WIN') {
         winDeductions += amt;
+      } else if (t.type === 'WITHDRAW') {
+        const grossAmount = Math.abs(amt);
+        const netAmount = grossAmount - (grossAmount >= 100 ? 20 : 0);
+        totalPaid += netAmount;
       }
     });
 
@@ -85,7 +90,8 @@ export default async function AdminAffiliatesPage() {
       depositCommissions: Number(depositCommissions.toFixed(2)),
       subCommissions: Number(subCommissions.toFixed(2)),
       winDeductions: Number(winDeductions.toFixed(2)),
-      netEarnings
+      netEarnings,
+      totalPaid: Number(totalPaid.toFixed(2))
     };
   });
 

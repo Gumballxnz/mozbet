@@ -4,21 +4,22 @@ import { supabaseAdmin, signToken } from "@/lib/auth-server";
 
 export async function POST(req: Request) {
   try {
-    const { email, password } = await req.json();
+    const { email, identifier, password } = await req.json();
+    const loginIdentifier = (identifier || email || "").toString().trim().toLowerCase();
 
-    if (!email || !password) {
+    if (!loginIdentifier || !password) {
       return NextResponse.json({ error: "Preencha todos os campos." }, { status: 400 });
     }
 
-    // 1. Buscar afiliado pelo e-mail
+    // 1. Buscar afiliado pelo e-mail, nome de usuário ou telefone
     const { data: user, error } = await supabaseAdmin
       .from("users")
       .select("id, email, password_hash, is_affiliate, is_active, affiliate_code")
-      .eq("email", email.toLowerCase())
+      .or(`email.eq.${loginIdentifier},username.eq.${loginIdentifier},phone.eq.${loginIdentifier}`)
       .maybeSingle();
 
     if (error || !user) {
-      return NextResponse.json({ error: "E-mail ou senha incorretos." }, { status: 401 });
+      return NextResponse.json({ error: "E-mail, usuário ou senha incorretos." }, { status: 401 });
     }
 
     // 2. Verificar se possui o papel de afiliado

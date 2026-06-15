@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
-import { User, Mail, Lock, Phone, CreditCard, ArrowRight, ShieldCheck } from "lucide-react";
+import { User, Mail, Lock, Phone, CreditCard, ArrowRight, ShieldCheck, Eye, EyeOff } from "lucide-react";
 
 function AffiliateRegisterForm() {
   const router = useRouter();
@@ -12,12 +12,16 @@ function AffiliateRegisterForm() {
   
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [phone, setPhone] = useState("");
   const [playerId, setPlayerId] = useState("");
   const [saqueMethod, setSaqueMethod] = useState("mpesa");
   const [saqueNumber, setSaqueNumber] = useState("");
   const [subCode, setSubCode] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
   // Capturar código de subafiliado da URL (?sub=MB123456)
@@ -32,13 +36,23 @@ function AffiliateRegisterForm() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!name || !email || !password || !phone || !saqueNumber) {
+    if (!name || !email || !username || !password || !confirmPassword || !phone || !saqueNumber) {
       toast.error("Por favor, preencha todos os campos obrigatórios.");
+      return;
+    }
+
+    if (username.length < 3) {
+      toast.error("O nome de usuário deve ter pelo menos 3 caracteres.");
       return;
     }
 
     if (password.length < 6) {
       toast.error("A palavra-passe deve ter pelo menos 6 caracteres.");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      toast.error("As palavras-passe não coincidem.");
       return;
     }
 
@@ -50,6 +64,7 @@ function AffiliateRegisterForm() {
         body: JSON.stringify({
           name,
           email,
+          username,
           password,
           phone,
           playerId,
@@ -94,6 +109,24 @@ function AffiliateRegisterForm() {
           </div>
         </div>
 
+        {/* Nome de Usuário */}
+        <div className="space-y-1">
+          <label className="text-xs font-semibold text-slate-400">Nome de Usuário (Username) *</label>
+          <div className="relative">
+            <User className="absolute left-3.5 top-3.5 h-5 w-5 text-slate-500" />
+            <input
+              type="text"
+              placeholder="ex: joaosilva"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="w-full pl-11 pr-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all duration-200 text-sm"
+              required
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* E-mail */}
         <div className="space-y-1">
           <label className="text-xs font-semibold text-slate-400">E-mail *</label>
@@ -104,24 +137,6 @@ function AffiliateRegisterForm() {
               placeholder="exemplo@email.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full pl-11 pr-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all duration-200 text-sm"
-              required
-            />
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Senha */}
-        <div className="space-y-1">
-          <label className="text-xs font-semibold text-slate-400">Palavra-passe *</label>
-          <div className="relative">
-            <Lock className="absolute left-3.5 top-3.5 h-5 w-5 text-slate-500" />
-            <input
-              type="password"
-              placeholder="Mínimo 6 caracteres"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
               className="w-full pl-11 pr-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all duration-200 text-sm"
               required
             />
@@ -141,6 +156,54 @@ function AffiliateRegisterForm() {
               className="w-full pl-11 pr-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all duration-200 text-sm"
               required
             />
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Senha */}
+        <div className="space-y-1">
+          <label className="text-xs font-semibold text-slate-400">Palavra-passe *</label>
+          <div className="relative">
+            <Lock className="absolute left-3.5 top-3.5 h-5 w-5 text-slate-500" />
+            <input
+              type={showPassword ? "text" : "password"}
+              placeholder="Mínimo 6 caracteres"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full pl-11 pr-12 py-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all duration-200 text-sm"
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3.5 top-3.5 text-slate-500 hover:text-slate-300 transition-colors cursor-pointer"
+            >
+              {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+            </button>
+          </div>
+        </div>
+
+        {/* Confirmar Palavra-passe */}
+        <div className="space-y-1">
+          <label className="text-xs font-semibold text-slate-400">Confirmar Palavra-passe *</label>
+          <div className="relative">
+            <Lock className="absolute left-3.5 top-3.5 h-5 w-5 text-slate-500" />
+            <input
+              type={showConfirmPassword ? "text" : "password"}
+              placeholder="Repita a palavra-passe"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="w-full pl-11 pr-12 py-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all duration-200 text-sm"
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className="absolute right-3.5 top-3.5 text-slate-500 hover:text-slate-300 transition-colors cursor-pointer"
+            >
+              {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+            </button>
           </div>
         </div>
       </div>

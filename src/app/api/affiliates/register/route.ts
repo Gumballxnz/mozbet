@@ -8,16 +8,16 @@ const resend = new Resend(process.env.RESEND_API_KEY || "re_dummy_key");
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { name, email, password, phone, playerId, saqueMethod, saqueNumber, subCode } = body;
+    const { name, email, username, password, phone, playerId, saqueMethod, saqueNumber, subCode } = body;
 
-    if (!name || !email || !password || !phone || !saqueMethod || !saqueNumber) {
+    if (!name || !email || !username || !password || !phone || !saqueMethod || !saqueNumber) {
       return NextResponse.json({ error: "Preencha todos os campos obrigatórios." }, { status: 400 });
     }
 
     const cleanPhone = phone.replace(/\D/g, "");
     const cleanSaqueNumber = saqueNumber.replace(/\D/g, "");
 
-    // 1. Verificar se o e-mail ou telefone já estão em uso por um afiliado
+    // 1. Verificar se o e-mail ou telefone já estão em uso
     const { data: existingUser } = await supabaseAdmin
       .from("users")
       .select("id")
@@ -26,6 +26,17 @@ export async function POST(req: Request) {
 
     if (existingUser) {
       return NextResponse.json({ error: "E-mail ou número de telefone já cadastrado no sistema." }, { status: 400 });
+    }
+
+    // 1b. Verificar se o nome de usuário (username) já está em uso
+    const { data: existingUsername } = await supabaseAdmin
+      .from("users")
+      .select("id")
+      .eq("username", username.toLowerCase().trim())
+      .maybeSingle();
+
+    if (existingUsername) {
+      return NextResponse.json({ error: "Este nome de usuário já está em uso por outro parceiro." }, { status: 400 });
     }
 
     // 2. Determinar se há padrinho de subafiliação (parent_affiliate_id)
@@ -57,6 +68,7 @@ export async function POST(req: Request) {
       .insert([
         {
           email: email.toLowerCase(),
+          username: username.toLowerCase().trim(),
           phone: cleanPhone,
           password_hash: hashedPassword,
           is_affiliate: true,

@@ -4,17 +4,18 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
-import { Lock, Mail, ArrowRight, ShieldCheck } from "lucide-react";
+import { Lock, Mail, ArrowRight, ShieldCheck, Eye, EyeOff } from "lucide-react";
 
 export default function AffiliateLogin() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) {
+    if (!identifier || !password) {
       toast.error("Por favor, preencha todos os campos.");
       return;
     }
@@ -24,7 +25,7 @@ export default function AffiliateLogin() {
       const res = await fetch("/api/affiliates/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ identifier, password }),
       });
 
       const data = await res.json();
@@ -66,40 +67,49 @@ export default function AffiliateLogin() {
 
         {/* FORM */}
         <form onSubmit={handleLogin} className="space-y-4">
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-slate-400">E-mail</label>
+          <div className="space-y-1 text-left">
+            <label className="text-xs font-semibold text-slate-400">E-mail, Usuário ou Telefone *</label>
             <div className="relative">
               <Mail className="absolute left-3.5 top-3.5 h-5 w-5 text-slate-500" />
               <input
-                type="email"
-                placeholder="exemplo@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                type="text"
+                placeholder="E-mail, utilizador ou número"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
                 className="w-full pl-11 pr-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all duration-200 text-sm"
+                required
               />
             </div>
           </div>
 
-          <div className="space-y-1">
+          <div className="space-y-1 text-left">
             <div className="flex justify-between items-center">
-              <label className="text-xs font-semibold text-slate-400">Palavra-passe</label>
+              <label className="text-xs font-semibold text-slate-400">Palavra-passe *</label>
             </div>
             <div className="relative">
               <Lock className="absolute left-3.5 top-3.5 h-5 w-5 text-slate-500" />
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-11 pr-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all duration-200 text-sm"
+                className="w-full pl-11 pr-12 py-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all duration-200 text-sm"
+                required
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3.5 top-3.5 text-slate-500 hover:text-slate-300 transition-colors cursor-pointer"
+              >
+                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+              </button>
             </div>
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3.5 bg-emerald-500 text-slate-950 rounded-xl font-extrabold hover:bg-emerald-400 active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 text-sm shadow-lg shadow-emerald-500/20 cursor-pointer"
+            className="w-full py-3.5 bg-emerald-500 text-slate-950 rounded-xl font-extrabold hover:bg-emerald-400 active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 text-sm shadow-lg shadow-emerald-500/20 cursor-pointer pt-2"
           >
             {loading ? "A processar..." : "ENTRAR NO PAINEL"}
             {!loading && <ArrowRight className="h-4 w-4" />}

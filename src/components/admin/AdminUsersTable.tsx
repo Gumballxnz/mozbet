@@ -158,8 +158,7 @@ export function AdminUsersTable({ initialUsers, currentUserRole, totalCount = 0 
     const searchClean = search.replace(/\D/g, "");
 
     const matchesPhone = u.phone.includes(search) || 
-                         (searchClean && phoneClean.includes(searchClean)) ||
-                         maskPhone(u.phone).toLowerCase().includes(searchLower);
+                         (searchClean && phoneClean.includes(searchClean));
 
     const matchesId = u.id.toLowerCase().includes(searchLower);
     const matchesEmail = u.email && u.email.toLowerCase().includes(searchLower);

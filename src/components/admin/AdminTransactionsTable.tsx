@@ -18,6 +18,7 @@ interface Transaction {
   status: string;
   created_at: string;
   phone?: string;
+  bonusAmount?: number;
 }
 
 export function AdminTransactionsTable({ 

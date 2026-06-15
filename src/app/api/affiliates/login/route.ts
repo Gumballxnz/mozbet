@@ -11,11 +11,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Preencha todos os campos." }, { status: 400 });
     }
 
-    // 1. Buscar afiliado pelo e-mail, nome de usuário ou telefone
+    const cleanIdentifier = loginIdentifier.replace(/\D/g, "");
+    
+    // Preparar as possibilidades de busca
+    const emailWithAff = loginIdentifier.includes("@") ? `aff_${loginIdentifier}` : loginIdentifier;
+    const phoneWithAff = cleanIdentifier ? `aff_${cleanIdentifier}` : loginIdentifier;
+
+    // 1. Buscar afiliado pelo e-mail, nome de usuário ou telefone (normal ou com prefixo aff_)
     const { data: user, error } = await supabaseAdmin
       .from("users")
       .select("id, email, password_hash, is_affiliate, is_active, affiliate_code")
-      .or(`email.eq.${loginIdentifier},username.eq.${loginIdentifier},phone.eq.${loginIdentifier}`)
+      .or(`email.eq.${loginIdentifier},email.eq.${emailWithAff},username.eq.${loginIdentifier},phone.eq.${loginIdentifier},phone.eq.${phoneWithAff}`)
       .maybeSingle();
 
     if (error || !user) {

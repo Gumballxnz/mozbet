@@ -17,15 +17,18 @@ export async function POST(req: Request) {
     const cleanPhone = phone.replace(/\D/g, "");
     const cleanSaqueNumber = saqueNumber.replace(/\D/g, "");
 
-    // 1. Verificar se o e-mail ou telefone já estão em uso
+    const affPhone = `aff_${cleanPhone}`;
+    const affEmail = `aff_${email.toLowerCase().trim()}`;
+
+    // 1. Verificar se o e-mail ou telefone já estão em uso POR OUTRO AFILIADO
     const { data: existingUser } = await supabaseAdmin
       .from("users")
       .select("id")
-      .or(`email.eq.${email},phone.eq.${cleanPhone}`)
+      .or(`email.eq.${affEmail},phone.eq.${affPhone}`)
       .maybeSingle();
 
     if (existingUser) {
-      return NextResponse.json({ error: "E-mail ou número de telefone já cadastrado no sistema." }, { status: 400 });
+      return NextResponse.json({ error: "E-mail ou número de telefone já cadastrado no sistema de parceiros." }, { status: 400 });
     }
 
     // 1b. Verificar se o nome de usuário (username) já está em uso
@@ -63,21 +66,19 @@ export async function POST(req: Request) {
     const hashedPassword = await bcrypt.hash(password, salt);
 
     // 5. Inserir novo afiliado na tabela users
-    // NOTA: O nome do titular da conta móvel (saqueName) é armazenado no affiliate_name
-    // no formato "Nome do Afiliado | Titular: Nome do Titular" para preservar ambos os dados.
     const affiliateDisplayName = saqueName && saqueName !== name
       ? `${name} | Titular: ${saqueName}`
       : name;
 
     const insertPayload: Record<string, unknown> = {
-      email: email.toLowerCase(),
+      email: affEmail,
       username: username.toLowerCase().trim(),
-      phone: cleanPhone,
+      phone: affPhone,
       password_hash: hashedPassword,
       is_affiliate: true,
       affiliate_code: affiliateCode,
       affiliate_name: affiliateDisplayName,
-      affiliate_phone: cleanPhone,
+      affiliate_phone: cleanPhone, // Guardar o telefone limpo original para contato/saques
       affiliate_saque_number: cleanSaqueNumber,
       affiliate_saque_method: saqueMethod,
       parent_affiliate_id: parentAffiliateId,

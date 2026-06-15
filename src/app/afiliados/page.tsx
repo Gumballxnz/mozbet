@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { 
   TrendingUp, Users, Wallet, CreditCard, Copy, LogOut, Check,
   Settings, HelpCircle, Code, BarChart2, ShieldAlert, Handshake,
-  ExternalLink, MessageCircle, ChevronRight
+  ExternalLink, MessageCircle, ChevronRight, Menu, X
 } from "lucide-react";
 
 interface Stats {
@@ -38,6 +38,7 @@ export default function AffiliateDashboard() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [copiedLink, setCopiedLink] = useState<string | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     fetchStats();
@@ -106,8 +107,44 @@ export default function AffiliateDashboard() {
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col md:flex-row font-sans">
       
+      {/* HEADER MOBILE */}
+      <header className="md:hidden bg-surface border-b border-white/5 h-16 px-4 flex items-center justify-between shrink-0 sticky top-0 z-40">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
+            <span className="text-primary glow-primary text-2xl leading-none">M</span>
+          </div>
+          <div>
+            <span className="text-lg font-extrabold tracking-tight text-white">
+              MOZ<span className="text-primary glow-primary">BET</span>
+            </span>
+            <span className="block text-[8px] text-primary font-bold tracking-[0.2em] uppercase -mt-0.5">
+              Partners Panel
+            </span>
+          </div>
+        </div>
+
+        <button
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          className="p-2 -mr-2 text-muted-foreground hover:text-white focus:outline-none transition-colors"
+        >
+          {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+        </button>
+      </header>
+
+      {/* Overlay de fundo no mobile */}
+      {mobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
       {/* SIDEBAR — Design MozBet */}
-      <aside className="w-full md:w-64 bg-surface border-b md:border-b-0 md:border-r border-white/5 flex flex-col shrink-0">
+      <aside className={`
+        fixed md:static inset-y-0 left-0 w-64 bg-surface border-r border-white/5 flex flex-col shrink-0 z-50 h-full
+        transform md:transform-none transition-transform duration-300 ease-in-out
+        ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
+      `}>
         
         {/* LOGO — Idêntico ao DesktopSidebar da MozBet */}
         <div className="p-5 h-16 flex items-center gap-2.5 border-b border-white/5">
@@ -140,7 +177,10 @@ export default function AffiliateDashboard() {
           {navItems.map((item) => (
             <button
               key={item.id}
-              onClick={() => setActiveTab(item.id)}
+              onClick={() => {
+                setActiveTab(item.id);
+                setMobileMenuOpen(false);
+              }}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
                 activeTab === item.id 
                   ? "bg-white/10 text-white" 
@@ -156,7 +196,10 @@ export default function AffiliateDashboard() {
         {/* BOTÃO SAIR */}
         <div className="p-3 border-t border-white/5">
           <button
-            onClick={handleLogout}
+            onClick={() => {
+              setMobileMenuOpen(false);
+              handleLogout();
+            }}
             className="w-full flex items-center justify-center gap-2 px-3 py-2.5 text-red-400 hover:bg-red-500/10 hover:text-red-300 font-semibold text-sm rounded-lg transition-all cursor-pointer"
           >
             <LogOut className="h-4 w-4" />

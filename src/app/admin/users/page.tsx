@@ -22,6 +22,7 @@ export default async function AdminUsersPage() {
   const { data: users, count } = await supabaseAdmin
     .from("users")
     .select("*", { count: "exact" })
+    .or("is_affiliate.is.null,is_affiliate.eq.false")
     .order("created_at", { ascending: false })
     .limit(30);
 

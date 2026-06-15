@@ -53,12 +53,24 @@ export function AdminUsersTable({ initialUsers, currentUserRole, totalCount = 0 
   useEffect(() => {
     const channel = supabase.channel('admin-users')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, payload => {
+        const isAffiliate = payload.new && (payload.new as any).is_affiliate === true;
+
         if (payload.eventType === 'INSERT') {
-          setUsers(prev => [payload.new as UserData, ...prev]);
+          if (!isAffiliate) {
+            setUsers(prev => [payload.new as UserData, ...prev]);
+          }
         } else if (payload.eventType === 'UPDATE') {
-          setUsers(prev => prev.map(u => u.id === payload.new.id ? { ...u, ...payload.new } : u));
-          if (selectedUser?.id === payload.new.id) {
-            setSelectedUser({ ...selectedUser, ...payload.new } as UserData);
+          if (isAffiliate) {
+            // Se virou afiliado, removemos da lista de jogadores comuns
+            setUsers(prev => prev.filter(u => u.id !== payload.new.id));
+            if (selectedUser?.id === payload.new.id) {
+              setSelectedUser(null);
+            }
+          } else {
+            setUsers(prev => prev.map(u => u.id === payload.new.id ? { ...u, ...payload.new } : u));
+            if (selectedUser?.id === payload.new.id) {
+              setSelectedUser({ ...selectedUser, ...payload.new } as UserData);
+            }
           }
         } else if (payload.eventType === 'DELETE') {
           setUsers(prev => prev.filter(u => u.id !== payload.old.id));
@@ -96,6 +108,7 @@ export function AdminUsersTable({ initialUsers, currentUserRole, totalCount = 0 
         let query = supabase
           .from("users")
           .select("*")
+          .or("is_affiliate.is.null,is_affiliate.eq.false")
           .order("created_at", { ascending: false });
 
         let orConditions = `id.ilike.%${term}%,phone.ilike.%${term}%,email.ilike.%${term}%`;
@@ -136,6 +149,7 @@ export function AdminUsersTable({ initialUsers, currentUserRole, totalCount = 0 
     const { data } = await supabase
       .from("users")
       .select("*")
+      .or("is_affiliate.is.null,is_affiliate.eq.false")
       .order("created_at", { ascending: false })
       .range(start, end);
 

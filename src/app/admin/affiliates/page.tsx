@@ -68,14 +68,14 @@ export default async function AdminAffiliatesPage() {
 
     return {
       id: aff.id,
-      email: aff.email,
+      email: aff.email?.startsWith("aff_") ? aff.email.replace("aff_", "") : aff.email,
       username: aff.username,
-      phone: aff.phone,
+      phone: aff.phone?.startsWith("aff_") ? aff.phone.replace("aff_", "") : aff.phone,
       created_at: aff.created_at,
       is_active: aff.is_active,
       code: aff.affiliate_code,
       name: displayName,
-      affPhone: aff.affiliate_phone || aff.phone,
+      affPhone: aff.affiliate_phone || (aff.phone?.startsWith("aff_") ? aff.phone.replace("aff_", "") : aff.phone),
       saqueNumber: aff.affiliate_saque_number || "",
       saqueMethod: aff.affiliate_saque_method || "mpesa",
       saqueName: extractedSaqueName,

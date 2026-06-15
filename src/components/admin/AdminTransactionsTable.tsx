@@ -287,10 +287,45 @@ export function AdminTransactionsTable({
       setLoadingMore(false);
     }
   };
+  // 1. Agrupar bônus e depósitos correspondentes baseados em proximidade de tempo (até 2 min)
+  const groupedTransactions: (Transaction & { bonusAmount?: number })[] = [];
+  const processedBonusIds = new Set<string>();
 
+  const depositsAndWithdraws = transactions.map(tx => ({ ...tx }));
 
+  depositsAndWithdraws.forEach(tx => {
+    if (tx.type === "DEPOSIT") {
+      const txTime = new Date(tx.created_at).getTime();
+      const matchingBonus = transactions.find(b => 
+        b.type === "BONUS" &&
+        b.user_id === tx.user_id &&
+        !processedBonusIds.has(b.id) &&
+        Math.abs(new Date(b.created_at).getTime() - txTime) < 120000 // 2 minutos
+      );
 
-  const filtered = transactions.filter(t => {
+      if (matchingBonus) {
+        tx.bonusAmount = matchingBonus.amount;
+        processedBonusIds.add(matchingBonus.id);
+      }
+    }
+  });
+
+  transactions.forEach(tx => {
+    if (tx.type === "BONUS") {
+      if (!processedBonusIds.has(tx.id)) {
+        groupedTransactions.push(tx);
+      }
+    } else {
+      const modified = depositsAndWithdraws.find(d => d.id === tx.id);
+      if (modified) {
+        groupedTransactions.push(modified);
+      } else {
+        groupedTransactions.push(tx);
+      }
+    }
+  });
+
+  const filtered = groupedTransactions.filter(t => {
     const matchesSearch = t.phone?.includes(search) || t.type.includes(search.toUpperCase());
     const matchesStatus = statusFilter === "ALL" || t.status === statusFilter;
     
@@ -308,12 +343,13 @@ export function AdminTransactionsTable({
   const handleDownloadCSV = () => {
     if (filtered.length === 0) return toast.error("Nenhuma transação para exportar.");
     
-    const headers = ["Data", "Tipo", "Telefone", "Valor", "Estado", "ID"];
+    const headers = ["Data", "Tipo", "Telefone", "Valor Pago", "Bónus Pago", "Estado", "ID"];
     const rows = filtered.map(t => [
       new Date(t.created_at).toLocaleString("pt-MZ"),
       t.type,
       `+258 ${t.phone}`,
       t.amount.toString(),
+      t.bonusAmount ? t.bonusAmount.toString() : "0",
       t.status,
       t.id
     ]);
@@ -342,7 +378,7 @@ export function AdminTransactionsTable({
             {typeFilter === "DEPOSIT" 
               ? "Monitorização Realtime de depósitos M-Pesa e E-Mola para Depósitos e Bónus." 
               : "Monitorização e aprovação manual de levantamentos de fundos."}
-            <span className="text-white font-bold ml-2">Total: {totalCount}</span>
+            <span className="text-white font-bold ml-2">Total: {filtered.length}</span>
           </p>
         </div>
         
@@ -452,8 +488,14 @@ export function AdminTransactionsTable({
                   <td className="px-6 py-4 font-mono-data text-gray-300">
                     +258 {tx.phone}
                   </td>
-                  <td className="px-6 py-4 font-mono-data font-black text-white text-lg">
-                    {formatMZN(tx.amount)}
+                  <td className="px-6 py-4 font-mono-data text-white align-middle">
+                    <div className="font-black text-lg">{formatMZN(tx.amount)}</div>
+                    {tx.bonusAmount !== undefined && (
+                      <div className="text-[10px] text-emerald-400 font-bold mt-0.5 whitespace-nowrap bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-md inline-flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                        + {formatMZN(tx.bonusAmount)} Bónus
+                      </div>
+                    )}
                   </td>
                   <td className="px-6 py-4 text-center">
                     {renderStatus(tx)}
@@ -488,8 +530,14 @@ export function AdminTransactionsTable({
                 <span className="text-[10px] text-gray-500 mt-1">{new Date(tx.created_at).toLocaleString("pt-MZ")}</span>
               </div>
               
-              <div className="text-right">
+              <div className="text-right flex flex-col items-end">
                 <span className="font-mono-data font-black text-white text-xl block">{formatMZN(tx.amount)}</span>
+                {tx.bonusAmount !== undefined && (
+                  <span className="inline-flex items-center gap-1 text-[10px] text-emerald-400 font-bold mt-1 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-md">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    + {formatMZN(tx.bonusAmount)} Bónus
+                  </span>
+                )}
               </div>
             </div>
 

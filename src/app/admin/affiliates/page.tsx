@@ -7,7 +7,7 @@ export default async function AdminAffiliatesPage() {
   // 1. Buscar todos os afiliados
   const { data: users } = await supabaseAdmin
     .from("users")
-    .select("id, email, username, phone, created_at, is_active, affiliate_code, affiliate_name, affiliate_phone, affiliate_saque_number, affiliate_saque_method, affiliate_saque_name, affiliate_balance")
+    .select("id, email, username, phone, created_at, is_active, affiliate_code, affiliate_name, affiliate_phone, affiliate_saque_number, affiliate_saque_method, affiliate_balance")
     .eq("is_affiliate", true)
     .order("created_at", { ascending: false });
 
@@ -56,6 +56,16 @@ export default async function AdminAffiliatesPage() {
     const totalDeposits = depositCommissions * 2;
     const netEarnings = Number((depositCommissions + subCommissions + winDeductions).toFixed(2));
 
+    // Extrair nome do titular se estiver concatenado no affiliate_name
+    const rawName = aff.affiliate_name || aff.username || "Sem Nome";
+    let displayName = rawName;
+    let extractedSaqueName = "";
+    if (rawName.includes(" | Titular: ")) {
+      const parts = rawName.split(" | Titular: ");
+      displayName = parts[0];
+      extractedSaqueName = parts[1];
+    }
+
     return {
       id: aff.id,
       email: aff.email,
@@ -64,11 +74,11 @@ export default async function AdminAffiliatesPage() {
       created_at: aff.created_at,
       is_active: aff.is_active,
       code: aff.affiliate_code,
-      name: aff.affiliate_name || aff.username || "Sem Nome",
+      name: displayName,
       affPhone: aff.affiliate_phone || aff.phone,
       saqueNumber: aff.affiliate_saque_number || "",
       saqueMethod: aff.affiliate_saque_method || "mpesa",
-      saqueName: aff.affiliate_saque_name || "",
+      saqueName: extractedSaqueName,
       balance: aff.affiliate_balance || 0,
       referredCount: myReferrals.length,
       totalDeposits: Number(totalDeposits.toFixed(2)),

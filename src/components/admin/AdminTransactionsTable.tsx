@@ -295,7 +295,8 @@ export function AdminTransactionsTable({
   const depositsAndWithdraws = transactions.map(tx => ({ ...tx }));
 
   depositsAndWithdraws.forEach(tx => {
-    if (tx.type === "DEPOSIT") {
+    // Só associar bónus a depósitos que foram COMPLETED (evita mostrar bónus em depósitos falhados)
+    if (tx.type === "DEPOSIT" && tx.status === "COMPLETED") {
       const txTime = new Date(tx.created_at).getTime();
       const matchingBonus = transactions.find(b => 
         b.type === "BONUS" &&

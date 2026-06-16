@@ -43,6 +43,7 @@ interface ReferralUser {
   balance: number;
   created_at: string;
   is_active: boolean;
+  totalDeposited?: number;
 }
 
 export function AdminAffiliateDetails({ 
@@ -477,6 +478,7 @@ export function AdminAffiliateDetails({
                 <th className="px-6 py-4">Jogador (ID)</th>
                 <th className="px-6 py-4">Telefone</th>
                 <th className="px-6 py-4">Data Cadastro</th>
+                <th className="px-6 py-4">Total Depositado</th>
                 <th className="px-6 py-4">Saldo em Caixa</th>
                 <th className="px-6 py-4">Status</th>
                 <th className="px-6 py-4 text-right">Ação</th>
@@ -493,6 +495,9 @@ export function AdminAffiliateDetails({
                   </td>
                   <td className="px-6 py-4 text-xs text-gray-400">
                     {new Date(ref.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                  </td>
+                  <td className="px-6 py-4 font-mono font-bold text-emerald-400 text-sm">
+                    {formatMZN(ref.totalDeposited || 0)}
                   </td>
                   <td className="px-6 py-4 font-mono font-bold text-primary text-sm">
                     {formatMZN(ref.balance)}

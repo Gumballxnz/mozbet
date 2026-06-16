@@ -49,14 +49,36 @@ export default async function AffiliateDetailsPage({ params }: PageProps) {
     notFound();
   }
 
-  // 3. Buscar indicados diretos
+  // 3. Buscar indicados diretos e calcular total de depósitos de cada um
   const { data: referralsData } = await supabaseAdmin
     .from("users")
     .select("id, phone, email, balance, created_at, is_active")
     .eq("referrer_id", id)
     .order("created_at", { ascending: false });
 
-  const referrals = referralsData || [];
+  const referralIds = referralsData?.map(r => r.id) || [];
+  const depositsMap: Record<string, number> = {};
+
+  if (referralIds.length > 0) {
+    const { data: txsSums } = await supabaseAdmin
+      .from("transactions")
+      .select("user_id, amount")
+      .eq("type", "DEPOSIT")
+      .eq("status", "COMPLETED")
+      .in("user_id", referralIds);
+
+    if (txsSums) {
+      txsSums.forEach(tx => {
+        const amt = Number(tx.amount);
+        depositsMap[tx.user_id] = (depositsMap[tx.user_id] || 0) + amt;
+      });
+    }
+  }
+
+  const referrals = (referralsData || []).map(r => ({
+    ...r,
+    totalDeposited: depositsMap[r.id] || 0
+  }));
 
   // 4. Buscar transações de comissão deste afiliado
   const { data: txsData } = await supabaseAdmin

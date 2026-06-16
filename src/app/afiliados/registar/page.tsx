@@ -314,7 +314,7 @@ export default function AffiliateRegister() {
             Partners Program
           </p>
           <h2 className="text-xl font-bold text-slate-100 pt-2">
-            Registe-se e ganhe 50% de comissões!
+            Registe-se e ganhe 70% de comissões!
           </h2>
           <p className="text-xs text-slate-500">
             Preencha o formulário abaixo para começar a faturar.

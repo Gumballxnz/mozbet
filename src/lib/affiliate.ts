@@ -5,8 +5,8 @@ import { supabaseAdmin } from "@/lib/auth-server";
  * correspondentes para o afiliado padrinho e o subafiliado de nível superior (padrinho do afiliado).
  * 
  * Lógica:
- * - Depósito: Afiliado ganha +50% de comissão.
- * - Vitória em Jogo (WIN): Afiliado é penalizado em -50% do valor ganho pelo jogador (deduzido dos seus ganhos, podendo ficar negativo).
+ * - Depósito: Afiliado ganha comissão dinâmica (padrão 70%, configurável via admin).
+ * - Vitória em Jogo (WIN): Afiliado é penalizado na mesma taxa de comissão sobre o valor ganho pelo jogador (deduzido dos seus ganhos, podendo ficar negativo).
  * - Subafiliação: O padrinho do afiliado (parent_affiliate_id) recebe 15% de comissão sobre a movimentação líquida do subafiliado.
  * 
  * @param userId ID do jogador indicado que gerou a ação.

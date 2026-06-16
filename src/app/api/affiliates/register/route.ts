@@ -125,7 +125,7 @@ export async function POST(req: Request) {
             <div style="padding: 40px 30px;">
               <h2 style="color: #ffffff; font-size: 22px; margin-top: 0;">Olá, ${name}!</h2>
               <p style="color: #cbd5e1; line-height: 1.6; font-size: 15px;">
-                A tua conta de parceiro foi criada com sucesso! A partir de agora, tu recebes **50% de comissão** sobre cada depósito feito pelos teus indicados. Caso eles obtenham lucros nos jogos, esse valor é deduzido proporcionalmente.
+                A tua conta de parceiro foi criada com sucesso! A partir de agora, tu recebes **70% de comissão** sobre cada depósito feito pelos teus indicados. Caso eles obtenham lucros nos jogos, esse valor é deduzido proporcionalmente.
               </p>
               
               <div style="background-color: #1e293b; padding: 25px; border-radius: 12px; margin: 30px 0; border: 1px solid #334155;">

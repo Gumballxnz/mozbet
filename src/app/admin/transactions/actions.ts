@@ -321,3 +321,102 @@ export async function rejectAllPendingWithdrawals() {
     return { success: false, error: err.message || "Erro ao rejeitar saques em lote" };
   }
 }
+
+export async function searchUsersAdmin(term: string) {
+  try {
+    const cleanPhoneSearch = term.replace(/\D/g, "");
+    
+    let query = supabaseAdmin
+      .from("users")
+      .select("*")
+      .or("is_affiliate.is.null,is_affiliate.eq.false")
+      .order("created_at", { ascending: false });
+
+    let roleFilter = "";
+    const termLower = term.toLowerCase().trim();
+    if ("administrador".includes(termLower) || "admin".includes(termLower)) {
+      roleFilter = "admin";
+    } else if ("proprietário".includes(termLower) || "proprietario".includes(termLower) || "dono".includes(termLower) || "super".includes(termLower)) {
+      roleFilter = "super_admin";
+    } else if ("utilizador".includes(termLower) || "user".includes(termLower) || "cliente".includes(termLower)) {
+      roleFilter = "user";
+    }
+
+    let orConditions = `id.ilike.%${term}%,phone.ilike.%${term}%,email.ilike.%${term}%`;
+    if (cleanPhoneSearch && cleanPhoneSearch.length > 2) {
+      orConditions += `,phone.ilike.%${cleanPhoneSearch}%`;
+    }
+    if (roleFilter) {
+      orConditions += `,role.eq.${roleFilter}`;
+    }
+    
+    query = query.or(orConditions);
+
+    const { data, error } = await query.limit(50);
+    if (error) throw error;
+
+    const authDataRaw = await supabaseAdmin.auth.admin.listUsers().catch(() => null);
+    const authUsers = authDataRaw?.data?.users || [];
+    
+    return (data || []).map(u => {
+      const authUser = authUsers.find((au: any) => au.id === u.id);
+      return {
+        ...u,
+        role: u.role || (u.is_admin ? 'super_admin' : 'user'),
+        email: u.email || authUser?.email || null
+      };
+    });
+  } catch (err: any) {
+    console.error("Erro na busca de usuários por admin:", err);
+    return [];
+  }
+}
+
+export async function searchTransactionsAdmin(term: string, typeFilter?: "DEPOSIT" | "WITHDRAW") {
+  try {
+    const cleanPhoneSearch = term.replace(/\D/g, "");
+    
+    let userIds: string[] = [];
+    if (cleanPhoneSearch && cleanPhoneSearch.length > 2) {
+      const { data: matchedUsers } = await supabaseAdmin
+        .from("users")
+        .select("id")
+        .or(`phone.ilike.%${cleanPhoneSearch}%,phone.ilike.%${term}%`);
+      
+      if (matchedUsers && matchedUsers.length > 0) {
+        userIds = matchedUsers.map(u => u.id);
+      }
+    }
+
+    let query = supabaseAdmin
+      .from("transactions")
+      .select("*, users(phone)");
+
+    if (typeFilter === "DEPOSIT") {
+      query = query.in("type", ["DEPOSIT", "BONUS"]);
+    } else if (typeFilter === "WITHDRAW") {
+      query = query.eq("type", "WITHDRAW");
+    }
+
+    let orConditions = `id.ilike.%${term}%,phone.ilike.%${term}%`;
+    if (userIds.length > 0) {
+      orConditions += `,user_id.in.(${userIds.join(",")})`;
+    }
+    
+    query = query.or(orConditions);
+
+    const { data: transactionsRaw, error } = await query
+      .order("created_at", { ascending: false })
+      .limit(100);
+
+    if (error) throw error;
+
+    return transactionsRaw?.map(tx => ({
+      ...tx,
+      phone: tx.phone || tx.users?.phone || 'Desconhecido'
+    })) || [];
+  } catch (err: any) {
+    console.error("Erro ao pesquisar transações por admin:", err);
+    return [];
+  }
+}

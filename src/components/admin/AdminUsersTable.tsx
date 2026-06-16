@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { searchUsersAdmin } from "@/app/admin/transactions/actions";
 
 interface UserData {
   id: string;
@@ -72,7 +73,7 @@ export function AdminUsersTable({ initialUsers, currentUserRole, totalCount = 0 
   // Busca Dinâmica no Banco de Dados com Debounce e suporte a termos em Português
   useEffect(() => {
     const delayDebounce = setTimeout(async () => {
-      const term = search.trim().toLowerCase();
+      const term = search.trim();
       if (!term) {
         setUsers(initialUsers);
         setPage(1);
@@ -81,42 +82,8 @@ export function AdminUsersTable({ initialUsers, currentUserRole, totalCount = 0 
 
       setLoadingMore(true);
       try {
-        let roleFilter = "";
-        if ("administrador".includes(term) || "admin".includes(term)) {
-          roleFilter = "admin";
-        } else if ("proprietário".includes(term) || "proprietario".includes(term) || "dono".includes(term) || "super".includes(term)) {
-          roleFilter = "super_admin";
-        } else if ("utilizador".includes(term) || "user".includes(term) || "cliente".includes(term)) {
-          roleFilter = "user";
-        }
-
-        const cleanPhoneSearch = term.replace(/\D/g, "");
-
-        let query = supabase
-          .from("users")
-          .select("*")
-          .or("is_affiliate.is.null,is_affiliate.eq.false")
-          .order("created_at", { ascending: false });
-
-        let orConditions = `id.ilike.%${term}%,phone.ilike.%${term}%,email.ilike.%${term}%`;
-        if (cleanPhoneSearch && cleanPhoneSearch.length > 2) {
-          orConditions += `,phone.ilike.%${cleanPhoneSearch}%`;
-        }
-        if (roleFilter) {
-          orConditions += `,role.eq.${roleFilter}`;
-        }
-        
-        query = query.or(orConditions);
-
-        const { data, error } = await query.limit(50);
-        if (error) throw error;
-
-        const mapped = (data || []).map(u => ({
-          ...u,
-          role: u.role || (u.is_admin ? 'super_admin' : 'user')
-        }));
-
-        setUsers(mapped as UserData[]);
+        const data = await searchUsersAdmin(term);
+        setUsers(data as UserData[]);
       } catch (err: any) {
         console.error("Erro na busca dinâmica:", err);
       } finally {

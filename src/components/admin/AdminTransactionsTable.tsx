@@ -7,7 +7,7 @@ import { ArrowDownLeft, ArrowUpRight, CheckCircle2, XCircle, Search } from "luci
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { getLatestTransactions, getMoreTransactions, approveWithdraw, rejectWithdraw, approveAllPendingWithdrawals, rejectAllPendingWithdrawals } from "@/app/admin/transactions/actions";
+import { getLatestTransactions, getMoreTransactions, approveWithdraw, rejectWithdraw, approveAllPendingWithdrawals, rejectAllPendingWithdrawals, searchTransactionsAdmin } from "@/app/admin/transactions/actions";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 interface Transaction {
@@ -275,6 +275,26 @@ export function AdminTransactionsTable({
     };
   }, [typeFilter]);
 
+  // Busca Dinâmica de Transações no Banco de Dados com Debounce
+  useEffect(() => {
+    const delayDebounce = setTimeout(async () => {
+      const term = search.trim();
+      if (!term) {
+        setTransactions(initialTransactions);
+        return;
+      }
+
+      try {
+        const data = await searchTransactionsAdmin(term, typeFilter);
+        setTransactions(data as Transaction[]);
+      } catch (err) {
+        console.error("Erro na busca dinâmica de transações:", err);
+      }
+    }, 400);
+
+    return () => clearTimeout(delayDebounce);
+  }, [search, initialTransactions, typeFilter]);
+
   const handleLoadMore = async () => {
     setLoadingMore(true);
     try {
@@ -328,7 +348,10 @@ export function AdminTransactionsTable({
   });
 
   const filtered = groupedTransactions.filter(t => {
-    const matchesSearch = t.phone?.includes(search) || t.type.includes(search.toUpperCase());
+    const matchesSearch = !search.trim() || 
+                          t.phone?.includes(search) || 
+                          t.type.includes(search.toUpperCase()) || 
+                          t.id.includes(search);
     const matchesStatus = statusFilter === "ALL" || t.status === statusFilter;
     
     if (!startDate && !endDate) return matchesSearch && matchesStatus;

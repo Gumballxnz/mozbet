@@ -24,9 +24,14 @@ export async function middleware(request: NextRequest) {
   const host = request.headers.get("host") || "";
   const isAffiliatesSubdomain = host.startsWith("afiliados.mozbet.online") || host.startsWith("afiliados.localhost");
   
+  if (isAffiliatesSubdomain && (url === "/afiliados" || url.startsWith("/afiliados/"))) {
+    let cleanPath = url.replace(/^\/afiliados/, "");
+    if (!cleanPath) cleanPath = "/";
+    return NextResponse.redirect(new URL(cleanPath, request.url));
+  }
+  
   let targetUrl = url;
   if (isAffiliatesSubdomain) {
-    // Evita reescrever caminhos de arquivos estáticos como favicon.ico, icon.svg, etc., ou requisições de API/_next
     const isStaticFile = url.includes(".") || url.startsWith("/_next/") || url.includes("/api/") || url === "/icon.svg" || url === "/favicon.ico";
     if (url === "/") {
       targetUrl = "/afiliados";

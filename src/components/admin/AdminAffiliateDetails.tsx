@@ -65,6 +65,14 @@ export function AdminAffiliateDetails({
 
   // Pagamento manual (payout)
   const [payoutModalOpen, setPayoutModalOpen] = useState(false);
+
+  // Modal de confirmação para banir/reativar
+  const [actionModal, setActionModal] = useState<{
+    isOpen: boolean;
+    action: 'ban' | 'activate';
+    title: string;
+    description: string;
+  } | null>(null);
   const [isProcessingPayout, setIsProcessingPayout] = useState(false);
 
   // Cópia do Telefone
@@ -371,7 +379,12 @@ export function AdminAffiliateDetails({
                 <Button 
                   variant="outline" 
                   className="w-full border-[#2A2F40] bg-[#1A1D27] hover:bg-red-500/20 hover:text-red-500 justify-start h-11 font-bold text-xs rounded-xl cursor-pointer"
-                  onClick={() => executeAction('ban', affiliate.id)}
+                  onClick={() => setActionModal({
+                    isOpen: true,
+                    action: 'ban',
+                    title: 'Banir Parceiro',
+                    description: `Tem a certeza que deseja BANIR o parceiro "${affiliate.name}" (${affiliate.code})? O parceiro perderá o acesso ao painel e não poderá gerar comissões.`
+                  })}
                 >
                   <Ban className="w-4 h-4 mr-2.5 text-red-500" />
                   Banir Parceiro
@@ -380,7 +393,12 @@ export function AdminAffiliateDetails({
                 <Button 
                   variant="outline" 
                   className="w-full border-[#2A2F40] bg-[#1A1D27] hover:bg-primary/20 hover:text-primary justify-start h-11 font-bold text-xs rounded-xl cursor-pointer"
-                  onClick={() => executeAction('activate', affiliate.id)}
+                  onClick={() => setActionModal({
+                    isOpen: true,
+                    action: 'activate',
+                    title: 'Reativar Parceiro',
+                    description: `Tem a certeza que deseja REATIVAR o parceiro "${affiliate.name}" (${affiliate.code})? O parceiro voltará a ter acesso ao painel e poderá gerar comissões.`
+                  })}
                 >
                   <UserCheck className="w-4 h-4 mr-2.5 text-primary" />
                   Reativar Parceiro
@@ -513,6 +531,47 @@ export function AdminAffiliateDetails({
               className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold cursor-pointer border-none shadow-[0_0_15px_rgba(16,185,129,0.2)]"
             >
               {isProcessingPayout ? "A processar..." : "Confirmar Pagamento Realizado"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* CONFIRMAÇÃO DE BANIR/REATIVAR PARCEIRO */}
+      <Dialog open={!!actionModal?.isOpen} onOpenChange={(open) => { if (!open) setActionModal(null); }}>
+        <DialogContent className="sm:max-w-[420px] bg-[#141516] border border-[#2A2F40]/50 text-white rounded-3xl p-6 shadow-2xl focus:outline-none">
+          <DialogHeader>
+            <DialogTitle className={`text-lg font-black uppercase tracking-wider flex items-center gap-2 ${
+              actionModal?.action === 'ban' ? 'text-red-500' : 'text-emerald-400'
+            }`}>
+              {actionModal?.action === 'ban' ? <Ban className="w-5 h-5" /> : <UserCheck className="w-5 h-5" />}
+              {actionModal?.title}
+            </DialogTitle>
+            <DialogDescription className="text-sm text-gray-400 mt-2 leading-relaxed">
+              {actionModal?.description}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-3 mt-6">
+            <Button
+              variant="outline"
+              onClick={() => setActionModal(null)}
+              className="bg-[#1A1C24] hover:bg-white/5 border-[#2A2F40] text-gray-300 hover:text-white rounded-xl h-11 px-4 cursor-pointer"
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => {
+                if (actionModal) {
+                  executeAction(actionModal.action, affiliate.id);
+                  setActionModal(null);
+                }
+              }}
+              className={`font-black rounded-xl h-11 px-5 cursor-pointer border-none ${
+                actionModal?.action === 'ban'
+                  ? 'bg-red-600 hover:bg-red-700 text-white shadow-[0_0_15px_rgba(239,68,68,0.2)]'
+                  : 'bg-primary hover:bg-primary/90 text-black shadow-[0_0_15px_rgba(0,255,127,0.2)]'
+              }`}
+            >
+              {actionModal?.action === 'ban' ? 'Confirmar Banimento' : 'Confirmar Reativação'}
             </Button>
           </div>
         </DialogContent>

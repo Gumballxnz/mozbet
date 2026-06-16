@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { formatMZN } from "@/lib/utils";
 import { Search, ShieldAlert, UserCheck, Settings, Mail, Ban, PauseCircle, HandCoins, Trash2, Megaphone, Send, AtSign, MessageCircle } from "lucide-react";
@@ -24,19 +25,11 @@ interface UserData {
 }
 
 export function AdminUsersTable({ initialUsers, currentUserRole, totalCount = 0 }: { initialUsers: UserData[], currentUserRole: string, totalCount?: number }) {
+  const router = useRouter();
   const [users, setUsers] = useState<UserData[]>(initialUsers);
   const [search, setSearch] = useState("");
-  const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
   const [page, setPage] = useState(1);
   const [loadingMore, setLoadingMore] = useState(false);
-
-  // Modal de confirmação customizado para ações administrativas sensíveis (deletar utilizador)
-  const [confirmModal, setConfirmModal] = useState<{
-    isOpen: boolean;
-    title: string;
-    description: string;
-    onConfirm: () => void;
-  } | null>(null);
   
   // Modais de envio de comunicação
   const [globalModalOpen, setGlobalModalOpen] = useState(false);
@@ -63,14 +56,8 @@ export function AdminUsersTable({ initialUsers, currentUserRole, totalCount = 0 
           if (isAffiliate) {
             // Se virou afiliado, removemos da lista de jogadores comuns
             setUsers(prev => prev.filter(u => u.id !== payload.new.id));
-            if (selectedUser?.id === payload.new.id) {
-              setSelectedUser(null);
-            }
           } else {
             setUsers(prev => prev.map(u => u.id === payload.new.id ? { ...u, ...payload.new } : u));
-            if (selectedUser?.id === payload.new.id) {
-              setSelectedUser({ ...selectedUser, ...payload.new } as UserData);
-            }
           }
         } else if (payload.eventType === 'DELETE') {
           setUsers(prev => prev.filter(u => u.id !== payload.old.id));
@@ -81,7 +68,7 @@ export function AdminUsersTable({ initialUsers, currentUserRole, totalCount = 0 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [selectedUser]);
+  }, []);
   // Busca Dinâmica no Banco de Dados com Debounce e suporte a termos em Português
   useEffect(() => {
     const delayDebounce = setTimeout(async () => {
@@ -176,85 +163,9 @@ export function AdminUsersTable({ initialUsers, currentUserRole, totalCount = 0 
 
     const matchesId = u.id.toLowerCase().includes(searchLower);
     const matchesEmail = u.email && u.email.toLowerCase().includes(searchLower);
-    const matchesRole = roleText.includes(searchLower);
-
     return matchesPhone || matchesId || matchesEmail || matchesRole;
   });
-  const executeAction = async (action: 'ban' | 'suspend' | 'activate' | 'delete' | 'promote' | 'demote', userId: string) => {
-    try {
-      toast.loading("A executar...", { id: "admin-action" });
-      const res = await fetch("/api/admin/users/action", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action, userId })
-      });
-      
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Erro ao executar ação");
-      
-      toast.success(data.message || "Ação concluída.", { id: "admin-action" });
-      
-      // Update local state instantly (Optimistic UI)
-      if (action === 'delete') {
-        setSelectedUser(null);
-        setUsers(prev => prev.filter(u => u.id !== userId));
-      } else {
-        const updates: Partial<UserData> = {};
-        if (action === 'ban' || action === 'suspend') updates.is_active = false;
-        if (action === 'activate') updates.is_active = true;
-        if (action === 'promote') { updates.role = 'admin'; updates.is_admin = true; }
-        if (action === 'demote') { updates.role = 'user'; updates.is_admin = false; }
-        
-        setUsers(prev => prev.map(u => u.id === userId ? { ...u, ...updates } : u));
-        if (selectedUser?.id === userId) {
-          setSelectedUser(prev => prev ? { ...prev, ...updates } : prev);
-        }
-      }
-    } catch (err: any) {
-      toast.error(err.message || "Erro ao executar ação", { id: "admin-action" });
-    }
-  };
 
-  const handleAction = async (action: 'ban' | 'suspend' | 'activate' | 'delete' | 'promote' | 'demote', userId: string) => {
-    if (action === 'delete') {
-      setConfirmModal({
-        isOpen: true,
-        title: "Apagar Ficha de Utilizador",
-        description: "Aviso: Apagar este utilizador removerá permanentemente todos os seus dados e histórico. Esta ação é irreversível. Deseja continuar?",
-        onConfirm: () => executeAction('delete', userId)
-      });
-      return;
-    }
-    // Ações normais (bloqueio/desbloqueio/cargo) podem rodar diretamente
-    executeAction(action, userId);
-  };
-
-  const handleRetainBalance = async (userId: string, currentStatus?: boolean) => {
-    try {
-      toast.loading("A atualizar saldo...", { id: "admin-action" });
-      const res = await fetch("/api/admin/users/action", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: 'retain', userId, balanceRetainedStatus: currentStatus })
-      });
-      
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Erro ao reter saldo");
-      
-      toast.success(!currentStatus ? "Saldo Bloqueado com sucesso. O cliente não pode jogar nem levantar." : "Saldo desbloqueado!", { id: "admin-action" });
-      
-      // Update local state instantly
-      const updates = { balance_retained: !currentStatus };
-      setUsers(prev => prev.map(u => u.id === userId ? { ...u, ...updates } : u));
-      if (selectedUser?.id === userId) {
-        setSelectedUser(prev => prev ? { ...prev, ...updates } : prev);
-      }
-    } catch (err: any) {
-      toast.error(err.message || "Erro ao reter saldo.", { id: "admin-action" });
-    }
-  };
-
-  // Envio Realtime para a BD - Notificação de Site
   const executeSendSiteMessage = async () => {
     if (!msgTitle || !msgBody) return toast.error("Preencha título e mensagem");
     
@@ -417,9 +328,9 @@ export function AdminUsersTable({ initialUsers, currentUserRole, totalCount = 0 
                   </td>
                   <td className="px-6 py-4 text-right align-middle">
                     <Button 
-                      onClick={() => setSelectedUser(user)}
+                      onClick={() => router.push(`/admin/users/${user.id}`)}
                       size="sm" 
-                      className="h-8 bg-[#2A2F40] hover:bg-primary hover:text-black font-bold text-white transition-all border-none"
+                      className="h-8 bg-[#2A2F40] hover:bg-primary hover:text-black font-bold text-white transition-all border-none cursor-pointer"
                     >
                       <Settings className="w-4 h-4 mr-2" />
                       Gerir Conta
@@ -500,7 +411,7 @@ export function AdminUsersTable({ initialUsers, currentUserRole, totalCount = 0 
                 </div>
                 
                 <Button 
-                  onClick={() => setSelectedUser(user)}
+                  onClick={() => router.push(`/admin/users/${user.id}`)}
                   size="sm" 
                   className="h-8 bg-[#2A2F40] hover:bg-primary hover:text-black font-bold text-xs text-white transition-all rounded-lg cursor-pointer"
                 >
@@ -532,190 +443,7 @@ export function AdminUsersTable({ initialUsers, currentUserRole, totalCount = 0 
         )}
       </div>
 
-      {/* MODAL DE CRM COMPLETO DO UTILIZADOR */}
-      <Dialog open={!!selectedUser} onOpenChange={(open) => !open && setSelectedUser(null)}>
-        <DialogContent className="sm:max-w-[650px] max-h-[90vh] overflow-y-auto bg-[#101116] border-[#2A2F40] text-white scrollbar-thin scrollbar-thumb-[#2A2F40]">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-black flex items-center gap-2">
-              <UserCheck className="w-6 h-6 text-primary" />
-              Jogador: <span className="font-mono-data text-primary text-sm select-all">#{selectedUser?.id}</span>
-            </DialogTitle>
-            <DialogDescription className="hidden">Painel de gestão do jogador</DialogDescription>
-          </DialogHeader>
-
-          {selectedUser && (
-            <div className="space-y-6 pt-2">
-              
-              <div className="bg-[#0B0C10] border border-[#2A2F40] p-4 rounded-xl flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <MessageCircle className="w-5 h-5 text-primary" />
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider block">Número de Telefone</span>
-                    <span className="text-lg font-black text-white">+{selectedUser.phone}</span>
-                  </div>
-                </div>
-                <div className="text-right">
-                   <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider block">Membro desde</span>
-                   <span className="text-xs font-bold text-gray-300">{new Date(selectedUser.created_at).toLocaleDateString('pt-BR')}</span>
-                </div>
-              </div>
-
-              {selectedUser.email ? (
-                 <div className="bg-sky-900/20 border border-sky-500/30 p-3 rounded-xl flex items-center gap-3">
-                   <Mail className="w-5 h-5 text-sky-400" />
-                   <span className="text-sm font-bold text-sky-100">{selectedUser.email}</span>
-                 </div>
-              ) : (
-                <div className="bg-gray-900/40 border border-gray-800 p-3 rounded-xl flex items-center gap-3">
-                   <AtSign className="w-4 h-4 text-gray-500" />
-                   <span className="text-xs font-bold text-gray-500">Sem E-mail Registado na Ficha</span>
-                 </div>
-              )}
-
-              {/* Stats Financeiras */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                <div className={`col-span-1 sm:col-span-2 p-4 rounded-xl border ${selectedUser.balance_retained ? 'bg-orange-950/40 border-orange-500/50' : 'bg-[#0B0C10] border-[#2A2F40]'}`}>
-                  <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider block mb-1">Saldo em Caixa</span>
-                  <span className={`text-3xl font-black ${selectedUser.balance_retained ? 'text-orange-500' : 'text-white glow-primary'}`}>{formatMZN(selectedUser.balance)}</span>
-                  {selectedUser.balance_retained && <span className="text-[10px] font-bold text-orange-400 mt-1 block">BLOQUEADO. UTILIZADOR NÃO PODE MOVER FUNDOS.</span>}
-                </div>
-                <div className="bg-[#0B0C10] p-4 rounded-xl border border-[#2A2F40] flex flex-col justify-center min-h-[80px]">
-                  <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider block mb-1">Depósitos Totais</span>
-                  <span className="text-lg font-bold text-gray-300">{formatMZN(selectedUser.total_deposits || 0)}</span>
-                </div>
-                <div className="bg-[#0B0C10] p-4 rounded-xl border border-[#2A2F40] flex flex-col justify-center min-h-[80px]">
-                  <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider block mb-1">Levantamentos</span>
-                  <span className="text-lg font-bold text-red-400">{formatMZN(selectedUser.total_withdrawn || 0)}</span>
-                </div>
-              </div>
-
-              {/* Acções Rápidas */}
-              <div>
-                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Comunicações Diretas (Realtime)</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
-                  <Button 
-                    variant="outline" 
-                    className="border-[#2A2F40] bg-[#1A1D27] hover:bg-primary/20 hover:text-primary flex items-center justify-center py-6 gap-3"
-                    onClick={() => openCommDialog('site', selectedUser.id)}
-                  >
-                    <Send className="w-5 h-5 text-primary" />
-                    <span className="text-sm font-bold">Enviar Notificação BD</span>
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    disabled={!selectedUser.email}
-                    className="border-[#2A2F40] bg-[#1A1D27] hover:bg-sky-500/20 hover:text-sky-400 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center py-6 gap-3"
-                    onClick={() => openCommDialog('email', selectedUser.id)}
-                  >
-                    <Mail className="w-5 h-5 text-sky-400" />
-                    <span className="text-sm font-bold">{selectedUser.email ? 'Enviar E-mail' : 'Sem E-mail Registado'}</span>
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="border-[#2A2F40] bg-[#1A1D27] hover:bg-green-500/20 hover:text-green-500 flex items-center justify-center py-6 gap-3 md:col-span-2 lg:col-span-1"
-                    onClick={() => window.open(`https://wa.me/258${selectedUser.phone.replace(/\D/g, '')}?text=${encodeURIComponent('Olá! Sou do suporte da MozBet.')}`, '_blank')}
-                  >
-                    <MessageCircle className="w-5 h-5 text-green-500" />
-                    <span className="text-sm font-bold">Mensagem WhatsApp</span>
-                  </Button>
-                </div>
-
-                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Auditoria e Segurança</h3>
-                
-                {/* Avisos de Hierarquia */}
-                {(selectedUser.role === 'super_admin' || (selectedUser.role === 'admin' && currentUserRole === 'admin')) && (
-                  <div className="bg-red-500/10 border border-red-500/30 p-3 rounded-xl mb-4">
-                    <p className="text-xs text-red-400 font-bold">⚠️ Acções bloqueadas por hierarquia. Sem permissão para modificar o estado deste membro.</p>
-                  </div>
-                )}
-
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  
-                  <Button 
-                    variant="outline" 
-                    disabled={selectedUser.role === 'super_admin' || (selectedUser.role === 'admin' && currentUserRole === 'admin')}
-                    className={`flex flex-col h-auto py-4 gap-2 disabled:opacity-30 disabled:cursor-not-allowed ${selectedUser.balance_retained ? 'border-orange-500 bg-orange-500/20 text-orange-400' : 'border-[#2A2F40] bg-[#1A1D27] hover:bg-orange-500/20 hover:text-orange-400 hover:border-orange-500/50'}`}
-                    onClick={() => handleRetainBalance(selectedUser.id, selectedUser.balance_retained)}
-                  >
-                    <HandCoins className="w-5 h-5" />
-                    <span className="text-[10px] font-bold text-center leading-tight">
-                      {selectedUser.balance_retained ? "Desbloquear Saldo" : "Reter e Congelar"}
-                    </span>
-                  </Button>
-
-                  {selectedUser.is_active ? (
-                    <Button 
-                      variant="outline" 
-                      disabled={selectedUser.role === 'super_admin' || (selectedUser.role === 'admin' && currentUserRole === 'admin')}
-                      className="border-[#2A2F40] bg-[#1A1D27] hover:bg-yellow-500/20 hover:text-yellow-500 hover:border-yellow-500/50 flex flex-col h-auto py-4 gap-2 disabled:opacity-30 disabled:cursor-not-allowed"
-                      onClick={() => handleAction('suspend', selectedUser.id)}
-                    >
-                      <PauseCircle className="w-5 h-5" />
-                      <span className="text-[10px] font-bold">Suspender</span>
-                    </Button>
-                  ) : (
-                    <Button 
-                      variant="outline" 
-                      disabled={selectedUser.role === 'super_admin' || (selectedUser.role === 'admin' && currentUserRole === 'admin')}
-                      className="border-[#2A2F40] bg-[#1A1D27] hover:bg-primary/20 hover:text-primary hover:border-primary/50 flex flex-col h-auto py-4 gap-2 disabled:opacity-30 disabled:cursor-not-allowed"
-                      onClick={() => handleAction('activate', selectedUser.id)}
-                    >
-                      <UserCheck className="w-5 h-5" />
-                      <span className="text-[10px] font-bold">Reativar</span>
-                    </Button>
-                  )}
-
-                  <Button 
-                    variant="outline" 
-                    disabled={selectedUser.role === 'super_admin' || (selectedUser.role === 'admin' && currentUserRole === 'admin')}
-                    className="border-[#2A2F40] bg-[#1A1D27] hover:bg-red-900/40 hover:text-red-500 hover:border-red-600 flex flex-col h-auto py-4 gap-2 disabled:opacity-30 disabled:cursor-not-allowed"
-                    onClick={() => handleAction('ban', selectedUser.id)}
-                  >
-                    <Ban className="w-5 h-5" />
-                    <span className="text-[10px] font-bold">Banimento Total</span>
-                  </Button>
-
-                  <Button 
-                    variant="outline" 
-                    disabled={selectedUser.role === 'super_admin' || (selectedUser.role === 'admin' && currentUserRole === 'admin')}
-                    className="border-red-900/30 bg-red-950/20 text-red-500 hover:bg-red-600 hover:text-white flex flex-col h-auto py-4 gap-2 disabled:opacity-30 disabled:cursor-not-allowed"
-                    onClick={() => handleAction('delete', selectedUser.id)}
-                  >
-                    <Trash2 className="w-5 h-5" />
-                    <span className="text-[10px] font-bold">Apagar Ficha</span>
-                  </Button>
-                </div>
-
-                {/* Gestão de Equipa (Apenas Super Admin) */}
-                {currentUserRole === 'super_admin' && (
-                  <div className="mt-8 pt-6 border-t border-[#2A2F40]">
-                    <h3 className="text-xs font-bold text-purple-400 uppercase tracking-wider mb-3">Gestão de Equipa (Dono)</h3>
-                    {selectedUser.role === 'user' && (
-                       <Button 
-                         className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold"
-                         onClick={() => handleAction('promote', selectedUser.id)}
-                       >
-                         <ShieldAlert className="w-4 h-4 mr-2" /> Promover a Administrador
-                       </Button>
-                    )}
-                    {selectedUser.role === 'admin' && (
-                       <Button 
-                         variant="destructive"
-                         className="w-full font-bold bg-red-600 hover:bg-red-700"
-                         onClick={() => handleAction('demote', selectedUser.id)}
-                       >
-                         <UserCheck className="w-4 h-4 mr-2" /> Despromover para Utilizador Normal
-                       </Button>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* MODAL DE CRM COMPLETO DO UTILIZADOR REMOVIDO EM PROL DA ROTA /admin/users/[id] */}
 
       {/* MODAL GLOBAL COMMUNICATION */}
       <Dialog open={globalModalOpen} onOpenChange={setGlobalModalOpen}>
@@ -830,35 +558,7 @@ export function AdminUsersTable({ initialUsers, currentUserRole, totalCount = 0 
         </DialogContent>
       </Dialog>
 
-      {/* Modal de Confirmação Customizado para exclusão */}
-      <Dialog open={!!confirmModal?.isOpen} onOpenChange={(open) => { if (!open) setConfirmModal(null); }}>
-        <DialogContent className="sm:max-w-[400px] bg-[#141516] border border-[#2A2F40]/50 text-white rounded-3xl p-6 shadow-2xl focus:outline-none">
-          <DialogTitle className="text-lg font-black text-white uppercase tracking-wider">
-            {confirmModal?.title}
-          </DialogTitle>
-          <DialogDescription className="text-sm text-gray-400 mt-2 leading-relaxed">
-            {confirmModal?.description}
-          </DialogDescription>
-          <div className="flex justify-end gap-3 mt-6">
-            <Button
-              variant="outline"
-              onClick={() => setConfirmModal(null)}
-              className="bg-[#1A1C24] hover:bg-white/5 border-[#2A2F40] text-gray-300 hover:text-white rounded-xl h-11 px-4 cursor-pointer"
-            >
-              Cancelar
-            </Button>
-            <Button
-              onClick={() => {
-                confirmModal?.onConfirm();
-                setConfirmModal(null);
-              }}
-              className="bg-red-600 hover:bg-red-700 text-white font-black rounded-xl h-11 px-5 cursor-pointer shadow-[0_0_15px_rgba(239,68,68,0.2)]"
-            >
-              Excluir
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* CONFIRM MODAL INDIVIDUAL REMOVIDO */}
     </div>
   );
 }

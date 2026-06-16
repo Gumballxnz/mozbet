@@ -34,17 +34,29 @@ export async function registerAffiliateActivity(
 
     const affiliateId = user.referrer_id;
 
-    // 2. Calcular a comissão direta do afiliado (50% sobre o depósito líquido de 7% de gateway)
+    // 2. Buscar dados do afiliado direto (taxa de comissão personalizada, saldo, padrinho)
+    const { data: affiliate } = await supabaseAdmin
+      .from("users")
+      .select("parent_affiliate_id, affiliate_balance, affiliate_percent")
+      .eq("id", affiliateId)
+      .single();
+
+    // Se o afiliado tiver taxa cadastrada no banco, usa ela (ex: 70% -> 0.70), senão usa o padrão de 70% (0.70)
+    const affiliateRate = affiliate && affiliate.affiliate_percent !== undefined && affiliate.affiliate_percent !== null
+      ? Number(affiliate.affiliate_percent) / 100
+      : 0.70;
+
+    // 3. Calcular a comissão direta do afiliado baseado na comissão dinâmica
     let directCommission = 0;
     if (type === 'DEPOSIT') {
-      directCommission = Number(((amount * 0.93) * 0.50).toFixed(2));
+      directCommission = Number(((amount * 0.93) * affiliateRate).toFixed(2));
     } else if (type === 'WIN') {
-      directCommission = -Number((amount * 0.50).toFixed(2));
+      directCommission = -Number((amount * affiliateRate).toFixed(2));
     }
 
     if (directCommission === 0) return;
 
-    // 3. Gravar transação do afiliado direto no banco
+    // 4. Gravar transação do afiliado direto no banco
     const { error: txError } = await supabaseAdmin
       .from("affiliate_transactions")
       .insert({
@@ -60,13 +72,7 @@ export async function registerAffiliateActivity(
       return;
     }
 
-    // 4. Atualizar o saldo do afiliado direto
-    const { data: affiliate } = await supabaseAdmin
-      .from("users")
-      .select("parent_affiliate_id, affiliate_balance")
-      .eq("id", affiliateId)
-      .single();
-
+    // 5. Atualizar o saldo do afiliado direto
     const currentBalance = Number(affiliate?.affiliate_balance || 0);
     const newBalance = Number((currentBalance + directCommission).toFixed(2));
 

@@ -1,12 +1,11 @@
-"use client";
-
 import { useState } from "react";
-import { Search, Settings, Ban, UserCheck, ShieldAlert, Wallet, Percent, Users, MessageCircle, ExternalLink } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Search, Settings, Ban, UserCheck, ShieldAlert, Wallet, Percent, Users, MessageCircle, ExternalLink, Copy } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { formatMZN } from "@/lib/utils";
+import { formatMZN, cleanMocambiquePhone } from "@/lib/utils";
 
 interface AffiliateData {
   id: string;
@@ -32,38 +31,11 @@ interface AffiliateData {
 }
 
 export function AdminAffiliatesTable({ initialAffiliates }: { initialAffiliates: AffiliateData[] }) {
+  const router = useRouter();
   const [affiliates, setAffiliates] = useState<AffiliateData[]>(initialAffiliates);
   const [search, setSearch] = useState("");
-  const [selectedAffiliate, setSelectedAffiliate] = useState<AffiliateData | null>(null);
 
-  const executeAction = async (action: 'ban' | 'activate', userId: string) => {
-    try {
-      toast.loading("A processar...", { id: "admin-aff-action" });
-      const res = await fetch("/api/admin/users/action", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action, userId })
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Erro ao executar ação");
-
-      toast.success(data.message || "Ação concluída com sucesso.", { id: "admin-aff-action" });
-
-      setAffiliates(prev => prev.map(a => {
-        if (a.id === userId) {
-          const updated = { ...a, is_active: action === 'activate' };
-          if (selectedAffiliate?.id === userId) {
-            setSelectedAffiliate(updated);
-          }
-          return updated;
-        }
-        return a;
-      }));
-    } catch (err: any) {
-      toast.error(err.message || "Erro ao executar ação", { id: "admin-aff-action" });
-    }
-  };
+  // Ações de afiliado individual migradas para a página de detalhes /admin/affiliates/[id]
 
   const filteredAffiliates = affiliates.filter(a => 
     a.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -154,13 +126,26 @@ export function AdminAffiliatesTable({ initialAffiliates }: { initialAffiliates:
                   <td className="px-6 py-4 align-middle text-xs">
                     <span className="font-bold text-white uppercase">{aff.saqueMethod}</span>
                     <span className="block text-[10px] text-emerald-400 font-bold">{aff.saqueName || "Sem Titular"}</span>
-                    <span className="block text-gray-400 font-mono">+{aff.saqueNumber}</span>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className="text-gray-400 font-mono">{cleanMocambiquePhone(aff.saqueNumber)}</span>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="w-5 h-5 text-gray-400 hover:text-white p-0 cursor-pointer"
+                        onClick={() => {
+                          navigator.clipboard.writeText(cleanMocambiquePhone(aff.saqueNumber));
+                          toast.success("Número de saque copiado!");
+                        }}
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
                   </td>
                   <td className="px-6 py-4 text-right align-middle">
                     <Button 
-                      onClick={() => setSelectedAffiliate(aff)}
+                      onClick={() => router.push(`/admin/affiliates/${aff.id}`)}
                       size="sm" 
-                      className="h-8 bg-[#2A2F40] hover:bg-primary hover:text-black font-bold text-white transition-all border-none"
+                      className="h-8 bg-[#2A2F40] hover:bg-primary hover:text-black font-bold text-white transition-all border-none cursor-pointer"
                     >
                       Detalhes CRM
                     </Button>
@@ -223,10 +208,23 @@ export function AdminAffiliatesTable({ initialAffiliates }: { initialAffiliates:
             <div className="flex justify-between items-center pt-2 border-t border-[#2A2F40]/30 text-xs">
               <div className="flex flex-col text-left">
                 <span className="text-[9px] text-emerald-400 font-bold">{aff.saqueName || "Sem Titular"}</span>
-                <span className="text-xs text-gray-400 font-mono">+{aff.saqueNumber}</span>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span className="text-xs text-gray-400 font-mono">{cleanMocambiquePhone(aff.saqueNumber)}</span>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="w-5 h-5 text-gray-400 hover:text-white p-0 cursor-pointer"
+                    onClick={() => {
+                      navigator.clipboard.writeText(cleanMocambiquePhone(aff.saqueNumber));
+                      toast.success("Número de saque copiado!");
+                    }}
+                  >
+                    <Copy className="w-3 h-3" />
+                  </Button>
+                </div>
               </div>
               <Button 
-                onClick={() => setSelectedAffiliate(aff)}
+                onClick={() => router.push(`/admin/affiliates/${aff.id}`)}
                 size="sm" 
                 className="h-8 bg-[#2A2F40] hover:bg-primary hover:text-black font-bold text-xs text-white cursor-pointer"
               >
@@ -237,209 +235,7 @@ export function AdminAffiliatesTable({ initialAffiliates }: { initialAffiliates:
         ))}
       </div>
 
-      {/* MODAL DETALHES CRM DO PARCEIRO */}
-      <Dialog open={!!selectedAffiliate} onOpenChange={(open) => !open && setSelectedAffiliate(null)}>
-        <DialogContent className="sm:max-w-[600px] bg-[#101116] border-[#2A2F40] text-white">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-black flex items-center gap-2">
-              <Users className="w-6 h-6 text-primary" />
-              CRM do Parceiro: <span className="text-primary font-mono">{selectedAffiliate?.code}</span>
-            </DialogTitle>
-            <DialogDescription className="hidden">Visualização CRM de Afiliação</DialogDescription>
-          </DialogHeader>
-
-          {selectedAffiliate && (
-            <div className="space-y-6 pt-2">
-              {/* Informações Cadastrais */}
-              <div className="bg-[#0B0C10] border border-[#2A2F40] p-4 rounded-xl space-y-3">
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div>
-                    <span className="text-gray-500 block font-bold uppercase tracking-wider text-[9px]">Nome do Parceiro</span>
-                    <span className="text-sm font-bold text-white">{selectedAffiliate.name}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-500 block font-bold uppercase tracking-wider text-[9px]">ID de Afiliado (Completo)</span>
-                    <span className="text-sm font-mono font-bold text-emerald-400 select-all">{selectedAffiliate.id}</span>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-[#2A2F40]/40">
-                  <div>
-                    <span className="text-gray-500 block font-bold uppercase tracking-wider text-[9px]">Telefone de Contato</span>
-                    <span className="text-sm font-bold text-white">+{selectedAffiliate.phone}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-500 block font-bold uppercase tracking-wider text-[9px]">E-mail</span>
-                    <span className="text-sm font-bold text-white">{selectedAffiliate.email || "Sem e-mail cadastrado"}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Informações Financeiras do CRM */}
-              <div className="grid grid-cols-3 gap-3">
-                <div className="bg-[#0B0C10] p-3 rounded-xl border border-[#2A2F40] text-center">
-                  <span className="text-[9px] text-gray-500 font-bold uppercase tracking-wider block mb-1">Depósitos de Indicados</span>
-                  <span className="text-sm font-mono font-bold text-white">{formatMZN(selectedAffiliate.totalDeposits)}</span>
-                </div>
-                <div className="bg-[#0B0C10] p-3 rounded-xl border border-[#2A2F40] text-center">
-                  <span className="text-[9px] text-gray-500 font-bold uppercase tracking-wider block mb-1">Comissões Diretas (50%)</span>
-                  <span className="text-sm font-mono font-bold text-emerald-400">+{formatMZN(selectedAffiliate.depositCommissions)}</span>
-                </div>
-                <div className="bg-[#0B0C10] p-3 rounded-xl border border-[#2A2F40] text-center">
-                  <span className="text-[9px] text-gray-500 font-bold uppercase tracking-wider block mb-1">Deduções Jogadores (50%)</span>
-                  <span className="text-sm font-mono font-bold text-red-500">{formatMZN(selectedAffiliate.winDeductions)}</span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-3">
-                <div className="bg-[#0B0C10] p-3 rounded-xl border border-[#2A2F40] text-center">
-                  <span className="text-[9px] text-gray-500 font-bold uppercase tracking-wider block mb-1">Passivo de Subafiliação (15%)</span>
-                  <span className="text-xs font-mono font-bold text-sky-400">+{formatMZN(selectedAffiliate.subCommissions)}</span>
-                </div>
-                <div className="bg-[#0B0C10] p-3 rounded-xl border border-[#2A2F40] text-center">
-                  <span className="text-[9px] text-gray-500 font-bold uppercase tracking-wider block mb-1">Histórico Pago (Saldo)</span>
-                  <span className="text-xs font-mono font-bold text-gray-300">{formatMZN(selectedAffiliate.totalPaid || 0)}</span>
-                </div>
-                <div className="bg-primary/5 p-3 rounded-xl border border-primary/20 text-center">
-                  <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider block mb-1">Acumulado a Pagar (Ganhos)</span>
-                  <span className="text-sm font-mono font-black text-primary">{formatMZN(selectedAffiliate.balance)}</span>
-                </div>
-              </div>
-
-              {/* Informações Bancárias completas */}
-              <div className="bg-[#0B0C10] border border-[#2A2F40] p-4 rounded-xl">
-                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Dados Bancários para Pagamento</h4>
-                <div className="grid grid-cols-3 gap-2 text-xs">
-                  <div>
-                    <span className="text-[10px] text-gray-500 uppercase tracking-wider block mb-0.5">Método de Saque</span>
-                    <span className="font-bold text-white uppercase">{selectedAffiliate.saqueMethod}</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-gray-500 uppercase tracking-wider block mb-0.5">Titular da Conta</span>
-                    <span className="font-bold text-emerald-400">{selectedAffiliate.saqueName || "Sem Titular"}</span>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-[10px] text-gray-500 uppercase tracking-wider block mb-0.5">Número da Conta</span>
-                    <span className="font-mono font-bold text-white select-all">+{selectedAffiliate.saqueNumber}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Efetuar Pagamento de Lucros */}
-              {selectedAffiliate.balance > 0 && (
-                <div className="bg-emerald-950/20 border border-emerald-500/30 p-4 rounded-xl space-y-3">
-                  <h4 className="text-xs font-bold text-emerald-400 uppercase tracking-wider">Efetuar Pagamento de Lucros</h4>
-                  <p className="text-[11px] text-gray-400 leading-relaxed font-semibold">
-                    O pagamento é efetuado manualmente. Ao confirmar abaixo, o saldo comissão acumulado será zerado no painel do parceiro e movido para o histórico de saques pagos ("Saldo").
-                  </p>
-                  
-                  <div className="grid grid-cols-3 gap-2 bg-[#0B0C10]/80 p-3 rounded-lg border border-[#2A2F40] text-xs font-mono">
-                    <div>
-                      <span className="text-gray-500 block text-[9px] font-bold">GANHOS BRUTOS</span>
-                      <span className="text-white font-bold">{formatMZN(selectedAffiliate.balance)}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-500 block text-[9px] font-bold">TAXA DE GATEWAY</span>
-                      <span className="text-red-400 font-bold">
-                        {selectedAffiliate.balance >= 100 ? "-MT20.00" : "MT0.00"}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-emerald-400 block text-[9px] font-bold">VALOR LÍQUIDO A ENVIAR</span>
-                      <span className="text-emerald-400 font-black text-sm">
-                        {formatMZN(Math.max(0, selectedAffiliate.balance - (selectedAffiliate.balance >= 100 ? 20 : 0)))}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-end pt-1">
-                    <Button
-                      onClick={async () => {
-                        const netAmount = selectedAffiliate.balance - (selectedAffiliate.balance >= 100 ? 20 : 0);
-                        const confirmMsg = `Confirmar pagamento manual de ${formatMZN(netAmount)} líquido (após taxa) para a conta M-Pesa/e-Mola de titular: "${selectedAffiliate.saqueName || 'Não Informado'}" no número +${selectedAffiliate.saqueNumber}?`;
-                        
-                        if (!window.confirm(confirmMsg)) return;
-
-                        try {
-                          toast.loading("A registrar liquidação...", { id: "payout-action" });
-                          const res = await fetch("/api/admin/affiliates/payout", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ affiliateId: selectedAffiliate.id, amount: selectedAffiliate.balance })
-                          });
-
-                          const data = await res.json();
-                          if (!res.ok) throw new Error(data.error || "Erro ao efetuar payout");
-
-                          toast.success(data.message || "Pagamento liquidado com sucesso!", { id: "payout-action" });
-                          
-                          // Atualiza o estado local
-                          const updated = {
-                            ...selectedAffiliate,
-                            balance: 0,
-                            totalPaid: (selectedAffiliate.totalPaid || 0) + netAmount
-                          };
-                          setAffiliates(prev => prev.map(a => a.id === selectedAffiliate.id ? updated : a));
-                          setSelectedAffiliate(updated);
-                        } catch (err: any) {
-                          toast.error(err.message || "Falha ao liquidar pagamento.", { id: "payout-action" });
-                        }
-                      }}
-                      className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-9 text-xs w-full sm:w-auto cursor-pointer border-none"
-                    >
-                      Confirmar Pagamento Realizado
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-              {/* Ações Rápidas */}
-              <div className="space-y-3">
-                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Ações e Contatos</h4>
-                <div className="grid grid-cols-3 gap-2">
-                  <Button 
-                    variant="outline" 
-                    className="border-[#2A2F40] bg-[#1A1D27] hover:bg-emerald-500/20 hover:text-emerald-400 h-10 flex gap-2 font-bold text-xs"
-                    onClick={() => window.open(`https://wa.me/258${selectedAffiliate.phone.replace(/\D/g, '')}`, '_blank')}
-                  >
-                    <MessageCircle className="w-4 h-4" /> Whatsapp
-                  </Button>
-                  
-                  {selectedAffiliate.is_active ? (
-                    <Button 
-                      variant="outline" 
-                      className="border-[#2A2F40] bg-[#1A1D27] hover:bg-red-500/20 hover:text-red-500 h-10 flex gap-2 font-bold text-xs"
-                      onClick={() => executeAction('ban', selectedAffiliate.id)}
-                    >
-                      <Ban className="w-4 h-4" /> Banir Parceiro
-                    </Button>
-                  ) : (
-                    <Button 
-                      variant="outline" 
-                      className="border-[#2A2F40] bg-[#1A1D27] hover:bg-primary/20 hover:text-primary h-10 flex gap-2 font-bold text-xs"
-                      onClick={() => executeAction('activate', selectedAffiliate.id)}
-                    >
-                      <UserCheck className="w-4 h-4" /> Reativar Conta
-                    </Button>
-                  )}
-
-                  <Button 
-                    variant="outline" 
-                    className="border-[#2A2F40] bg-[#1A1D27] hover:bg-sky-500/20 hover:text-sky-400 h-10 flex gap-2 font-bold text-xs"
-                    onClick={() => {
-                      setSelectedAffiliate(null);
-                      // Redirecionar para gerir o utilizador comum
-                      window.location.href = `/admin/users?search=${selectedAffiliate.id}`;
-                    }}
-                  >
-                    <ExternalLink className="w-4 h-4" /> Ficha de Jogador
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* MODAL DETALHES CRM DO PARCEIRO REMOVIDO EM PROL DA ROTA /admin/affiliates/[id] */}
     </div>
   );
 }

@@ -114,6 +114,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, message: returnMsg });
     }
 
+    if (action === 'update_affiliate_percent') {
+      const { affiliatePercent } = await req.json();
+      if (affiliatePercent === undefined || isNaN(Number(affiliatePercent))) {
+        return NextResponse.json({ error: "Porcentagem de comissão inválida" }, { status: 400 });
+      }
+      const percent = Number(affiliatePercent);
+      if (percent < 0 || percent > 100) {
+        return NextResponse.json({ error: "A comissão deve ser entre 0% e 100%" }, { status: 400 });
+      }
+      const { error } = await supabaseAdmin
+        .from("users")
+        .update({ affiliate_percent: percent })
+        .eq("id", userId);
+        
+      if (error) throw error;
+      return NextResponse.json({ success: true, message: `Comissão do afiliado alterada para ${percent}% com sucesso!` });
+    }
+
     if (action === 'delete') {
       const { error } = await supabaseAdmin.from("users").delete().eq("id", userId);
       if (error) throw error;

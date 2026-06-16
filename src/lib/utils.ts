@@ -39,3 +39,14 @@ export function generateId(length: number = 16): string {
   }
   return result;
 }
+
+// Limpar DDI (+258 / 258) e formatação de números de Moçambique, retornando apenas os 9 dígitos nacionais
+export function cleanMocambiquePhone(phone: string): string {
+  if (!phone) return "";
+  let cleaned = phone.trim().replace(/\s+/g, "").replace(/\+/g, "");
+  // Se começar com 258, remove
+  if (cleaned.startsWith("258") && cleaned.length > 9) {
+    cleaned = cleaned.substring(3);
+  }
+  return cleaned;
+}

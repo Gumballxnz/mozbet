@@ -163,6 +163,7 @@ export function AdminUsersTable({ initialUsers, currentUserRole, totalCount = 0 
 
     const matchesId = u.id.toLowerCase().includes(searchLower);
     const matchesEmail = u.email && u.email.toLowerCase().includes(searchLower);
+    const matchesRole = roleText.includes(searchLower);
     return matchesPhone || matchesId || matchesEmail || matchesRole;
   });
 

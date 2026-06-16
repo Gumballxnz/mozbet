@@ -1,11 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Search, Settings, Ban, UserCheck, ShieldAlert, Wallet, Percent, Users, MessageCircle, ExternalLink, Copy } from "lucide-react";
+import { Search, Percent, Copy, ArrowUpDown, ArrowUp, ArrowDown, Filter, Wallet, TrendingUp, Users as UsersIcon, DollarSign, Settings, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { formatMZN, cleanMocambiquePhone } from "@/lib/utils";
 
@@ -32,24 +31,91 @@ interface AffiliateData {
   totalPaid: number;
 }
 
+type SortField = "balance" | "netEarnings" | "referredCount" | "totalDeposits" | "name";
+type SortDir = "asc" | "desc";
+type BalanceFilter = "all" | "positive" | "gt100" | "gt500" | "gt1000" | "negative";
+
+const BALANCE_FILTERS: { value: BalanceFilter; label: string; color: string }[] = [
+  { value: "all", label: "Todos", color: "bg-[#2A2F40] text-gray-300" },
+  { value: "positive", label: "Saldo > 0", color: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" },
+  { value: "gt100", label: "> 100 MT", color: "bg-sky-500/15 text-sky-400 border-sky-500/30" },
+  { value: "gt500", label: "> 500 MT", color: "bg-amber-500/15 text-amber-400 border-amber-500/30" },
+  { value: "gt1000", label: "> 1.000 MT", color: "bg-purple-500/15 text-purple-400 border-purple-500/30" },
+  { value: "negative", label: "Negativos", color: "bg-red-500/15 text-red-400 border-red-500/30" },
+];
+
+function filterByBalance(aff: AffiliateData, filter: BalanceFilter): boolean {
+  switch (filter) {
+    case "positive": return aff.balance > 0;
+    case "gt100": return aff.balance > 100;
+    case "gt500": return aff.balance > 500;
+    case "gt1000": return aff.balance > 1000;
+    case "negative": return aff.balance < 0;
+    default: return true;
+  }
+}
+
 export function AdminAffiliatesTable({ initialAffiliates }: { initialAffiliates: AffiliateData[] }) {
   const router = useRouter();
-  const [affiliates, setAffiliates] = useState<AffiliateData[]>(initialAffiliates);
+  const [affiliates] = useState<AffiliateData[]>(initialAffiliates);
   const [search, setSearch] = useState("");
+  const [balanceFilter, setBalanceFilter] = useState<BalanceFilter>("all");
+  const [sortField, setSortField] = useState<SortField>("balance");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [showGlobalCommission, setShowGlobalCommission] = useState(false);
+  const [globalPercent, setGlobalPercent] = useState("70");
+  const [savingGlobal, setSavingGlobal] = useState(false);
 
-  // Ações de afiliado individual migradas para a página de detalhes /admin/affiliates/[id]
+  // Alternar ordenação
+  const toggleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDir(prev => prev === "desc" ? "asc" : "desc");
+    } else {
+      setSortField(field);
+      setSortDir("desc");
+    }
+  };
 
-  const filteredAffiliates = affiliates.filter(a => 
-    a.name.toLowerCase().includes(search.toLowerCase()) ||
-    a.username.toLowerCase().includes(search.toLowerCase()) ||
-    a.code.toLowerCase().includes(search.toLowerCase()) ||
-    a.phone.includes(search) ||
-    a.id.includes(search) ||
-    (a.email && a.email.toLowerCase().includes(search.toLowerCase()))
-  );
+  // Ícone de ordenação
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) return <ArrowUpDown className="w-3 h-3 text-gray-600 ml-1" />;
+    return sortDir === "desc"
+      ? <ArrowDown className="w-3 h-3 text-primary ml-1" />
+      : <ArrowUp className="w-3 h-3 text-primary ml-1" />;
+  };
+
+  // Filtrar e ordenar
+  const filteredAffiliates = useMemo(() => {
+    const searchLower = search.toLowerCase();
+    return affiliates
+      .filter(a =>
+        a.name.toLowerCase().includes(searchLower) ||
+        a.username.toLowerCase().includes(searchLower) ||
+        a.code.toLowerCase().includes(searchLower) ||
+        a.phone.includes(search) ||
+        a.id.includes(search) ||
+        (a.email && a.email.toLowerCase().includes(searchLower))
+      )
+      .filter(a => filterByBalance(a, balanceFilter))
+      .sort((a, b) => {
+        const multiplier = sortDir === "desc" ? -1 : 1;
+        if (sortField === "name") return multiplier * a.name.localeCompare(b.name);
+        return multiplier * ((a[sortField] as number) - (b[sortField] as number));
+      });
+  }, [affiliates, search, balanceFilter, sortField, sortDir]);
+
+  // Resumos calculados
+  const summary = useMemo(() => {
+    const totalBalance = affiliates.reduce((s, a) => s + a.balance, 0);
+    const totalPositive = affiliates.filter(a => a.balance > 0).length;
+    const totalPending = affiliates.filter(a => a.balance > 100).length;
+    const totalReferrals = affiliates.reduce((s, a) => s + a.referredCount, 0);
+    return { totalBalance, totalPositive, totalPending, totalReferrals };
+  }, [affiliates]);
 
   return (
     <div className="space-y-6">
+      {/* Cabeçalho */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold text-white flex items-center gap-2">
@@ -73,17 +139,148 @@ export function AdminAffiliatesTable({ initialAffiliates }: { initialAffiliates:
         </div>
       </div>
 
+      {/* Botão e Painel de Comissão Global */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+        <button
+          onClick={() => setShowGlobalCommission(!showGlobalCommission)}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 text-amber-400 text-sm font-bold hover:border-amber-400 transition-all cursor-pointer"
+        >
+          <Settings className="w-4 h-4" />
+          Alterar Comissão Global
+        </button>
+
+        {showGlobalCommission && (
+          <div className="flex items-center gap-3 bg-[#101116] border border-[#2A2F40] rounded-xl px-4 py-3 animate-in fade-in slide-in-from-left-2">
+            <label className="text-xs text-gray-400 font-bold uppercase">Nova Comissão:</label>
+            <div className="flex items-center gap-1">
+              <input
+                type="number"
+                min="0"
+                max="100"
+                value={globalPercent}
+                onChange={(e) => setGlobalPercent(e.target.value)}
+                className="w-16 h-8 bg-[#0B0C10] border border-[#2A2F40] rounded-lg text-center text-white font-bold text-sm focus:border-primary outline-none"
+              />
+              <span className="text-white font-bold">%</span>
+            </div>
+            <button
+              disabled={savingGlobal}
+              onClick={async () => {
+                setSavingGlobal(true);
+                try {
+                  const res = await fetch("/api/admin/affiliates/commission", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ percent: Number(globalPercent) }),
+                  });
+                  const data = await res.json();
+                  if (data.success) {
+                    toast.success(data.message);
+                    setShowGlobalCommission(false);
+                  } else {
+                    toast.error(data.error || "Erro ao atualizar");
+                  }
+                } catch {
+                  toast.error("Erro de conexão");
+                } finally {
+                  setSavingGlobal(false);
+                }
+              }}
+              className="h-8 px-4 rounded-lg bg-primary text-black font-bold text-xs hover:bg-primary/90 transition-all cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+            >
+              {savingGlobal ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+              Aplicar a Todos
+            </button>
+            <button
+              onClick={() => setShowGlobalCommission(false)}
+              className="h-8 px-3 rounded-lg bg-[#2A2F40] text-gray-400 text-xs font-bold hover:text-white transition-all cursor-pointer"
+            >
+              Cancelar
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Cards de resumo */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="bg-[#101116] border border-[#2A2F40] rounded-xl p-4">
+          <div className="flex items-center gap-2 text-gray-500 text-xs font-bold uppercase mb-1">
+            <Wallet className="w-4 h-4" /> Saldo Total Pendente
+          </div>
+          <div className={`text-xl font-black font-mono ${summary.totalBalance >= 0 ? 'text-primary' : 'text-red-500'}`}>
+            {formatMZN(summary.totalBalance)}
+          </div>
+        </div>
+        <div className="bg-[#101116] border border-[#2A2F40] rounded-xl p-4">
+          <div className="flex items-center gap-2 text-gray-500 text-xs font-bold uppercase mb-1">
+            <TrendingUp className="w-4 h-4" /> Com Saldo &gt; 0
+          </div>
+          <div className="text-xl font-black text-emerald-400 font-mono">
+            {summary.totalPositive} <span className="text-xs text-gray-500 font-normal">afiliados</span>
+          </div>
+        </div>
+        <div className="bg-[#101116] border border-[#2A2F40] rounded-xl p-4">
+          <div className="flex items-center gap-2 text-gray-500 text-xs font-bold uppercase mb-1">
+            <DollarSign className="w-4 h-4" /> Pendente &gt; 100 MT
+          </div>
+          <div className="text-xl font-black text-amber-400 font-mono">
+            {summary.totalPending} <span className="text-xs text-gray-500 font-normal">afiliados</span>
+          </div>
+        </div>
+        <div className="bg-[#101116] border border-[#2A2F40] rounded-xl p-4">
+          <div className="flex items-center gap-2 text-gray-500 text-xs font-bold uppercase mb-1">
+            <UsersIcon className="w-4 h-4" /> Total de Indicados
+          </div>
+          <div className="text-xl font-black text-sky-400 font-mono">
+            {summary.totalReferrals}
+          </div>
+        </div>
+      </div>
+
+      {/* Filtros de saldo */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <Filter className="w-4 h-4 text-gray-500" />
+        <span className="text-xs text-gray-500 font-bold uppercase mr-1">Filtrar por saldo:</span>
+        {BALANCE_FILTERS.map(f => (
+          <button
+            key={f.value}
+            onClick={() => setBalanceFilter(f.value)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
+              balanceFilter === f.value 
+                ? `${f.color} ring-1 ring-white/10 scale-105` 
+                : "bg-[#101116] text-gray-500 border-[#2A2F40] hover:border-gray-500"
+            }`}
+          >
+            {f.label}
+          </button>
+        ))}
+        <span className="text-xs text-gray-600 ml-2">
+          Mostrando {filteredAffiliates.length} de {affiliates.length}
+        </span>
+      </div>
+
+      {/* Tabela Desktop */}
       <div className="bg-[#101116] border border-[#2A2F40] rounded-2xl overflow-hidden shadow-xl hidden lg:block">
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
             <thead className="text-[10px] text-gray-500 uppercase bg-[#0B0C10] border-b border-[#2A2F40] font-black tracking-wider">
               <tr>
-                <th className="px-6 py-4">Parceiro</th>
+                <th className="px-6 py-4 cursor-pointer select-none hover:text-gray-300 transition-colors" onClick={() => toggleSort("name")}>
+                  <span className="flex items-center">Parceiro <SortIcon field="name" /></span>
+                </th>
                 <th className="px-6 py-4">Código</th>
-                <th className="px-6 py-4 text-center">Indicados</th>
-                <th className="px-6 py-4">Depósitos Jogadores</th>
-                <th className="px-6 py-4">Lucro do Parceiro</th>
-                <th className="px-6 py-4">Ganhos / Pago</th>
+                <th className="px-6 py-4 text-center cursor-pointer select-none hover:text-gray-300 transition-colors" onClick={() => toggleSort("referredCount")}>
+                  <span className="flex items-center justify-center">Indicados <SortIcon field="referredCount" /></span>
+                </th>
+                <th className="px-6 py-4 cursor-pointer select-none hover:text-gray-300 transition-colors" onClick={() => toggleSort("totalDeposits")}>
+                  <span className="flex items-center">Depósitos Jogadores <SortIcon field="totalDeposits" /></span>
+                </th>
+                <th className="px-6 py-4 cursor-pointer select-none hover:text-gray-300 transition-colors" onClick={() => toggleSort("netEarnings")}>
+                  <span className="flex items-center">Lucro do Parceiro <SortIcon field="netEarnings" /></span>
+                </th>
+                <th className="px-6 py-4 cursor-pointer select-none hover:text-gray-300 transition-colors" onClick={() => toggleSort("balance")}>
+                  <span className="flex items-center">Saldo / Pago <SortIcon field="balance" /></span>
+                </th>
                 <th className="px-6 py-4">Dados de Saque</th>
                 <th className="px-6 py-4 text-right">Ações</th>
               </tr>
@@ -122,7 +319,9 @@ export function AdminAffiliatesTable({ initialAffiliates }: { initialAffiliates:
                     )}
                   </td>
                   <td className="px-6 py-4 align-middle font-mono text-xs">
-                    <div className="text-primary font-black text-sm">{formatMZN(aff.balance)} Ganhos</div>
+                    <div className={`font-black text-sm ${aff.balance > 0 ? 'text-primary' : aff.balance < 0 ? 'text-red-500' : 'text-gray-500'}`}>
+                      {formatMZN(aff.balance)}
+                    </div>
                     <div className="text-[10px] text-gray-400">Total Pago: {formatMZN(aff.totalPaid || 0)}</div>
                   </td>
                   <td className="px-6 py-4 align-middle text-xs">
@@ -158,7 +357,7 @@ export function AdminAffiliatesTable({ initialAffiliates }: { initialAffiliates:
               {filteredAffiliates.length === 0 && (
                 <tr>
                   <td colSpan={8} className="px-6 py-12 text-center text-muted-foreground font-medium">
-                    Nenhum parceiro de afiliados encontrado.
+                    Nenhum parceiro encontrado com os filtros selecionados.
                   </td>
                 </tr>
               )}
@@ -176,21 +375,15 @@ export function AdminAffiliatesTable({ initialAffiliates }: { initialAffiliates:
                 <span className="font-bold text-white text-base block">{aff.name}</span>
                 <span className="text-xs text-emerald-400 font-mono font-bold tracking-wider">{aff.code}</span>
               </div>
-              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
-                aff.is_active ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-red-500/10 text-red-500 border border-red-500/20"
-              }`}>
-                {aff.is_active ? "Ativo" : "Banido"}
-              </span>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#2A2F40]/30 text-xs font-mono">
-              <div>
-                <span className="text-gray-500 block">Saldo Comissão</span>
-                <span className="font-black text-primary text-base">{formatMZN(aff.balance)}</span>
-              </div>
-              <div>
-                <span className="text-gray-500 block">Indicados</span>
-                <span className="text-white font-bold text-base">{aff.referredCount}</span>
+              <div className="flex flex-col items-end gap-1">
+                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                  aff.is_active ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-red-500/10 text-red-500 border border-red-500/20"
+                }`}>
+                  {aff.is_active ? "Ativo" : "Banido"}
+                </span>
+                <span className={`text-lg font-black font-mono ${aff.balance > 0 ? 'text-primary' : aff.balance < 0 ? 'text-red-500' : 'text-gray-500'}`}>
+                  {formatMZN(aff.balance)}
+                </span>
               </div>
             </div>
 
@@ -202,8 +395,8 @@ export function AdminAffiliatesTable({ initialAffiliates }: { initialAffiliates:
                 </span>
               </div>
               <div>
-                <span className="text-gray-500 block">Método de Saque</span>
-                <span className="text-white font-bold uppercase">{aff.saqueMethod}</span>
+                <span className="text-gray-500 block">Indicados</span>
+                <span className="text-white font-bold text-base">{aff.referredCount}</span>
               </div>
             </div>
 
@@ -236,8 +429,6 @@ export function AdminAffiliatesTable({ initialAffiliates }: { initialAffiliates:
           </div>
         ))}
       </div>
-
-      {/* MODAL DETALHES CRM DO PARCEIRO REMOVIDO EM PROL DA ROTA /admin/affiliates/[id] */}
     </div>
   );
 }

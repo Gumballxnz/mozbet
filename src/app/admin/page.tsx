@@ -8,6 +8,31 @@ export default async function AdminDashboard() {
   // Limpar depósitos pendentes antigos
   await cleanupPendingDeposits();
 
+  // Helper genérico para paginação segura
+  async function fetchPagedData<T>(
+    fetcher: (from: number, to: number) => Promise<{ data: T[] | null; error: any }>
+  ): Promise<T[]> {
+    let results: T[] = [];
+    let page = 0;
+    const limit = 1000;
+    let hasMore = true;
+
+    while (hasMore) {
+      const { data, error } = await fetcher(page * limit, (page + 1) * limit - 1);
+      if (error || !data || data.length === 0) {
+        hasMore = false;
+      } else {
+        results = results.concat(data);
+        if (data.length < limit) {
+          hasMore = false;
+        } else {
+          page++;
+        }
+      }
+    }
+    return results;
+  }
+
   // 1. Contagem exata de usuários
   const { count: usersCount } = await supabaseAdmin
     .from("users")
@@ -15,11 +40,12 @@ export default async function AdminDashboard() {
 
   const totalUsersCount = usersCount || 0;
 
+  const pageSize = 1000;
+
   // 2. Calcular totais gerais de depósitos concluídos (Paginado)
   let totalDepositsSum = 0;
   let hasMoreDeps = true;
   let depPage = 0;
-  const pageSize = 1000;
 
   while (hasMoreDeps) {
     const { data, error } = await supabaseAdmin
@@ -60,7 +86,7 @@ export default async function AdminDashboard() {
     }
   }
 
-  // 4. Calcular total de depósitos que falharam (soma e contagem) (Paginado)
+  // 4. Calcular total de depósitos que falharam
   let totalFailedSum = 0;
   let failedCount = 0;
   let hasMoreFailed = true;
@@ -84,7 +110,7 @@ export default async function AdminDashboard() {
     }
   }
 
-  // 5. Calcular saldo dos clientes (Passivo) (Paginado)
+  // 5. Calcular saldo dos clientes (Passivo)
   let totalRetainedSum = 0;
   let hasMoreUsers = true;
   let userPage = 0;
@@ -104,37 +130,51 @@ export default async function AdminDashboard() {
     }
   }
 
-  // 6. Buscar dados dos últimos 90 dias para os gráficos de forma paginada para evitar o limite de 1000 do Supabase
+  // 6. Calcular receita via afiliados vs link direto
+  const referredUserIds = await fetchPagedData<{ id: string }>(async (from, to) =>
+    supabaseAdmin
+      .from("users")
+      .select("id")
+      .not("referrer_id", "is", null)
+      .range(from, to)
+  );
+  const referredIdSet = new Set(referredUserIds.map(u => u.id));
+
+  const allDepositsWithUser = await fetchPagedData<{ user_id: string; amount: number }>(async (from, to) =>
+    supabaseAdmin
+      .from("transactions")
+      .select("user_id, amount")
+      .eq("type", "DEPOSIT")
+      .eq("status", "COMPLETED")
+      .range(from, to)
+  );
+
+  let affiliateDepositsSum = 0;
+  let directDepositsSum = 0;
+  allDepositsWithUser.forEach(dep => {
+    const amt = Number(dep.amount);
+    if (referredIdSet.has(dep.user_id)) {
+      affiliateDepositsSum += amt;
+    } else {
+      directDepositsSum += amt;
+    }
+  });
+
+  // Saldo pendente total de afiliados
+  const affiliateBalances = await fetchPagedData<{ affiliate_balance: number }>(async (from, to) =>
+    supabaseAdmin
+      .from("users")
+      .select("affiliate_balance")
+      .eq("is_affiliate", true)
+      .range(from, to)
+  );
+  const totalAffiliateBalance = affiliateBalances.reduce((s, a) => s + Number(a.affiliate_balance || 0), 0);
+
+  // 7. Buscar dados dos últimos 90 dias para os gráficos
   const ninetyDaysAgo = new Date();
   ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
   const ninetyDaysAgoISO = ninetyDaysAgo.toISOString();
 
-  // Helper genérico para paginação segura
-  async function fetchPagedData<T>(
-    fetcher: (from: number, to: number) => Promise<{ data: T[] | null; error: any }>
-  ): Promise<T[]> {
-    let results: T[] = [];
-    let page = 0;
-    const limit = 1000;
-    let hasMore = true;
-
-    while (hasMore) {
-      const { data, error } = await fetcher(page * limit, (page + 1) * limit - 1);
-      if (error || !data || data.length === 0) {
-        hasMore = false;
-      } else {
-        results = results.concat(data);
-        if (data.length < limit) {
-          hasMore = false;
-        } else {
-          page++;
-        }
-      }
-    }
-    return results;
-  }
-
-  // Buscar usuários dos últimos 90 dias
   const usersRaw = await fetchPagedData(async (from, to) => 
     supabaseAdmin
       .from("users")
@@ -143,7 +183,6 @@ export default async function AdminDashboard() {
       .range(from, to)
   );
 
-  // Buscar depósitos concluídos dos últimos 90 dias
   const depositsRaw = await fetchPagedData(async (from, to) => 
     supabaseAdmin
       .from("transactions")
@@ -154,7 +193,6 @@ export default async function AdminDashboard() {
       .range(from, to)
   );
 
-  // Buscar levantamentos concluídos dos últimos 90 dias
   const withdrawalsRaw = await fetchPagedData(async (from, to) => 
     supabaseAdmin
       .from("transactions")
@@ -165,7 +203,6 @@ export default async function AdminDashboard() {
       .range(from, to)
   );
 
-  // Buscar depósitos que falharam nos últimos 90 dias
   const failedRaw = await fetchPagedData(async (from, to) => 
     supabaseAdmin
       .from("transactions")
@@ -183,7 +220,6 @@ export default async function AdminDashboard() {
         <p className="text-muted-foreground">Métricas de crescimento, fluxo de caixa e atividade em tempo real.</p>
       </div>
 
-      {/* Componente Client de Gráficos (Recharts) */}
       <AdminCharts 
         depositsRaw={depositsRaw || []} 
         usersRaw={usersRaw || []} 
@@ -195,6 +231,9 @@ export default async function AdminDashboard() {
         initialTotalFailed={totalFailedSum}
         initialFailedCount={failedCount}
         initialTotalRetained={totalRetainedSum}
+        affiliateDeposits={affiliateDepositsSum}
+        directDeposits={directDepositsSum}
+        totalAffiliateBalance={totalAffiliateBalance}
       />
     </div>
   );

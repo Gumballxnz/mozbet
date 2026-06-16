@@ -297,6 +297,18 @@ function AffiliateRegisterForm() {
 }
 
 export default function AffiliateRegister() {
+  const [commissionPercent, setCommissionPercent] = useState(70);
+
+  // Buscar comissão atual da API
+  useEffect(() => {
+    fetch("/api/admin/affiliates/commission")
+      .then(res => res.json())
+      .then(data => {
+        if (data.percent) setCommissionPercent(data.percent);
+      })
+      .catch(() => {});
+  }, []);
+
   return (
     <div className="min-h-screen bg-[#0b0c0f] flex flex-col justify-center items-center py-10 px-4 relative overflow-hidden font-sans">
       {/* Background glow effects */}
@@ -314,7 +326,7 @@ export default function AffiliateRegister() {
             Partners Program
           </p>
           <h2 className="text-xl font-bold text-slate-100 pt-2">
-            Registe-se e ganhe 70% de comissões!
+            Registe-se e ganhe {commissionPercent}% de comissões!
           </h2>
           <p className="text-xs text-slate-500">
             Preencha o formulário abaixo para começar a faturar.

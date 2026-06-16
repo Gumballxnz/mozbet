@@ -5,7 +5,7 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { format, subDays, startOfDay, parseISO, isAfter } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/lib/supabase";
-import { TrendingUp, TrendingDown, Wallet, Users, ArrowUpRight, ArrowDownRight, Activity } from "lucide-react";
+import { TrendingUp, TrendingDown, Wallet, Users, ArrowUpRight, ArrowDownRight, Activity, Link2, Percent } from "lucide-react";
 import { formatMZN } from "@/lib/utils";
 
 interface Props {
@@ -19,6 +19,9 @@ interface Props {
   initialTotalFailed?: number;
   initialFailedCount?: number;
   initialTotalRetained?: number;
+  affiliateDeposits?: number;
+  directDeposits?: number;
+  totalAffiliateBalance?: number;
 }
 
 export function AdminCharts({ 
@@ -31,7 +34,10 @@ export function AdminCharts({
   initialTotalWithdrawals = 0,
   initialTotalFailed = 0,
   initialFailedCount = 0,
-  initialTotalRetained = 0
+  initialTotalRetained = 0,
+  affiliateDeposits = 0,
+  directDeposits = 0,
+  totalAffiliateBalance = 0
 }: Props) {
   const [isMounted, setIsMounted] = useState(false);
 
@@ -301,6 +307,75 @@ export function AdminCharts({
                  Total Perdas
                </span>
                <span className="text-xs text-gray-500">{formatMZN(totalFailed)} não creditado</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Cards de Origem de Receita: Afiliados vs Direto */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {/* Receita via Afiliados */}
+        <div className="bg-[#101116] border border-[#2A2F40] p-5 rounded-2xl flex flex-col justify-between shadow-xl relative overflow-hidden group hover:border-amber-500/50 transition-colors">
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+             <Percent className="w-16 h-16 text-amber-500" />
+          </div>
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-500">
+              <Percent className="w-4 h-4" />
+            </div>
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Receita via Afiliados</span>
+          </div>
+          <div>
+            <span className="text-3xl font-black text-white">{formatMZN(affiliateDeposits)}</span>
+            <div className="flex items-center gap-2 mt-2">
+               <span className="text-xs font-bold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full flex items-center gap-1">
+                 {totalDeposits > 0 ? `${((affiliateDeposits / totalDeposits) * 100).toFixed(1)}%` : '0%'}
+               </span>
+               <span className="text-xs text-gray-500">do total de depósitos</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Receita Link Direto */}
+        <div className="bg-[#101116] border border-[#2A2F40] p-5 rounded-2xl flex flex-col justify-between shadow-xl relative overflow-hidden group hover:border-cyan-500/50 transition-colors">
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+             <Link2 className="w-16 h-16 text-cyan-500" />
+          </div>
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-8 h-8 rounded-lg bg-cyan-500/10 flex items-center justify-center text-cyan-500">
+              <Link2 className="w-4 h-4" />
+            </div>
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Receita Link Direto</span>
+          </div>
+          <div>
+            <span className="text-3xl font-black text-white">{formatMZN(directDeposits)}</span>
+            <div className="flex items-center gap-2 mt-2">
+               <span className="text-xs font-bold text-cyan-500 bg-cyan-500/10 px-2 py-0.5 rounded-full flex items-center gap-1">
+                 {totalDeposits > 0 ? `${((directDeposits / totalDeposits) * 100).toFixed(1)}%` : '0%'}
+               </span>
+               <span className="text-xs text-gray-500">sem afiliado vinculado</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Comissões Pendentes de Afiliados */}
+        <div className="bg-[#101116] border border-[#2A2F40] p-5 rounded-2xl flex flex-col justify-between shadow-xl relative overflow-hidden group hover:border-rose-500/50 transition-colors">
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+             <TrendingDown className="w-16 h-16 text-rose-500" />
+          </div>
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-8 h-8 rounded-lg bg-rose-500/10 flex items-center justify-center text-rose-500">
+              <Wallet className="w-4 h-4" />
+            </div>
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Comissões Pendentes</span>
+          </div>
+          <div>
+            <span className={`text-3xl font-black ${totalAffiliateBalance >= 0 ? 'text-white' : 'text-emerald-400'}`}>{formatMZN(totalAffiliateBalance)}</span>
+            <div className="flex items-center gap-2 mt-2">
+               <span className="text-xs font-bold text-rose-500 bg-rose-500/10 px-2 py-0.5 rounded-full flex items-center gap-1">
+                 Passivo
+               </span>
+               <span className="text-xs text-gray-500">saldo total afiliados</span>
             </div>
           </div>
         </div>

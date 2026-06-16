@@ -158,23 +158,42 @@ export function AdminUserDetails({ user: initialUser, currentUserRole }: { user:
   };
 
   const handleRetainBalance = async (userId: string, currentStatus?: boolean) => {
-    try {
-      toast.loading("A atualizar saldo...", { id: "admin-action" });
-      const res = await fetch("/api/admin/users/action", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: 'retain', userId, balanceRetainedStatus: currentStatus })
-      });
-      
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Erro ao reter saldo");
-      
-      toast.success(!currentStatus ? "Saldo Bloqueado com sucesso! O cliente não pode jogar nem levantar." : "Saldo desbloqueado!", { id: "admin-action" });
-      
-      setUser(prev => ({ ...prev, balance_retained: !currentStatus }));
-    } catch (err: any) {
-      toast.error(err.message || "Erro ao reter saldo.", { id: "admin-action" });
-    }
+    const actionText = currentStatus ? "Liberar" : "Reter";
+    const actionDesc = currentStatus 
+      ? `Tem a certeza que deseja LIBERAR o saldo do utilizador +${user.phone}? Ele poderá voltar a apostar e levantar fundos normalmente.`
+      : `Tem a certeza que deseja RETER o saldo do utilizador +${user.phone}? O saldo ficará bloqueado e ele não poderá jogar nem efetuar levantamentos.`;
+
+    setConfirmModal({
+      isOpen: true,
+      title: `${actionText} Saldo`,
+      description: actionDesc,
+      onConfirm: async () => {
+        try {
+          toast.loading("A atualizar saldo...", { id: "admin-action" });
+          const res = await fetch("/api/admin/users/action", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: 'retain', userId, balanceRetainedStatus: currentStatus })
+          });
+          
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || "Erro ao reter saldo");
+          
+          toast.success(!currentStatus ? "Saldo Bloqueado com sucesso! O cliente não pode jogar nem levantar." : "Saldo desbloqueado!", { id: "admin-action" });
+          
+          setUser(prev => ({ ...prev, balance_retained: !currentStatus }));
+        } catch (err: any) {
+          toast.error(err.message || "Erro ao reter saldo.", { id: "admin-action" });
+        }
+      },
+      confirmText: `${actionText} Saldo`,
+      buttonClass: currentStatus 
+        ? "bg-emerald-600 hover:bg-emerald-700 text-white" 
+        : "bg-orange-600 hover:bg-orange-700 text-white",
+      borderClass: currentStatus ? "border-emerald-500" : "border-orange-500",
+      titleColor: currentStatus ? "text-emerald-400" : "text-orange-400",
+      icon: <HandCoins className="w-5 h-5" />
+    });
   };
 
   const executeSendSiteMessage = async () => {

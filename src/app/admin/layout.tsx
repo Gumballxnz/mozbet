@@ -8,6 +8,21 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 
+const formatAdminPhone = (phone: string) => {
+  if (!phone) return "";
+  const clean = phone.replace(/\D/g, "");
+  if (clean.length === 9) {
+    return `+258 ${clean.slice(0, 3)}******`;
+  }
+  if (clean.length === 12 && clean.startsWith("258")) {
+    return `+258 ${clean.slice(3, 6)}******`;
+  }
+  if (clean.length > 4) {
+    return `+${clean.slice(0, 3)}******`;
+  }
+  return phone;
+};
+
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -101,7 +116,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </div>
             <div className="text-sm">
               <p className="font-bold text-white">Admin</p>
-              <p className="text-xs text-muted-foreground">{user?.phone ? `+258 ${user.phone}` : ''}</p>
+              <p className="text-xs text-muted-foreground">{user?.phone ? formatAdminPhone(user.phone) : ''}</p>
             </div>
           </div>
           <Button 
@@ -176,7 +191,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 </div>
                 <div className="text-sm">
                   <p className="font-bold text-white">Admin</p>
-                  <p className="text-xs text-muted-foreground">{user?.phone ? `+258 ${user.phone}` : ''}</p>
+                  <p className="text-xs text-muted-foreground">{user?.phone ? formatAdminPhone(user.phone) : ''}</p>
                 </div>
               </div>
               <Button 

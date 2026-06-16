@@ -21,6 +21,7 @@ export default function AffiliateLogin() {
   const [resetStep, setResetStep] = useState<ResetStep>("email");
   const [resetEmail, setResetEmail] = useState("");
   const [resetCode, setResetCode] = useState(["", "", "", "", "", ""]);
+  const [verifiedCode, setVerifiedCode] = useState(""); // Código verificado para usar no reset
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -69,7 +70,7 @@ export default function AffiliateLogin() {
       } else {
         toast.success("Login efetuado com sucesso!");
         router.refresh();
-        router.push("/afiliados"); // Redireciona para o painel
+        router.push("/afiliados");
       }
     } catch (err) {
       toast.error("Erro interno do servidor. Tente novamente.");
@@ -102,7 +103,6 @@ export default function AffiliateLogin() {
         toast.success("Código enviado! Verifica a tua caixa de e-mail.");
         setResetStep("code");
         setCooldown(60);
-        // Foca no primeiro input do código
         setTimeout(() => codeInputRefs.current[0]?.focus(), 100);
       }
     } catch (err) {
@@ -112,8 +112,8 @@ export default function AffiliateLogin() {
     }
   };
 
-  // === RECUPERAÇÃO - Etapa 2: Verificar código e definir nova senha ===
-  const handleResetPassword = async (e: React.FormEvent) => {
+  // === RECUPERAÇÃO - Etapa 2: Validar código OTP ===
+  const handleVerifyCode = async (e: React.FormEvent) => {
     e.preventDefault();
     const code = resetCode.join("");
 
@@ -121,6 +121,34 @@ export default function AffiliateLogin() {
       toast.error("Digita o código completo de 6 dígitos.");
       return;
     }
+
+    setResetLoading(true);
+    try {
+      const res = await fetch("/api/affiliates/verify-reset-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: resetEmail, otp: code }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast.error(data.error || "Código inválido.");
+      } else {
+        toast.success("Código verificado! Define a tua nova senha.");
+        setVerifiedCode(code);
+        setResetStep("newPassword");
+      }
+    } catch (err) {
+      toast.error("Erro interno do servidor.");
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
+  // === RECUPERAÇÃO - Etapa 3: Definir nova senha ===
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
 
     if (!newPassword || !confirmPassword) {
       toast.error("Preenche todos os campos de senha.");
@@ -144,7 +172,7 @@ export default function AffiliateLogin() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: resetEmail,
-          otp: code,
+          otp: verifiedCode,
           newPassword,
         }),
       });
@@ -165,13 +193,11 @@ export default function AffiliateLogin() {
 
   // === Controle dos inputs de código OTP ===
   const handleCodeInput = (index: number, value: string) => {
-    // Aceitar apenas dígitos
     const digit = value.replace(/\D/g, "").slice(-1);
     const newCode = [...resetCode];
     newCode[index] = digit;
     setResetCode(newCode);
 
-    // Auto-avançar para o próximo input
     if (digit && index < 5) {
       codeInputRefs.current[index + 1]?.focus();
     }
@@ -183,19 +209,21 @@ export default function AffiliateLogin() {
     }
   };
 
+  // Colar código - funciona em qualquer input do grupo
   const handleCodePaste = (e: React.ClipboardEvent) => {
     e.preventDefault();
     const pastedText = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
-    if (pastedText.length > 0) {
-      const newCode = [...resetCode];
-      for (let i = 0; i < pastedText.length && i < 6; i++) {
-        newCode[i] = pastedText[i];
-      }
-      setResetCode(newCode);
-      // Foca no último input preenchido ou no próximo vazio
-      const focusIndex = Math.min(pastedText.length, 5);
-      codeInputRefs.current[focusIndex]?.focus();
+    if (pastedText.length === 0) return;
+
+    const newCode = ["", "", "", "", "", ""];
+    for (let i = 0; i < pastedText.length && i < 6; i++) {
+      newCode[i] = pastedText[i];
     }
+    setResetCode(newCode);
+
+    // Foca no último dígito preenchido ou no próximo vazio
+    const lastFilledIndex = Math.min(pastedText.length - 1, 5);
+    setTimeout(() => codeInputRefs.current[lastFilledIndex]?.focus(), 10);
   };
 
   // === Reenviar código ===
@@ -228,20 +256,21 @@ export default function AffiliateLogin() {
   // === Fechar modal e resetar estado ===
   const closeReset = () => {
     setShowReset(false);
-    // Resetar após a animação de fechar
     setTimeout(() => {
       setResetStep("email");
       setResetEmail("");
       setResetCode(["", "", "", "", "", ""]);
+      setVerifiedCode("");
       setNewPassword("");
       setConfirmPassword("");
       setCooldown(0);
     }, 300);
   };
 
-  // Classes de input reutilizáveis
+  // Classes reutilizáveis
   const inputClass = "w-full pl-11 pr-4 py-3 bg-black/40 border border-white/10 rounded-xl text-white placeholder-white/20 focus:outline-none focus:border-[#00FF7F] focus:ring-1 focus:ring-[#00FF7F] transition-all duration-200 text-sm";
   const inputWithToggleClass = "w-full pl-11 pr-12 py-3 bg-black/40 border border-white/10 rounded-xl text-white placeholder-white/20 focus:outline-none focus:border-[#00FF7F] focus:ring-1 focus:ring-[#00FF7F] transition-all duration-200 text-sm";
+  const greenBtnClass = "w-full py-3.5 bg-[#00FF7F] text-black rounded-xl font-extrabold hover:bg-[#00d66a] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 text-sm shadow-lg shadow-[#00FF7F]/10 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed";
 
   return (
     <div className="min-h-screen bg-[#0b0c0f] flex flex-col justify-center items-center px-4 relative overflow-hidden font-sans">
@@ -360,6 +389,7 @@ export default function AffiliateLogin() {
             <div className="h-1 w-full bg-gradient-to-r from-[#00FF7F] via-[#00d66a] to-[#00FF7F]" />
 
             <div className="p-8">
+
               {/* ===== ETAPA 1: INSERIR E-MAIL ===== */}
               {resetStep === "email" && (
                 <div className="space-y-6 animate-[fadeIn_0.3s_ease-out]">
@@ -387,21 +417,11 @@ export default function AffiliateLogin() {
                       />
                     </div>
 
-                    <button
-                      type="submit"
-                      disabled={resetLoading}
-                      className="w-full py-3.5 bg-[#00FF7F] text-black rounded-xl font-extrabold hover:bg-[#00d66a] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 text-sm shadow-lg shadow-[#00FF7F]/10 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
+                    <button type="submit" disabled={resetLoading} className={greenBtnClass}>
                       {resetLoading ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          A enviar...
-                        </>
+                        <><Loader2 className="h-4 w-4 animate-spin" /> A enviar...</>
                       ) : (
-                        <>
-                          ENVIAR CÓDIGO
-                          <ArrowRight className="h-4 w-4" />
-                        </>
+                        <> ENVIAR CÓDIGO <ArrowRight className="h-4 w-4" /></>
                       )}
                     </button>
                   </form>
@@ -417,26 +437,25 @@ export default function AffiliateLogin() {
                 </div>
               )}
 
-              {/* ===== ETAPA 2: INSERIR CÓDIGO + NOVA SENHA ===== */}
+              {/* ===== ETAPA 2: VALIDAR CÓDIGO (SÓ CÓDIGO) ===== */}
               {resetStep === "code" && (
                 <div className="space-y-6 animate-[fadeIn_0.3s_ease-out]">
                   <div className="text-center space-y-3">
                     <div className="w-16 h-16 mx-auto rounded-2xl bg-[#00FF7F]/10 flex items-center justify-center border border-[#00FF7F]/20">
                       <ShieldCheck className="h-8 w-8 text-[#00FF7F]" />
                     </div>
-                    <h3 className="text-xl font-bold text-white">Verificação & Nova Senha</h3>
+                    <h3 className="text-xl font-bold text-white">Verificar Código</h3>
                     <p className="text-sm text-slate-400 leading-relaxed">
                       Digita o código de 6 dígitos enviado para{" "}
-                      <span className="text-[#00FF7F] font-semibold">{resetEmail}</span>{" "}
-                      e define a tua nova palavra-passe.
+                      <span className="text-[#00FF7F] font-semibold">{resetEmail}</span>
                     </p>
                   </div>
 
-                  <form onSubmit={handleResetPassword} className="space-y-5">
+                  <form onSubmit={handleVerifyCode} className="space-y-5">
                     {/* Inputs do código OTP */}
                     <div>
-                      <label className="text-xs font-semibold text-slate-400 block mb-2">Código de verificação</label>
-                      <div className="flex gap-2 justify-center" onPaste={handleCodePaste}>
+                      <label className="text-xs font-semibold text-slate-400 block mb-3">Código de verificação</label>
+                      <div className="flex gap-2.5 justify-center" onPaste={handleCodePaste}>
                         {resetCode.map((digit, i) => (
                           <input
                             key={i}
@@ -447,12 +466,14 @@ export default function AffiliateLogin() {
                             value={digit}
                             onChange={(e) => handleCodeInput(i, e.target.value)}
                             onKeyDown={(e) => handleCodeKeyDown(i, e)}
-                            className="w-12 h-14 text-center text-xl font-bold bg-black/40 border border-white/10 rounded-xl text-[#00FF7F] focus:outline-none focus:border-[#00FF7F] focus:ring-1 focus:ring-[#00FF7F] transition-all duration-200 caret-[#00FF7F]"
+                            onFocus={(e) => e.target.select()}
+                            className="w-12 h-14 text-center text-xl font-bold bg-black/40 border border-white/10 rounded-xl text-[#00FF7F] focus:outline-none focus:border-[#00FF7F] focus:ring-1 focus:ring-[#00FF7F] transition-all duration-200 caret-[#00FF7F] selection:bg-[#00FF7F]/20"
                           />
                         ))}
                       </div>
+
                       {/* Reenviar código */}
-                      <div className="text-center mt-3">
+                      <div className="text-center mt-4">
                         {cooldown > 0 ? (
                           <span className="text-xs text-slate-500">
                             Reenviar código em <span className="text-[#00FF7F] font-bold">{cooldown}s</span>
@@ -464,12 +485,53 @@ export default function AffiliateLogin() {
                             disabled={resetLoading}
                             className="text-xs text-[#00FF7F]/70 hover:text-[#00FF7F] transition-colors cursor-pointer font-medium"
                           >
-                            Reenviar código
+                            Não recebeu? Reenviar código
                           </button>
                         )}
                       </div>
                     </div>
 
+                    <button
+                      type="submit"
+                      disabled={resetLoading || resetCode.join("").length !== 6}
+                      className={greenBtnClass}
+                    >
+                      {resetLoading ? (
+                        <><Loader2 className="h-4 w-4 animate-spin" /> A verificar...</>
+                      ) : (
+                        <>VERIFICAR CÓDIGO <ArrowRight className="h-4 w-4" /></>
+                      )}
+                    </button>
+                  </form>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setResetStep("email");
+                      setResetCode(["", "", "", "", "", ""]);
+                    }}
+                    className="w-full text-center text-xs text-slate-500 hover:text-slate-300 transition-colors cursor-pointer flex items-center justify-center gap-1"
+                  >
+                    <ArrowLeft className="h-3 w-3" />
+                    Usar outro e-mail
+                  </button>
+                </div>
+              )}
+
+              {/* ===== ETAPA 3: NOVA SENHA (SÓ SENHA) ===== */}
+              {resetStep === "newPassword" && (
+                <div className="space-y-6 animate-[fadeIn_0.3s_ease-out]">
+                  <div className="text-center space-y-3">
+                    <div className="w-16 h-16 mx-auto rounded-2xl bg-[#00FF7F]/10 flex items-center justify-center border border-[#00FF7F]/20">
+                      <Lock className="h-8 w-8 text-[#00FF7F]" />
+                    </div>
+                    <h3 className="text-xl font-bold text-white">Nova Palavra-passe</h3>
+                    <p className="text-sm text-slate-400 leading-relaxed">
+                      Código verificado com sucesso! Agora define a tua nova palavra-passe.
+                    </p>
+                  </div>
+
+                  <form onSubmit={handleResetPassword} className="space-y-4">
                     {/* Nova senha */}
                     <div className="space-y-1">
                       <label className="text-xs font-semibold text-slate-400">Nova palavra-passe *</label>
@@ -483,6 +545,7 @@ export default function AffiliateLogin() {
                           className={inputWithToggleClass}
                           required
                           minLength={4}
+                          autoFocus
                         />
                         <button
                           type="button"
@@ -518,7 +581,7 @@ export default function AffiliateLogin() {
                       </div>
                       {/* Indicador de correspondência */}
                       {confirmPassword && (
-                        <p className={`text-xs mt-1 ${newPassword === confirmPassword ? "text-[#00FF7F]" : "text-red-400"}`}>
+                        <p className={`text-xs mt-1.5 flex items-center gap-1 ${newPassword === confirmPassword ? "text-[#00FF7F]" : "text-red-400"}`}>
                           {newPassword === confirmPassword ? "✓ As senhas coincidem" : "✗ As senhas não coincidem"}
                         </p>
                       )}
@@ -526,35 +589,20 @@ export default function AffiliateLogin() {
 
                     <button
                       type="submit"
-                      disabled={resetLoading || resetCode.join("").length !== 6}
-                      className="w-full py-3.5 bg-[#00FF7F] text-black rounded-xl font-extrabold hover:bg-[#00d66a] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 text-sm shadow-lg shadow-[#00FF7F]/10 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                      disabled={resetLoading || newPassword !== confirmPassword || !newPassword}
+                      className={greenBtnClass}
                     >
                       {resetLoading ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          A processar...
-                        </>
+                        <><Loader2 className="h-4 w-4 animate-spin" /> A processar...</>
                       ) : (
-                        <>
-                          REDEFINIR PALAVRA-PASSE
-                          <ArrowRight className="h-4 w-4" />
-                        </>
+                        <>REDEFINIR PALAVRA-PASSE <ArrowRight className="h-4 w-4" /></>
                       )}
                     </button>
                   </form>
-
-                  <button
-                    type="button"
-                    onClick={() => setResetStep("email")}
-                    className="w-full text-center text-xs text-slate-500 hover:text-slate-300 transition-colors cursor-pointer flex items-center justify-center gap-1"
-                  >
-                    <ArrowLeft className="h-3 w-3" />
-                    Usar outro e-mail
-                  </button>
                 </div>
               )}
 
-              {/* ===== ETAPA 3: SUCESSO ===== */}
+              {/* ===== ETAPA 4: SUCESSO ===== */}
               {resetStep === "success" && (
                 <div className="space-y-6 animate-[fadeIn_0.3s_ease-out] text-center">
                   <div className="space-y-3">
@@ -567,13 +615,8 @@ export default function AffiliateLogin() {
                     </p>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={closeReset}
-                    className="w-full py-3.5 bg-[#00FF7F] text-black rounded-xl font-extrabold hover:bg-[#00d66a] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 text-sm shadow-lg shadow-[#00FF7F]/10 cursor-pointer"
-                  >
-                    VOLTAR AO LOGIN
-                    <ArrowRight className="h-4 w-4" />
+                  <button type="button" onClick={closeReset} className={greenBtnClass}>
+                    VOLTAR AO LOGIN <ArrowRight className="h-4 w-4" />
                   </button>
                 </div>
               )}
@@ -582,7 +625,7 @@ export default function AffiliateLogin() {
         </div>
       )}
 
-      {/* Estilos de animação inline */}
+      {/* Estilos de animação */}
       <style jsx>{`
         @keyframes fadeIn {
           from { opacity: 0; }

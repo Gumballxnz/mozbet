@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { formatMZN, cleanMocambiquePhone } from "@/lib/utils";
 import { 
   ArrowLeft, Percent, Users, MessageCircle, Ban, 
-  UserCheck, ShieldAlert, Wallet, Copy, Check, Save 
+  UserCheck, ShieldAlert, Wallet, Copy, Check, Save, Trash2 
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -162,6 +162,34 @@ export function AdminAffiliateDetails({
       setAffiliate(prev => ({ ...prev, is_active: action === 'activate' }));
     } catch (err: any) {
       toast.error(err.message || "Erro ao executar ação", { id: "admin-aff-action" });
+    }
+  };
+
+  // Estado do modal de exclusão permanente
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const executeDelete = async () => {
+    setIsDeleting(true);
+    try {
+      toast.loading("A apagar conta...", { id: "delete-action" });
+      const res = await fetch("/api/admin/users/action", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete", userId: affiliate.id })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Erro ao apagar conta");
+
+      toast.success("Conta apagada permanentemente.", { id: "delete-action" });
+      setDeleteModalOpen(false);
+      // Redirecionar para a lista de afiliados após exclusão
+      router.push("/admin/affiliates");
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao apagar conta.", { id: "delete-action" });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -413,6 +441,18 @@ export function AdminAffiliateDetails({
                 <ShieldAlert className="w-4 h-4 mr-2.5 text-primary" />
                 Visualizar Ficha de Jogador
               </Button>
+
+              {/* Separador visual */}
+              <div className="border-t border-red-500/20 pt-2 mt-1">
+                <Button 
+                  variant="outline" 
+                  className="w-full border-red-500/30 bg-red-500/5 hover:bg-red-500/20 hover:text-red-400 text-red-500/70 justify-start h-11 font-bold text-xs rounded-xl cursor-pointer"
+                  onClick={() => setDeleteModalOpen(true)}
+                >
+                  <Trash2 className="w-4 h-4 mr-2.5" />
+                  Apagar Conta Permanentemente
+                </Button>
+              </div>
             </div>
           </div>
 
@@ -572,6 +612,58 @@ export function AdminAffiliateDetails({
               }`}
             >
               {actionModal?.action === 'ban' ? 'Confirmar Banimento' : 'Confirmar Reativação'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* CONFIRMAÇÃO DE EXCLUSÃO PERMANENTE */}
+      <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
+        <DialogContent className="sm:max-w-[450px] bg-[#141516] border border-red-500/30 text-white rounded-3xl p-6 shadow-2xl focus:outline-none">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-black uppercase tracking-wider flex items-center gap-2 text-red-500">
+              <Trash2 className="w-5 h-5" />
+              Apagar Conta Permanentemente
+            </DialogTitle>
+            <DialogDescription className="text-sm text-gray-400 mt-2 leading-relaxed">
+              Esta ação é <strong className="text-red-400">IRREVERSÍVEL</strong>. A conta do parceiro será completamente apagada do sistema, incluindo todos os dados associados.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-4 mt-3 space-y-2">
+            <div className="text-xs text-gray-400">
+              <span className="text-gray-500 font-bold block">PARCEIRO:</span>
+              <span className="text-white font-bold">{affiliate.name}</span> ({affiliate.code})
+            </div>
+            <div className="text-xs text-gray-400">
+              <span className="text-gray-500 font-bold block">E-MAIL:</span>
+              <span className="text-white font-mono">{affiliate.email || "N/A"}</span>
+            </div>
+            <div className="text-xs text-gray-400">
+              <span className="text-gray-500 font-bold block">SALDO PENDENTE:</span>
+              <span className="text-red-400 font-bold">{formatMZN(affiliate.balance)}</span>
+            </div>
+          </div>
+
+          <p className="text-[11px] text-red-400/70 mt-2">
+            ⚠️ Todos os registos de comissões, indicados e transações vinculadas a esta conta serão perdidos.
+          </p>
+
+          <div className="flex justify-end gap-3 mt-5">
+            <Button
+              variant="outline"
+              onClick={() => setDeleteModalOpen(false)}
+              disabled={isDeleting}
+              className="bg-[#1A1C24] hover:bg-white/5 border-[#2A2F40] text-gray-300 hover:text-white rounded-xl h-11 px-4 cursor-pointer"
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={executeDelete}
+              disabled={isDeleting}
+              className="bg-red-600 hover:bg-red-700 text-white font-black rounded-xl h-11 px-5 cursor-pointer border-none shadow-[0_0_15px_rgba(239,68,68,0.2)]"
+            >
+              {isDeleting ? "A apagar..." : "Apagar Definitivamente"}
             </Button>
           </div>
         </DialogContent>

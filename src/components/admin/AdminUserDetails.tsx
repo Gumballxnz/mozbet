@@ -40,12 +40,17 @@ export function AdminUserDetails({ user: initialUser, currentUserRole }: { user:
   const [msgBody, setMsgBody] = useState("");
   const [msgTargetEmail, setMsgTargetEmail] = useState(user.email || "");
 
-  // Modal de confirmação customizado para deletar utilizador
+  // Modal de confirmação customizado para ações administrativas
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
     title: string;
     description: string;
     onConfirm: () => void;
+    confirmText?: string;
+    buttonClass?: string;
+    borderClass?: string;
+    titleColor?: string;
+    icon?: React.ReactNode;
   } | null>(null);
 
   const executeAction = async (action: 'ban' | 'suspend' | 'activate' | 'delete' | 'promote' | 'demote', userId: string) => {
@@ -84,7 +89,68 @@ export function AdminUserDetails({ user: initialUser, currentUserRole }: { user:
         isOpen: true,
         title: "Apagar Ficha de Utilizador",
         description: "Aviso: Apagar este utilizador removerá permanentemente todos os seus dados e histórico. Esta ação é irreversível. Deseja continuar?",
-        onConfirm: () => executeAction('delete', userId)
+        onConfirm: () => executeAction('delete', userId),
+        confirmText: "Apagar Permanentemente",
+        buttonClass: "bg-red-600 hover:bg-red-700 text-white",
+        borderClass: "border-red-500",
+        titleColor: "text-red-500",
+        icon: <Trash2 className="w-5 h-5" />
+      });
+      return;
+    }
+    if (action === 'ban') {
+      setConfirmModal({
+        isOpen: true,
+        title: "Banir Utilizador",
+        description: `Deseja realmente banir o utilizador +${user.phone}? Ele perderá o acesso à conta imediatamente.`,
+        onConfirm: () => executeAction('ban', userId),
+        confirmText: "Confirmar Banimento",
+        buttonClass: "bg-red-600 hover:bg-red-700 text-white",
+        borderClass: "border-red-500",
+        titleColor: "text-red-500",
+        icon: <Ban className="w-5 h-5" />
+      });
+      return;
+    }
+    if (action === 'suspend') {
+      setConfirmModal({
+        isOpen: true,
+        title: "Suspender Utilizador",
+        description: `Tem a certeza que deseja suspender temporariamente o utilizador +${user.phone}?`,
+        onConfirm: () => executeAction('suspend', userId),
+        confirmText: "Confirmar Suspensão",
+        buttonClass: "bg-yellow-600 hover:bg-yellow-700 text-white",
+        borderClass: "border-yellow-500",
+        titleColor: "text-yellow-500",
+        icon: <PauseCircle className="w-5 h-5" />
+      });
+      return;
+    }
+    if (action === 'promote') {
+      setConfirmModal({
+        isOpen: true,
+        title: "Promover a Administrador",
+        description: `Deseja realmente promover o utilizador +${user.phone} a Administrador? Ele passará a ter acesso às funções de gestão da plataforma.`,
+        onConfirm: () => executeAction('promote', userId),
+        confirmText: "Confirmar Promoção",
+        buttonClass: "bg-purple-600 hover:bg-purple-700 text-white",
+        borderClass: "border-purple-500/30",
+        titleColor: "text-purple-400",
+        icon: <Shield className="w-5 h-5" />
+      });
+      return;
+    }
+    if (action === 'demote') {
+      setConfirmModal({
+        isOpen: true,
+        title: "Despromover Administrador",
+        description: `Tem a certeza que deseja despromover +${user.phone} para utilizador comum? Ele perderá imediatamente as permissões administrativas.`,
+        onConfirm: () => executeAction('demote', userId),
+        confirmText: "Confirmar Despromoção",
+        buttonClass: "bg-red-600 hover:bg-red-700 text-white",
+        borderClass: "border-red-500",
+        titleColor: "text-red-500",
+        icon: <ShieldAlert className="w-5 h-5" />
       });
       return;
     }
@@ -512,25 +578,25 @@ export function AdminUserDetails({ user: initialUser, currentUserRole }: { user:
 
       {/* CONFIRM MODAL */}
       <Dialog open={!!confirmModal} onOpenChange={(open) => !open && setConfirmModal(null)}>
-        <DialogContent className="sm:max-w-[420px] bg-[#101116] border border-red-500 text-white">
+        <DialogContent className={`sm:max-w-[420px] bg-[#101116] border text-white rounded-3xl p-6 shadow-2xl focus:outline-none ${confirmModal?.borderClass || 'border-[#2A2F40]'}`}>
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold flex items-center gap-2 text-red-500">
-              <ShieldAlert className="w-5 h-5" />
+            <DialogTitle className={`text-xl font-bold flex items-center gap-2 uppercase tracking-wider ${confirmModal?.titleColor || 'text-white'}`}>
+              {confirmModal?.icon || <ShieldAlert className="w-5 h-5" />}
               {confirmModal?.title}
             </DialogTitle>
             <DialogDescription className="hidden">Modal de Confirmação Crítica</DialogDescription>
           </DialogHeader>
           <p className="text-sm text-gray-400 py-3 leading-relaxed">{confirmModal?.description}</p>
-          <div className="flex justify-end gap-2 mt-4">
-            <Button variant="outline" onClick={() => setConfirmModal(null)} className="border-[#2A2F40] bg-transparent cursor-pointer">Cancelar</Button>
+          <div className="flex justify-end gap-3 mt-4">
+            <Button variant="outline" onClick={() => setConfirmModal(null)} className="border-[#2A2F40] bg-[#1A1C24] hover:bg-white/5 text-gray-300 hover:text-white rounded-xl h-11 px-4 cursor-pointer">Cancelar</Button>
             <Button 
               onClick={() => {
                 confirmModal?.onConfirm();
                 setConfirmModal(null);
               }} 
-              className="bg-red-600 hover:bg-red-700 text-white font-bold cursor-pointer"
+              className={`font-bold cursor-pointer rounded-xl h-11 px-5 ${confirmModal?.buttonClass || 'bg-primary text-black'}`}
             >
-              Apagar Permanentemente
+              {confirmModal?.confirmText || 'Confirmar'}
             </Button>
           </div>
         </DialogContent>

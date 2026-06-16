@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search, Settings, Ban, UserCheck, ShieldAlert, Wallet, Percent, Users, MessageCircle, ExternalLink, Copy } from "lucide-react";

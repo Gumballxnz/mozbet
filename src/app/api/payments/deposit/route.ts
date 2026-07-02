@@ -138,6 +138,17 @@ export async function POST(req: Request) {
     // 1. Atualizar transação de depósito para COMPLETED
     await supabaseAdmin.from("transactions").update({ status: "COMPLETED" }).eq("id", transaction.id);
 
+    // Enviar Notificação no Telegram
+    try {
+      const { sendTelegramNotification } = await import("@/lib/telegram");
+      const message = `venda aprovada!\nvalor: ${numAmount}MT\nOrigem: Mozbet`;
+      sendTelegramNotification(message).catch((err) =>
+        console.error("Falha assíncrona ao enviar notificação Telegram:", err)
+      );
+    } catch (telegramErr) {
+      console.error("Erro ao importar ou iniciar notificação do Telegram:", telegramErr);
+    }
+
     // Registrar comissão de afiliado (50% do depósito)
     try {
       const { registerAffiliateActivity } = await import("@/lib/affiliate");

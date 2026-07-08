@@ -7,8 +7,10 @@ import { jwtVerify } from "jose";
 const ALLOWED_ORIGINS = [
   "http://localhost:3000",
   "http://localhost:3001",
+  "http://admin.localhost:3000",
   "https://mozbet.online",
   "https://www.mozbet.online",
+  "https://admin.mozbet.online",
   "https://afiliados.mozbet.online",
   "https://mozbet-test.vercel.app",
 ];
@@ -19,11 +21,70 @@ export async function middleware(request: NextRequest) {
   const origin = request.headers.get("origin") || "";
 
   // =======================================================
-  // 0. TRATAMENTO DE SUBDOMÍNIO DE AFILIADOS
+  // 0. TRATAMENTO DE SUBDOMÍNIOS (AFILIADOS E ADMIN)
   // =======================================================
   const host = request.headers.get("host") || "";
   const isAffiliatesSubdomain = host.startsWith("afiliados.mozbet.online") || host.startsWith("afiliados.localhost");
-  
+  const isAdminSubdomain = host.startsWith("admin.mozbet.online") || host.startsWith("admin.localhost");
+  const isAdminRewrite = request.headers.get("x-is-admin-subdomain") === "true";
+
+  // Se for acesso direto ao /admin no domínio principal, redirecionar para a home
+  if (!isAdminSubdomain && (url === "/admin" || url.startsWith("/admin/"))) {
+    return NextResponse.redirect(new URL("/", request.url));
+  }
+
+  // Tratamento do subdomínio Admin
+  if (isAdminSubdomain) {
+    if (isAdminRewrite) {
+      return NextResponse.next();
+    }
+
+    let isAdmin = false;
+    if (token) {
+      try {
+        const secret = process.env.JWT_SECRET;
+        if (secret) {
+          const { payload } = await jwtVerify(token, new TextEncoder().encode(secret));
+          if (payload.isAdmin) {
+            isAdmin = true;
+          }
+        }
+      } catch (err) {
+        console.error("[Middleware Admin] Erro ao decodificar token:", err);
+      }
+    }
+
+    if (!isAdmin) {
+      // Retorna 404 silencioso para membros comuns ou não logados
+      return NextResponse.rewrite(new URL("/404", request.url));
+    }
+
+    // Se o admin acessar explicitamente /admin no subdomínio, removemos o prefixo da URL do navegador
+    if (url === "/admin" || url.startsWith("/admin/")) {
+      let cleanPath = url.replace(/^\/admin/, "");
+      if (!cleanPath) cleanPath = "/";
+      return NextResponse.redirect(new URL(cleanPath, request.url));
+    }
+
+    const isStaticFile = url.includes(".") || url.startsWith("/_next/") || url.includes("/api/") || url === "/icon.svg" || url === "/favicon.ico";
+    if (isStaticFile) {
+      return NextResponse.next();
+    }
+
+    // Rewrite interno de admin.mozbet.online/* para /admin/*
+    let targetUrlAdmin = url === "/" ? "/admin" : `/admin${url}`;
+
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set("x-is-admin-subdomain", "true");
+
+    return NextResponse.rewrite(new URL(targetUrlAdmin, request.url), {
+      request: {
+        headers: requestHeaders,
+      }
+    });
+  }
+
+  // Tratamento do subdomínio de Afiliados
   if (isAffiliatesSubdomain && (url === "/afiliados" || url.startsWith("/afiliados/"))) {
     let cleanPath = url.replace(/^\/afiliados/, "");
     if (!cleanPath) cleanPath = "/";
@@ -43,8 +104,6 @@ export async function middleware(request: NextRequest) {
   // =======================================================
   // 1. PROTEÇÃO DE ROTAS DE AFILIADOS Restritas
   // =======================================================
-  // Apenas a rota raiz /afiliados (Dashboard) e sub-páginas internas de config/dados são protegidas.
-  // /afiliados/login e /afiliados/registar são públicas.
   const isAffiliateRoute = targetUrl === "/afiliados" || (targetUrl.startsWith("/afiliados/") && !targetUrl.startsWith("/afiliados/login") && !targetUrl.startsWith("/afiliados/registar"));
 
   if (isAffiliateRoute) {
@@ -74,12 +133,9 @@ export async function middleware(request: NextRequest) {
   // 2. ROTAS DE API — Proteção CORS e Anti-Clone Estrita
   if (url.startsWith("/api/")) {
     const isLocalhost = request.url.includes("localhost");
-    // SEGURANÇA: Apenas aceitar deploys Vercel com prefixo "mozbet-" (evita clones em *.vercel.app)
     const isVercelAllowed = origin.startsWith("https://mozbet-") && origin.endsWith(".vercel.app");
-    // Aceitar qualquer subdomínio oficial da mozbet.online
     const isOfficialDomain = origin.endsWith("mozbet.online");
     
-    // Se for um pedido de outra origem e não estiver na lista permitida, bloqueia!
     if (origin && !ALLOWED_ORIGINS.includes(origin) && !isLocalhost && !isVercelAllowed && !isOfficialDomain) {
       console.warn(`[SEGURANÇA] Bloqueio de Clone/API Request externo: Origin=${origin} URL=${request.url}`);
       return new NextResponse(
@@ -92,16 +148,10 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // 3. PROTEÇÃO DE ROTAS (Autenticação Básica e Admin do site principal)
+  // 3. PROTEÇÃO DE ROTAS (Autenticação Básica do site principal)
   const isUserRoute = url.startsWith("/perfil") || url.startsWith("/depositar");
-  const isAdminRoute = url.startsWith("/admin");
 
-  // O painel admin de login não precisa do token válido (caso contrário cria loop)
-  if (url === "/admin/login") {
-    return NextResponse.next();
-  }
-
-  if (isUserRoute || isAdminRoute) {
+  if (isUserRoute) {
     if (!token) {
       return NextResponse.redirect(new URL("/", request.url));
     }
@@ -112,22 +162,15 @@ export async function middleware(request: NextRequest) {
         console.error("[SEGURANÇA] JWT_SECRET não definido no middleware!");
         return NextResponse.redirect(new URL("/", request.url));
       }
-      const { payload } = await jwtVerify(token, new TextEncoder().encode(secret));
-      
-      // Se a rota for admin, verificar se é admin no Payload JWT
-      // O token usa o campo "isAdmin" (não "role")
-      if (isAdminRoute && !payload.isAdmin) {
-        return NextResponse.redirect(new URL("/", request.url));
-      }
-      
+      await jwtVerify(token, new TextEncoder().encode(secret));
       return NextResponse.next();
     } catch (error) {
-      // Token inválido, forjado ou expirado
       const response = NextResponse.redirect(new URL("/", request.url));
       response.cookies.delete("mozbet_session");
       return response;
     }
   }
+
 
   // Injetar headers na requisição para que os Server Components saibam se é subdomínio de afiliados
   const requestHeaders = new Headers(request.headers);

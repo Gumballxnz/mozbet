@@ -192,7 +192,13 @@ export function DesktopSidebar() {
       {/* Botão Admin (apenas para admins) */}
       {isLoggedIn && user?.isAdmin && (
         <div className="p-3 border-t border-white/5">
-          <Link href="/admin/login" target="_blank"
+          <Link 
+            href={
+              typeof window !== "undefined" && window.location.hostname.includes("localhost")
+                ? "http://admin.localhost:3000"
+                : "https://admin.mozbet.online"
+            } 
+            target="_blank"
             className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 transition-colors ${collapsed ? "justify-center px-0" : ""}`}
             title={collapsed ? "Painel Admin" : undefined}
           >

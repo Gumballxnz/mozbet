@@ -16,12 +16,12 @@ export default async function UserDetailsPage({ params }: PageProps) {
   const token = cookieStore.get("mozbet_session")?.value;
   
   if (!token) {
-    redirect("/admin/login");
+    notFound();
   }
 
   const payload = await verifyToken<{ id: string; role: string }>(token);
   if (!payload?.id) {
-    redirect("/admin/login");
+    notFound();
   }
 
   // Obter role do administrador ativo

@@ -71,15 +71,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <nav className="flex-1 p-4 space-y-2">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const isActive = pathname === item.href;
-            const isLoading = isNavigatingTo === item.href;
+            const cleanHref = item.href.replace(/^\/admin/, "") || "/";
+            const isActive = pathname === item.href || pathname === cleanHref;
+            const isLoading = isNavigatingTo === item.href || isNavigatingTo === cleanHref;
             
             return (
               <Link
                 key={item.href}
-                href={item.href}
+                href={cleanHref}
                 onClick={() => {
-                  if (pathname !== item.href) setIsNavigatingTo(item.href);
+                  if (pathname !== cleanHref) setIsNavigatingTo(cleanHref);
                 }}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
                   isActive 
@@ -145,16 +146,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
               {navItems.map((item) => {
                 const Icon = item.icon;
-                const isActive = pathname === item.href;
-                const isLoading = isNavigatingTo === item.href;
+                const cleanHref = item.href.replace(/^\/admin/, "") || "/";
+                const isActive = pathname === item.href || pathname === cleanHref;
+                const isLoading = isNavigatingTo === item.href || isNavigatingTo === cleanHref;
                 
                 return (
                   <Link
                     key={item.href}
-                    href={item.href}
+                    href={cleanHref}
                     onClick={() => {
                       setIsMobileMenuOpen(false);
-                      if (pathname !== item.href) setIsNavigatingTo(item.href);
+                      if (pathname !== cleanHref) setIsNavigatingTo(cleanHref);
                     }}
                     className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
                       isActive 

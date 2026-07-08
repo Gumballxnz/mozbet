@@ -81,6 +81,8 @@ export default async function RootLayout({
   const isAffiliateRoute = headersList.get("x-is-affiliate-route") === "true";
   const isAffiliate = isAffiliateSubdomain || isAffiliateRoute;
 
+  const isAdminSubdomain = headersList.get("x-is-admin-subdomain") === "true";
+
   return (
     <html lang="pt" suppressHydrationWarning>
       <head>
@@ -106,7 +108,7 @@ export default async function RootLayout({
       </head>
       <body className="min-h-screen bg-background text-foreground font-sans antialiased" suppressHydrationWarning>
         <AuthProvider>
-          <LayoutWrapper isAffiliate={isAffiliate}>
+          <LayoutWrapper isAffiliate={isAffiliate} isAdmin={isAdminSubdomain}>
             {children}
           </LayoutWrapper>
         </AuthProvider>

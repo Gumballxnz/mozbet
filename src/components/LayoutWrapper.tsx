@@ -16,11 +16,20 @@ const SupportChat = dynamic(() => import("@/components/SupportChat").then(m => m
 const ChatGlobal = dynamic(() => import("@/components/ChatGlobal"), { ssr: false });
 const MobileSidebar = dynamic(() => import("@/components/MobileSidebar").then(m => m.MobileSidebar), { ssr: false });
 
-export function LayoutWrapper({ children, isAffiliate: isAffiliateProp }: { children: React.ReactNode; isAffiliate?: boolean }) {
+export function LayoutWrapper({ 
+  children, 
+  isAffiliate: isAffiliateProp, 
+  isAdmin: isAdminProp 
+}: { 
+  children: React.ReactNode; 
+  isAffiliate?: boolean; 
+  isAdmin?: boolean; 
+}) {
   const pathname = usePathname();
   const router = useRouter();
   const { chatOpen, setChatOpen } = useAppStore();
-  const isAdmin = pathname?.startsWith("/admin");
+  const isClientAdmin = typeof window !== "undefined" && (window.location.hostname.startsWith("admin.mozbet.online") || window.location.hostname.startsWith("admin.localhost"));
+  const isAdmin = isAdminProp || pathname?.startsWith("/admin") || isClientAdmin;
   const isEngine = pathname?.startsWith("/engine");
   const isAffiliate = isAffiliateProp || pathname?.startsWith("/afiliados");
 

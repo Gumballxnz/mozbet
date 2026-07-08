@@ -35,7 +35,11 @@ export async function GET(req: Request) {
     // 4. Se a conta foi desativada pelo admin
     if (!user.is_active) {
       const response = NextResponse.json({ user: null }, { status: 403 });
-      response.cookies.set("mozbet_session", "", { expires: new Date(0) });
+      response.cookies.set("mozbet_session", "", {
+        expires: new Date(0),
+        path: "/",
+        domain: process.env.NODE_ENV === "production" ? "mozbet.online" : undefined,
+      });
       return response;
     }
 

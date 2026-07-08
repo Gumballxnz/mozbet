@@ -39,6 +39,11 @@ export async function middleware(request: NextRequest) {
       return NextResponse.next();
     }
 
+    const isStaticFile = url.includes(".") || url.startsWith("/_next/") || url.includes("/api/") || url === "/icon.svg" || url === "/favicon.ico";
+    if (isStaticFile) {
+      return NextResponse.next();
+    }
+
     let isAdmin = false;
     if (token) {
       try {
@@ -64,11 +69,6 @@ export async function middleware(request: NextRequest) {
       let cleanPath = url.replace(/^\/admin/, "");
       if (!cleanPath) cleanPath = "/";
       return NextResponse.redirect(new URL(cleanPath, request.url));
-    }
-
-    const isStaticFile = url.includes(".") || url.startsWith("/_next/") || url.includes("/api/") || url === "/icon.svg" || url === "/favicon.ico";
-    if (isStaticFile) {
-      return NextResponse.next();
     }
 
     // Rewrite interno de admin.mozbet.online/* para /admin/*

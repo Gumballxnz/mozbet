@@ -22,6 +22,7 @@ export async function POST(req: Request) {
     httpOnly: true,
     expires: new Date(0),
     path: "/",
+    domain: process.env.NODE_ENV === "production" ? "mozbet.online" : undefined,
   });
 
   return response;

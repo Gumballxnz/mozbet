@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Loader2, Save, CreditCard, Shield, Percent, Wallet } from "lucide-react";
+import { Loader2, Save, CreditCard, Shield, Percent, Wallet, AlertTriangle } from "lucide-react";
 
 interface SettingsData {
   min_deposit: string;
@@ -26,6 +26,7 @@ export default function AdminSettingsPage() {
   const [originalConfig, setOriginalConfig] = useState<SettingsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [tableMissing, setTableMissing] = useState(false);
 
   const fetchSettings = async () => {
     setLoading(true);
@@ -33,8 +34,10 @@ export default function AdminSettingsPage() {
       const res = await fetch("/api/admin/settings");
       if (!res.ok) throw new Error("Falha ao obter configurações");
       const data = await res.json();
-      setConfig(data);
-      setOriginalConfig({ ...data });
+      const { _table_missing, ...configData } = data;
+      setConfig(configData);
+      setOriginalConfig({ ...configData });
+      setTableMissing(!!_table_missing);
     } catch (err: any) {
       console.error(err);
       toast.error("Erro ao carregar configurações.");
@@ -101,6 +104,34 @@ export default function AdminSettingsPage() {
         <h1 className="text-2xl font-extrabold text-white">Configurações Gerais</h1>
         <p className="text-muted-foreground">Gerencie o gateway de pagamento ativo e os limites financeiros da plataforma.</p>
       </div>
+
+      {tableMissing && (
+        <div className="bg-red-500/10 border border-red-500/30 p-5 rounded-2xl max-w-4xl space-y-3">
+          <div className="flex items-center gap-2 text-red-400 font-bold">
+            <AlertTriangle className="w-5 h-5" />
+            <span>Tabela 'settings' não encontrada no Supabase</span>
+          </div>
+          <p className="text-xs text-gray-300">
+            A tabela de configurações não existe no seu banco de dados Supabase. O sistema está rodando com valores padrão (fallbacks). 
+            Por favor, execute o seguinte comando no <strong>SQL Editor</strong> do seu painel do Supabase para criar a tabela e habilitar a gravação:
+          </p>
+          <pre className="bg-black/80 p-4 rounded-xl text-xs font-mono text-green-400 overflow-x-auto select-all">
+{`CREATE TABLE IF NOT EXISTS settings (
+  key VARCHAR(255) PRIMARY KEY,
+  value TEXT NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+
+INSERT INTO settings (key, value) VALUES
+  ('min_deposit', '10'),
+  ('max_deposit', '17500'),
+  ('first_deposit_bonus_percent', '500'),
+  ('default_deposit', '100'),
+  ('active_gateway', 'e2payments')
+ON CONFLICT (key) DO NOTHING;`}
+          </pre>
+        </div>
+      )}
 
       <form onSubmit={handleSave} className="space-y-6 max-w-4xl">
         {/* CARD 1: Gateway Ativo */}

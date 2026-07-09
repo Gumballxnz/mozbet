@@ -25,9 +25,15 @@ export async function GET(req: NextRequest) {
       .from("settings")
       .select("key, value");
 
+    let isTableMissing = false;
     if (error) {
-      console.error("Erro ao buscar configurações no BD:", error);
-      return NextResponse.json({ error: "Erro ao buscar configurações" }, { status: 500 });
+      if (error.code === "PGRST205") {
+        console.warn("[GET Settings] Tabela 'settings' não encontrada no banco, usando fallbacks.");
+        isTableMissing = true;
+      } else {
+        console.error("Erro ao buscar configurações no BD:", error);
+        return NextResponse.json({ error: "Erro ao buscar configurações" }, { status: 500 });
+      }
     }
 
     // Converter array para objeto chave-valor
@@ -45,7 +51,10 @@ export async function GET(req: NextRequest) {
     if (!configObj.default_deposit) configObj.default_deposit = "100";
     if (!configObj.active_gateway) configObj.active_gateway = "e2payments";
 
-    return NextResponse.json(configObj);
+    return NextResponse.json({
+      ...configObj,
+      _table_missing: isTableMissing
+    });
   } catch (error) {
     console.error("Erro no GET de configurações:", error);
     return NextResponse.json({ error: "Erro interno" }, { status: 500 });
@@ -93,7 +102,14 @@ export async function PUT(req: NextRequest) {
 
     if (hasError) {
       console.error("Erros ao salvar configurações:", results.filter(res => res.error));
-      return NextResponse.json({ error: "Falha ao salvar algumas configurações" }, { status: 500 });
+      const firstError = results.find(res => res.error)?.error;
+      const isMissing = firstError?.code === "PGRST205";
+      
+      return NextResponse.json({ 
+        error: isMissing 
+          ? "A tabela 'settings' não existe no banco de dados. Por favor, crie-a antes de salvar." 
+          : "Falha ao salvar algumas configurações" 
+      }, { status: isMissing ? 400 : 500 });
     }
 
     return NextResponse.json({ success: true });

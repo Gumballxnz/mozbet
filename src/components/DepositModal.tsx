@@ -13,7 +13,7 @@ import { useTranslation } from "@/hooks/useTranslation";
 import { useAppStore } from "@/lib/store";
 import { toast } from "sonner";
 import { formatMZN } from "@/lib/utils";
-import { EMOLA_LOGO, MPESA_LOGO } from "@/lib/logos";
+import { EMOLA_LOGO, MPESA_LOGO, MKESH_LOGO } from "@/lib/logos";
 import { Wallet, Check, Headphones, Lock } from "lucide-react";
 
 // Botões de valor rápido
@@ -24,7 +24,7 @@ const QUICK_AMOUNTS = [50, 100, 250, 500, 1000, 5000];
  * - Vodacom (84, 85) → M-Pesa
  * - Movitel (86, 87) → E-Mola
  */
-function detectPaymentMethod(phone: string): { method: "mpesa" | "emola"; label: string } {
+function detectPaymentMethod(phone: string, activeGateway: string): { method: "mpesa" | "emola" | "mkesh"; label: string } {
   const clean = phone.replace(/\D/g, "").replace(/^258/, "");
   const prefix = clean.substring(0, 2);
 
@@ -33,6 +33,9 @@ function detectPaymentMethod(phone: string): { method: "mpesa" | "emola"; label:
   }
   if (["86", "87", "88"].includes(prefix)) {
     return { method: "emola", label: "e-Mola" };
+  }
+  if (activeGateway === "debitopay" && ["82", "83"].includes(prefix)) {
+    return { method: "mkesh", label: "mKesh" };
   }
   // Fallback
   return { method: "mpesa", label: "M-Pesa" };
@@ -59,6 +62,7 @@ export function DepositModal() {
     max_deposit: 17500,
     first_deposit_bonus_percent: 500,
     default_deposit: 100,
+    active_gateway: "e2payments",
   });
 
   // Validação em tempo real do depósito (valor mínimo e máximo)
@@ -114,6 +118,7 @@ export function DepositModal() {
               max_deposit: data.max_deposit ?? 17500,
               first_deposit_bonus_percent: data.first_deposit_bonus_percent ?? 500,
               default_deposit: data.default_deposit ?? 100,
+              active_gateway: data.active_gateway ?? "e2payments",
             });
           }
         })
@@ -125,7 +130,7 @@ export function DepositModal() {
   const phone = user?.phone || "";
 
   // Detecção automática de operadora pelo número de telefone
-  const paymentInfo = useMemo(() => detectPaymentMethod(phone), [phone]);
+  const paymentInfo = useMemo(() => detectPaymentMethod(phone, config.active_gateway), [phone, config.active_gateway]);
 
   // Iniciar countdown de 60s quando o depósito for enviado com sucesso
   useEffect(() => {
@@ -351,7 +356,7 @@ export function DepositModal() {
                   Método de Pagamento Detectado
                 </span>
                 
-                <div className="grid grid-cols-2 gap-3">
+                <div className={`grid gap-3 ${config.active_gateway === "debitopay" ? "grid-cols-3" : "grid-cols-2"}`}>
                   {/* M-PESA BUTTON */}
                   <div
                     className={`relative flex items-center justify-center p-2 h-14 rounded-2xl transition-all bg-white/5 border ${
@@ -383,6 +388,24 @@ export function DepositModal() {
                       </div>
                     )}
                   </div>
+
+                  {/* M-KESH BUTTON (Apenas se o gateway ativo for DebitoPay) */}
+                  {config.active_gateway === "debitopay" && (
+                    <div
+                      className={`relative flex items-center justify-center p-2 h-14 rounded-2xl transition-all bg-white/5 border ${
+                        paymentInfo.method === "mkesh"
+                          ? "border-green-500 ring-2 ring-green-500/20 opacity-100 scale-102 shadow-[0_0_15px_rgba(34,197,94,0.15)]"
+                          : "border-[#2A2F40]/30 opacity-40 grayscale"
+                      }`}
+                    >
+                      <img src={MKESH_LOGO} alt="mKesh" className="h-10 w-auto object-contain" />
+                      {paymentInfo.method === "mkesh" && (
+                        <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-green-500 flex items-center justify-center text-black text-[9px] font-bold">
+                          ✓
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
                 <p className="text-[10px] text-muted-foreground text-center italic mt-1.5">
                   O método é detectado automaticamente pelo teu número de telemóvel.

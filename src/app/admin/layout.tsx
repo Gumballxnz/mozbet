@@ -55,6 +55,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { name: "Saques", href: "/admin/withdrawals", icon: ArrowUpRight },
     { name: "Carrossel de Destaques", href: "/admin/banners", icon: Settings },
     { name: "Catálogo de Jogos", href: "/admin/games", icon: Settings },
+    { name: "Configurações", href: "/admin/settings", icon: Settings },
   ];
 
 

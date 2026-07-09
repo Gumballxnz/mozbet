@@ -9,6 +9,7 @@ export async function GET() {
   let maxDeposit = 17500;
   let bonusPercent = 500;
   let defaultDeposit = 100;
+  let activeGateway = "e2payments";
 
   try {
     // Tenta consultar a tabela de configurações do Supabase caso exista
@@ -21,11 +22,13 @@ export async function GET() {
       const maxSetting = settings.find(s => s.key === "max_deposit");
       const bonusSetting = settings.find(s => s.key === "first_deposit_bonus_percent");
       const defaultSetting = settings.find(s => s.key === "default_deposit");
+      const gatewaySetting = settings.find(s => s.key === "active_gateway");
 
       if (minSetting) minDeposit = Number(minSetting.value);
       if (maxSetting) maxDeposit = Number(maxSetting.value);
       if (bonusSetting) bonusPercent = Number(bonusSetting.value);
       if (defaultSetting) defaultDeposit = Number(defaultSetting.value);
+      if (gatewaySetting) activeGateway = gatewaySetting.value;
     }
   } catch (err) {
     console.log("[API Config Payments] Tabela settings não encontrada, usando fallbacks locais.");
@@ -35,6 +38,7 @@ export async function GET() {
     min_deposit: minDeposit,
     max_deposit: maxDeposit,
     first_deposit_bonus_percent: bonusPercent,
-    default_deposit: defaultDeposit
+    default_deposit: defaultDeposit,
+    active_gateway: activeGateway
   });
 }

@@ -32,6 +32,7 @@ export async function POST(req: Request) {
     let minDeposit = 10;
     let maxDeposit = 17500;
     let bonusPercent = 500;
+    let activeGateway = "e2payments";
     try {
       const { data: settings } = await supabaseAdmin
         .from("settings")
@@ -41,10 +42,12 @@ export async function POST(req: Request) {
         const minSetting = settings.find(s => s.key === "min_deposit");
         const maxSetting = settings.find(s => s.key === "max_deposit");
         const bonusSetting = settings.find(s => s.key === "first_deposit_bonus_percent");
+        const gatewaySetting = settings.find(s => s.key === "active_gateway");
 
         if (minSetting) minDeposit = Number(minSetting.value);
         if (maxSetting) maxDeposit = Number(maxSetting.value);
         if (bonusSetting) bonusPercent = Number(bonusSetting.value);
+        if (gatewaySetting) activeGateway = gatewaySetting.value;
       }
     } catch (err) {
       console.error("[API Deposit] Erro ao buscar configurações do banco, usando fallbacks.");
@@ -74,7 +77,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Erro interno ao iniciar depósito." }, { status: 500 });
     }
 
-    const hasKeys = !!process.env.E2PAY_CLIENT_ID;
+    const hasKeys = activeGateway === "debitopay"
+      ? !!(process.env.DEBITOPAY_API_KEY || process.env.DEBITIPAY_API_KEY)
+      : !!process.env.E2PAY_CLIENT_ID;
     
     // Em produção, nunca permitir o modo simulação se as chaves estiverem em falta
     if (!hasKeys && process.env.NODE_ENV === "production") {
@@ -99,15 +104,37 @@ export async function POST(req: Request) {
     }
 
     let paymentSuccess = false;
+    let isPendingConfirmation = false;
     let errorMessage = "Ocorreu um erro no processamento do depósito.";
+    let providerTxId = "";
 
     if (hasKeys) {
-      // ===== MODO E2PAYMENTS — PAGAMENTO REAL E INSTANTÂNEO =====
-      const e2payRes = await processE2Payment(decoded.phone, numAmount, transaction.id, paymentMethod);
-      if (e2payRes.success) {
-        paymentSuccess = true;
+      if (activeGateway === "debitopay") {
+        // ===== MODO DEBITOPAY =====
+        const { processDebitoPayment } = await import("@/lib/debitopay");
+        const debitoMethod = method === "mkesh" ? "mkesh" : method === "emola" ? "emola" : "mpesa";
+        
+        const debitoRes = await processDebitoPayment(decoded.phone, numAmount, transaction.id, debitoMethod);
+        if (debitoRes.success) {
+          providerTxId = debitoRes.data?.payment_id || "";
+          
+          if (debitoMethod === "emola" || debitoMethod === "mkesh") {
+            isPendingConfirmation = true;
+            paymentSuccess = true;
+          } else {
+            paymentSuccess = true;
+          }
+        } else {
+          errorMessage = debitoRes.error || "Pagamento rejeitado pelo gateway DebitoPay.";
+        }
       } else {
-        errorMessage = e2payRes.error || "Pagamento rejeitado pelo gateway.";
+        // ===== MODO E2PAYMENTS — PAGAMENTO REAL E INSTANTÂNEO =====
+        const e2payRes = await processE2Payment(decoded.phone, numAmount, transaction.id, paymentMethod);
+        if (e2payRes.success) {
+          paymentSuccess = true;
+        } else {
+          errorMessage = e2payRes.error || "Pagamento rejeitado pelo gateway E2Payments.";
+        }
       }
     } else {
       // ===== MODO DESENVOLVIMENTO / TESTES =====
@@ -132,6 +159,30 @@ export async function POST(req: Request) {
       });
 
       return NextResponse.json({ error: errorMessage }, { status: 400 });
+    }
+
+    // Se DebitoPay retornou ID externo, grava no campo reference
+    if (providerTxId) {
+      await supabaseAdmin
+        .from("transactions")
+        .update({ reference: providerTxId })
+        .eq("id", transaction.id);
+    }
+
+    // Se for confirmação assíncrona (Aguardando PIN), retorna status PENDING e encerra o request
+    if (isPendingConfirmation) {
+      await supabaseAdmin.from('notifications').insert({
+        user_id: decoded.id,
+        message: `Iniciamos a transação de ${numAmount.toFixed(2)} MZN via ${method.toUpperCase()}. Digite o seu PIN no telemóvel para confirmar o pagamento!`,
+        type: "promo"
+      });
+
+      return NextResponse.json({
+        success: true,
+        status: "PENDING",
+        message: "Por favor, digite o PIN no seu telemóvel para autorizar o pagamento.",
+        transactionId: transaction.id
+      }, { status: 200 });
     }
 
     // ===== PROCESSO DE SUCESSO UNIFICADO (Saldo Real + Bónus Real) =====

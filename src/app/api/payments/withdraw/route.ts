@@ -24,8 +24,25 @@ export async function POST(req: Request) {
     const { amount } = await req.json();
     const numAmount = Number(amount);
 
-    if (isNaN(numAmount) || numAmount < 65) {
-      return NextResponse.json({ error: "O valor mínimo de levantamento é 65 MZN." }, { status: 400 });
+    let minWithdrawal = 65;
+    let maxWithdrawalDaily = 25000;
+    try {
+      const { data: settings } = await supabaseAdmin
+        .from("settings")
+        .select("key, value");
+
+      if (settings) {
+        const minSetting = settings.find(s => s.key === "min_withdrawal");
+        const maxSetting = settings.find(s => s.key === "max_withdrawal_daily");
+        if (minSetting) minWithdrawal = Number(minSetting.value);
+        if (maxSetting) maxWithdrawalDaily = Number(maxSetting.value);
+      }
+    } catch (err) {
+      console.error("[API Withdraw] Erro ao buscar limites do BD, usando fallbacks.");
+    }
+
+    if (isNaN(numAmount) || numAmount < minWithdrawal) {
+      return NextResponse.json({ error: `O valor mínimo de levantamento é ${minWithdrawal} MZN.` }, { status: 400 });
     }
 
     // 3. Buscar os dados do utilizador
@@ -64,6 +81,27 @@ export async function POST(req: Request) {
     if (!todayDeposits || todayDeposits.length === 0) {
       // Retorna erro específico informando que o depósito de segurança é necessário
       return NextResponse.json({ error: "DEPOSIT_REQUIRED" }, { status: 403 });
+    }
+
+    // 4.2. Validar limite diário de levantamento acumulado
+    const { data: todayWithdrawals, error: wdError } = await supabaseAdmin
+      .from("transactions")
+      .select("amount")
+      .eq("user_id", decoded.id)
+      .eq("type", "WITHDRAW")
+      .in("status", ["COMPLETED", "PENDING"])
+      .gte("created_at", startOfDay.toISOString());
+
+    if (wdError) {
+      console.error("Erro ao buscar saques de hoje:", wdError);
+      return NextResponse.json({ error: "Erro interno ao validar limites de saque." }, { status: 500 });
+    }
+
+    const todaySum = todayWithdrawals ? todayWithdrawals.reduce((sum, tx) => sum + Number(tx.amount), 0) : 0;
+    if (todaySum + numAmount > maxWithdrawalDaily) {
+      return NextResponse.json({ 
+        error: `O limite diário de levantamento é de ${maxWithdrawalDaily} MZN. Já levantou/solicitou ${todaySum} MZN hoje.` 
+      }, { status: 400 });
     }
 
     // 5. Deduzir o saldo imediatamente do utilizador para congelar o valor do saque

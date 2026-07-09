@@ -50,6 +50,8 @@ export async function GET(req: NextRequest) {
     if (!configObj.first_deposit_bonus_percent) configObj.first_deposit_bonus_percent = "500";
     if (!configObj.default_deposit) configObj.default_deposit = "100";
     if (!configObj.active_gateway) configObj.active_gateway = "e2payments";
+    if (!configObj.min_withdrawal) configObj.min_withdrawal = "65";
+    if (!configObj.max_withdrawal_daily) configObj.max_withdrawal_daily = "25000";
 
     return NextResponse.json({
       ...configObj,

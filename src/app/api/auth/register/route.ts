@@ -44,14 +44,36 @@ export async function POST(req: Request) {
       );
     }
 
+    const cleanPhone = phone.replace(/\D/g, "");
+
+    // Verificar se o gateway ativo é e2payments e bloquear Tmcel (82/83)
+    let activeGateway = "e2payments";
+    try {
+      const { data: gatewaySetting } = await supabaseAdmin
+        .from("settings")
+        .select("value")
+        .eq("key", "active_gateway")
+        .single();
+      if (gatewaySetting) activeGateway = gatewaySetting.value;
+    } catch (err) {
+      console.error("[API Register] Erro ao buscar gateway ativo:", err);
+    }
+
+    const cleanNoDdi = cleanPhone.replace(/^258/, "");
+    const prefix = cleanNoDdi.substring(0, 2);
+    if (activeGateway === "e2payments" && ["82", "83"].includes(prefix)) {
+      return NextResponse.json(
+        { error: "A rede Tmcel (mKesh) está em manutenção temporária. Por favor, utilize outra operadora ou tente mais tarde." },
+        { status: 400 }
+      );
+    }
+
     if (password.length < 6) {
       return NextResponse.json(
         { error: "A palavra-passe deve ter pelo menos 6 caracteres" },
         { status: 400 }
       );
     }
-
-    const cleanPhone = phone.replace(/\D/g, "");
 
     // Ler o cookie de afiliado para vincular a conta ou usar o código enviado pelo body
     const cookieHeader = req.headers.get("cookie") || "";

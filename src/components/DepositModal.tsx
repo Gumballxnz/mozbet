@@ -14,7 +14,7 @@ import { useAppStore } from "@/lib/store";
 import { toast } from "sonner";
 import { formatMZN } from "@/lib/utils";
 import { EMOLA_LOGO, MPESA_LOGO, MKESH_LOGO } from "@/lib/logos";
-import { Wallet, Check, Headphones, Lock } from "lucide-react";
+import { Wallet, Check, Headphones, Lock, Loader2 } from "lucide-react";
 
 // Botões de valor rápido
 const QUICK_AMOUNTS = [50, 100, 250, 500, 1000, 5000];
@@ -58,12 +58,15 @@ export function DepositModal() {
 
   // Configurações dinâmicas do backend
   const [config, setConfig] = useState({
-    min_deposit: 10,
-    max_deposit: 17500,
-    first_deposit_bonus_percent: 500,
-    default_deposit: 100,
+    min_deposit: 0,
+    max_deposit: 0,
+    first_deposit_bonus_percent: 0,
+    default_deposit: 0,
     active_gateway: "e2payments",
+    min_withdrawal: 0,
+    max_withdrawal_daily: 0,
   });
+  const [isLoadingConfig, setIsLoadingConfig] = useState(true);
 
   // Validação em tempo real do depósito (valor mínimo e máximo)
   const depositError = useMemo(() => {
@@ -84,15 +87,15 @@ export function DepositModal() {
     if (tab !== "withdraw") return null;
     const num = Number(amount);
     if (!amount || isNaN(num) || num === 0) return null;
-    if (num < 65) {
-      return "O valor mínimo de levantamento é de 65 MT.";
+    if (num < config.min_withdrawal) {
+      return `O valor mínimo de levantamento é de ${config.min_withdrawal} MT.`;
     }
     const userBalance = user?.balance || 0;
     if (num > userBalance) {
       return `Saldo insuficiente. O teu saldo disponível é de ${userBalance.toFixed(2)} MT.`;
     }
     return null;
-  }, [amount, tab, user?.balance]);
+  }, [amount, tab, user?.balance, config.min_withdrawal]);
 
   // Sincronizar aba ativa com a store global e definir valor padrão no input
   useEffect(() => {
@@ -109,6 +112,7 @@ export function DepositModal() {
   // Busca configurações ao abrir o modal
   useEffect(() => {
     if (depositOpen) {
+      setIsLoadingConfig(true);
       fetch("/api/payments/config")
         .then((res) => res.json())
         .then((data) => {
@@ -119,12 +123,21 @@ export function DepositModal() {
               first_deposit_bonus_percent: data.first_deposit_bonus_percent ?? 500,
               default_deposit: data.default_deposit ?? 100,
               active_gateway: data.active_gateway ?? "e2payments",
+              min_withdrawal: data.min_withdrawal ?? 65,
+              max_withdrawal_daily: data.max_withdrawal_daily ?? 25000,
             });
+            if (depositTab === "deposit") {
+              setAmount(data.default_deposit?.toString() ?? "100");
+            }
           }
+          setIsLoadingConfig(false);
         })
-        .catch((err) => console.error("Erro ao buscar configs de depósito:", err));
+        .catch((err) => {
+          console.error("Erro ao buscar configs de depósito:", err);
+          setIsLoadingConfig(false);
+        });
     }
-  }, [depositOpen]);
+  }, [depositOpen, depositTab]);
 
   // Telefone da conta do utilizador
   const phone = user?.phone || "";
@@ -248,8 +261,8 @@ export function DepositModal() {
     const numAmount = Number(amount);
     const userBalance = user?.balance || 0;
 
-    if (isNaN(numAmount) || numAmount < 65) {
-      toast.error("Erro de Valor", { description: "O valor mínimo de levantamento é 65 MT." });
+    if (isNaN(numAmount) || numAmount < config.min_withdrawal) {
+      toast.error("Erro de Valor", { description: `O valor mínimo de levantamento é ${config.min_withdrawal} MT.` });
       return;
     }
 
@@ -301,6 +314,19 @@ export function DepositModal() {
         setIsLoading(false);
       });
   };
+
+  if (isLoadingConfig) {
+    return (
+      <Dialog open={depositOpen} onOpenChange={(open) => { if (!open) handleClose(); }}>
+        <DialogContent className="sm:max-w-[450px] bg-[#141516] border border-[#2A2F40]/50 rounded-3xl p-6 shadow-2xl focus:outline-none flex flex-col items-center justify-center min-h-[300px]">
+          <DialogTitle className="sr-only">Carregando</DialogTitle>
+          <DialogDescription className="sr-only">Carregando limites de transação...</DialogDescription>
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <p className="text-gray-400 text-xs mt-3 font-semibold">Sincronizando parâmetros do sistema...</p>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <>
@@ -486,7 +512,7 @@ export function DepositModal() {
                         </p>
                       )}
                       <p className="text-[10px] text-muted-foreground text-left mt-2 leading-relaxed">
-                        Mínimo: 65 MT · Limite diário: 25,000 MT · Já levantado hoje: 0 MT
+                        Mínimo: {config.min_withdrawal} MT · Limite diário: {config.max_withdrawal_daily.toLocaleString("pt-MZ")} MT
                       </p>
                     </>
                   )}

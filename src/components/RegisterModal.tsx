@@ -35,6 +35,7 @@ export function RegisterModal() {
   const [agreeTerms, setAgreeTerms] = useState(true);
   const [agreeMarketing, setAgreeMarketing] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [activeGateway, setActiveGateway] = useState("e2payments");
 
   // OTP
   const [otpValues, setOtpValues] = useState(["", "", "", "", "", ""]);
@@ -59,6 +60,15 @@ export function RegisterModal() {
   useEffect(() => {
     if (registerOpen) {
       setIsLogin(authMode === "login");
+
+      fetch("/api/payments/config")
+        .then((res) => res.json())
+        .then((data) => {
+          if (data && data.active_gateway) {
+            setActiveGateway(data.active_gateway);
+          }
+        })
+        .catch((err) => console.error("Erro ao obter gateway ativo:", err));
     }
   }, [registerOpen, authMode]);
 
@@ -86,6 +96,15 @@ export function RegisterModal() {
 
     if (!isValidPhone(phone)) {
       toast.error("Erro", { description: "Número de telefone inválido." });
+      return;
+    }
+
+    const cleanPhone = phone.replace(/\D/g, "");
+    const prefix = cleanPhone.replace(/^258/, "").substring(0, 2);
+    if (activeGateway === "e2payments" && ["82", "83"].includes(prefix)) {
+      toast.error("Rede em Manutenção", { 
+        description: "A rede Tmcel (mKesh) está em manutenção temporária. Por favor, use M-Pesa ou e-Mola." 
+      });
       return;
     }
 

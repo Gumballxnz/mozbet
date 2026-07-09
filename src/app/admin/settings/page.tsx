@@ -12,6 +12,8 @@ interface SettingsData {
   first_deposit_bonus_percent: string;
   default_deposit: string;
   active_gateway: string;
+  min_withdrawal: string;
+  max_withdrawal_daily: string;
 }
 
 export default function AdminSettingsPage() {
@@ -21,6 +23,8 @@ export default function AdminSettingsPage() {
     first_deposit_bonus_percent: "500",
     default_deposit: "100",
     active_gateway: "e2payments",
+    min_withdrawal: "65",
+    max_withdrawal_daily: "25000",
   });
   
   const [originalConfig, setOriginalConfig] = useState<SettingsData | null>(null);
@@ -61,7 +65,9 @@ export default function AdminSettingsPage() {
       config.max_deposit !== originalConfig.max_deposit ||
       config.first_deposit_bonus_percent !== originalConfig.first_deposit_bonus_percent ||
       config.default_deposit !== originalConfig.default_deposit ||
-      config.active_gateway !== originalConfig.active_gateway
+      config.active_gateway !== originalConfig.active_gateway ||
+      config.min_withdrawal !== originalConfig.min_withdrawal ||
+      config.max_withdrawal_daily !== originalConfig.max_withdrawal_daily
     );
   };
 
@@ -265,6 +271,46 @@ ON CONFLICT (key) DO NOTHING;`}
                 onChange={e => handleChange("first_deposit_bonus_percent", e.target.value)}
                 className="bg-black/60 h-10 border-white/10 focus-visible:ring-primary"
                 min="0"
+                required
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* CARD 3: Limites Financeiros de Levantamento */}
+        <div className="bg-surface p-6 rounded-2xl border border-white/10 shadow-xl space-y-4">
+          <div className="flex items-center gap-3 border-b border-white/5 pb-3">
+            <Shield className="w-5 h-5 text-primary" />
+            <h2 className="text-lg font-bold text-white">Limites Financeiros de Levantamento</h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Levantamento Mínimo */}
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-gray-400 flex items-center gap-1">
+                <Wallet className="w-3.5 h-3.5" /> Levantamento Mínimo (MZN)
+              </label>
+              <Input
+                type="number"
+                value={config.min_withdrawal}
+                onChange={e => handleChange("min_withdrawal", e.target.value)}
+                className="bg-black/60 h-10 border-white/10 focus-visible:ring-primary"
+                min="1"
+                required
+              />
+            </div>
+
+            {/* Limite Diário de Levantamento */}
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-gray-400 flex items-center gap-1">
+                <Wallet className="w-3.5 h-3.5" /> Limite Diário de Levantamento (MZN)
+              </label>
+              <Input
+                type="number"
+                value={config.max_withdrawal_daily}
+                onChange={e => handleChange("max_withdrawal_daily", e.target.value)}
+                className="bg-black/60 h-10 border-white/10 focus-visible:ring-primary"
+                min="1"
                 required
               />
             </div>

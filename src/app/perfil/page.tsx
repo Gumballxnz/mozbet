@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useAppStore } from "@/lib/store";
-import { 
-  User as UserIcon, Mail, Phone, Camera, Save, LogOut, 
-  Gift, KeyRound, Calendar, Hash, CheckSquare, Square, 
+import {
+  User as UserIcon, Mail, Phone, Camera, Save, LogOut,
+  Gift, KeyRound, Calendar, Hash, CheckSquare, Square,
   ChevronLeft, Wallet, ArrowUpCircle, Pencil, ShieldCheck,
   TrendingUp, Lock
 } from "lucide-react";
@@ -43,27 +43,27 @@ export default function PerfilPage() {
   const { user, logout, setDepositOpen, setDepositTab } = useAppStore();
   const balance = user?.balance || 0;
   const router = useRouter();
-  
-  const fallbackAvatar = user?.id 
-    ? AVATARS[(user.id.charCodeAt(0) + user.id.charCodeAt(user.id.length - 1)) % AVATARS.length] 
+
+  const fallbackAvatar = user?.id
+    ? AVATARS[(user.id.charCodeAt(0) + user.id.charCodeAt(user.id.length - 1)) % AVATARS.length]
     : AVATARS[0];
-    
+
   const [email, setEmail] = useState(user?.email || "");
   const [selectedAvatar, setSelectedAvatar] = useState(user?.avatar || fallbackAvatar);
   const [isSaving, setIsSaving] = useState(false);
   const [commercialOptIn, setCommercialOptIn] = useState(true);
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
-  
+
   const [isEmailEditing, setIsEmailEditing] = useState(!user?.email);
   const [showOtpInput, setShowOtpInput] = useState(false);
   const [emailOtp, setEmailOtp] = useState("");
-  
+
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [passwordMethod, setPasswordMethod] = useState<"sms" | "email">("email");
   const [passwordOtp, setPasswordOtp] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [passwordStep, setPasswordStep] = useState<"choose" | "verify" | "done">("choose");
-  
+
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showWithdrawErrorModal, setShowWithdrawErrorModal] = useState(false);
 
@@ -74,18 +74,16 @@ export default function PerfilPage() {
 
   const shortId = user.id ? user.id.split("-")[0].toUpperCase() : "552223";
   const registerDate = user.createdAt ? new Date(user.createdAt).toLocaleDateString("pt-MZ") : "29/04/2026";
-  
-  // DADOS REAIS DO BANCO DE DADOS
-  const bonusBalance = user.bonusBalance || 0.00; 
+
+  const bonusBalance = user.bonusBalance || 0.00;
   const vipLevel = user.vipLevel || 1;
   const toUnlock = user.unlockedBalance || 0.00;
 
   const handleSave = async (forceAvatar?: string) => {
     const avatarToSave = forceAvatar || selectedAvatar;
-    
-    // 1. Se o email mudou, precisamos de enviar e validar um OTP
+
     const isNewEmail = email && email.includes("@") && email !== (user?.email || "");
-    
+
     if (isNewEmail && !showOtpInput) {
       setIsSaving(true);
       try {
@@ -96,7 +94,7 @@ export default function PerfilPage() {
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Erro ao pedir código.");
-        
+
         toast.success("Código enviado para o novo e-mail!");
         setShowOtpInput(true);
       } catch (err: any) {
@@ -112,22 +110,21 @@ export default function PerfilPage() {
       const res = await fetch("/api/profile/update", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          avatar: avatarToSave, 
+        body: JSON.stringify({
+          avatar: avatarToSave,
           email: isNewEmail ? email : undefined,
-          otp: showOtpInput ? emailOtp : undefined 
+          otp: showOtpInput ? emailOtp : undefined
         }),
       });
-      
+
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Falha ao salvar");
-      
+
       toast.success(forceAvatar ? "Avatar atualizado!" : "Perfil atualizado com sucesso!");
       setShowAvatarPicker(false);
       setShowOtpInput(false);
       setIsEmailEditing(false);
-      // Recarrega o estado global sem forçar reload pesado da página se possível
-      // mas o reload garante que o AuthProvider puxe os dados frescos
+
       setTimeout(() => window.location.reload(), 500);
     } catch (err: any) {
       toast.error(err.message);
@@ -171,7 +168,7 @@ export default function PerfilPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Erro ao atualizar senha.");
-      
+
       toast.success("Palavra-passe atualizada!");
       setShowPasswordModal(false);
       setPasswordStep("choose");
@@ -200,12 +197,12 @@ export default function PerfilPage() {
 
   return (
     <div className="max-w-2xl mx-auto p-4 py-6 pb-24 space-y-8 animate-in fade-in duration-500">
-      
-      {/* HEADER: BOTÃO VOLTAR E TÍTULO */}
+
+      {}
       <div className="flex items-center gap-4">
-        <Button 
-          variant="ghost" 
-          size="icon" 
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={() => router.push("/")}
           className="bg-white/5 hover:bg-white/10 rounded-full w-10 h-10 border border-white/5 shrink-0"
         >
@@ -220,16 +217,16 @@ export default function PerfilPage() {
           {/* Anel de Brilho */}
           <div className="w-24 h-24 rounded-full p-0.5 bg-gradient-to-tr from-primary via-emerald-400 to-primary shadow-[0_0_20px_rgba(0,255,127,0.3)]">
             <div className="w-full h-full rounded-full bg-[#0f1015] p-1">
-              <img 
-                src={selectedAvatar} 
-                alt="Profile" 
+              <img
+                src={selectedAvatar}
+                alt="Profile"
                 className="w-full h-full rounded-full object-cover bg-surface"
               />
             </div>
           </div>
-          
-          {/* Botão Editar Avatar (Lápis) */}
-          <button 
+
+          {}
+          <button
             onClick={() => setShowAvatarPicker(!showAvatarPicker)}
             className="absolute -bottom-1 -right-1 bg-primary text-black p-1.5 rounded-full border-2 border-[#0f1015] hover:scale-110 transition-transform shadow-lg z-10"
           >
@@ -256,7 +253,7 @@ export default function PerfilPage() {
           <p className="text-xs font-bold text-muted-foreground uppercase mb-4 text-center">Escolher Novo Avatar</p>
           <div className="flex flex-wrap justify-center gap-3">
             {AVATARS.map((av, i) => (
-              <button 
+              <button
                 key={i}
                 onClick={() => setSelectedAvatar(av)}
                 className={`w-12 h-12 rounded-full overflow-hidden border-2 transition-all ${selectedAvatar === av ? 'border-primary scale-110' : 'border-transparent opacity-40 hover:opacity-100'}`}
@@ -267,9 +264,9 @@ export default function PerfilPage() {
           </div>
           <div className="mt-4 flex gap-2">
             <Button variant="ghost" className="flex-1 text-xs" onClick={() => setShowAvatarPicker(false)}>Cancelar</Button>
-            <Button 
-               className="flex-1 bg-primary text-black font-bold text-xs" 
-               onClick={() => handleSave(selectedAvatar)} 
+            <Button
+               className="flex-1 bg-primary text-black font-bold text-xs"
+               onClick={() => handleSave(selectedAvatar)}
                disabled={isSaving || selectedAvatar === (user.avatar || fallbackAvatar)}
             >
               {isSaving ? "A guardar..." : "Confirmar"}
@@ -280,7 +277,7 @@ export default function PerfilPage() {
 
       {/* BOTÕES DE ACÇÃO PRINCIPAIS */}
       <div className="space-y-3">
-        <Button 
+        <Button
           onClick={() => {
             setDepositTab("deposit");
             setDepositOpen(true);
@@ -290,9 +287,9 @@ export default function PerfilPage() {
           <Wallet size={24} />
           DEPÓSITO
         </Button>
-        
+
         <div className="grid grid-cols-2 gap-3">
-          <Button 
+          <Button
             variant="outline"
             onClick={() => {
               setDepositTab("withdraw");
@@ -303,7 +300,7 @@ export default function PerfilPage() {
             <ArrowUpCircle size={18} className="text-primary" />
             LEVANTAMENTO
           </Button>
-          <Button 
+          <Button
             onClick={handleLogout}
             className="h-12 bg-red-500/10 border border-red-500/20 text-red-500 font-bold rounded-xl hover:bg-red-500/20 flex items-center gap-2 cursor-pointer"
           >
@@ -359,7 +356,7 @@ export default function PerfilPage() {
           </label>
           <div className="flex flex-col gap-3">
             <div className="flex gap-2">
-              <Input 
+              <Input
                 value={email}
                 onChange={(e) => {
                   setEmail(e.target.value);
@@ -370,16 +367,16 @@ export default function PerfilPage() {
                 className="bg-black/40 border-white/10 text-white font-medium h-12 rounded-xl disabled:opacity-80"
               />
               {!isEmailEditing ? (
-                <Button 
-                  variant="outline" 
-                  className="h-12 border-white/10 hover:bg-white/5 text-xs font-bold" 
+                <Button
+                  variant="outline"
+                  className="h-12 border-white/10 hover:bg-white/5 text-xs font-bold"
                   onClick={() => setIsEmailEditing(true)}
                 >
                   ALTERAR
                 </Button>
               ) : (
                 <div className="flex gap-2">
-                  <Button 
+                  <Button
                     variant="ghost"
                     className="h-12 text-muted-foreground hover:text-white text-xs font-bold"
                     onClick={() => {
@@ -390,8 +387,8 @@ export default function PerfilPage() {
                   >
                     CANCELAR
                   </Button>
-                  <Button 
-                    className="h-12 bg-primary text-black font-bold text-xs px-6" 
+                  <Button
+                    className="h-12 bg-primary text-black font-bold text-xs px-6"
                     onClick={() => handleSave()}
                     disabled={isSaving || (email === (user.email || ""))}
                   >
@@ -412,14 +409,14 @@ export default function PerfilPage() {
                   Enviámos um código para <strong className="text-white">{email}</strong>. Introduz o código abaixo para validar o novo endereço.
                 </p>
                 <div className="flex gap-2">
-                  <Input 
+                  <Input
                     value={emailOtp}
                     onChange={(e) => setEmailOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
                     placeholder="000000"
                     className="bg-black/60 border-primary/30 text-white font-black text-center text-lg tracking-[0.5em] h-12 rounded-xl"
                   />
-                  <Button 
-                    variant="ghost" 
+                  <Button
+                    variant="ghost"
                     className="text-[10px] font-bold text-muted-foreground hover:text-white"
                     onClick={() => { setShowOtpInput(false); setEmailOtp(""); }}
                   >
@@ -431,8 +428,8 @@ export default function PerfilPage() {
           </div>
         </div>
 
-        <Button 
-          variant="ghost" 
+        <Button
+          variant="ghost"
           onClick={() => setShowPasswordModal(true)}
           className="w-full h-12 justify-between bg-black/20 border border-white/5 text-white hover:bg-white/5 rounded-xl px-4"
         >
@@ -446,7 +443,7 @@ export default function PerfilPage() {
 
       {/* CHECKBOX MARKETING (Apenas visível se o utilizador não tiver email ou estiver a editar um vazio) */}
       {(!user.email || (isEmailEditing && !user.email)) && (
-        <div 
+        <div
            className="flex items-start gap-3 p-2 cursor-pointer group"
            onClick={() => setCommercialOptIn(!commercialOptIn)}
         >
@@ -469,11 +466,11 @@ export default function PerfilPage() {
                 {passwordStep === "choose" ? "Escolha o método de envio." : "Insira o código enviado para o seu e-mail."}
               </p>
             </div>
-            
+
             {passwordStep === "choose" ? (
               <div className="space-y-3">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="w-full h-14 justify-start gap-4 border-white/5 bg-black/40 hover:bg-white/5 rounded-2xl"
                   onClick={handleRequestPasswordOTP}
                   disabled={isSaving}
@@ -489,14 +486,14 @@ export default function PerfilPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                <Input 
+                <Input
                   type="password"
                   placeholder="Nova Senha"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   className="bg-black/40 border-white/10 h-12 rounded-xl text-white"
                 />
-                <Input 
+                <Input
                   placeholder="Código OTP (6 dígitos)"
                   value={passwordOtp}
                   onChange={(e) => setPasswordOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
@@ -512,9 +509,9 @@ export default function PerfilPage() {
                    {isSaving ? "..." : "ENVIAR"}
                  </Button>
               ) : (
-                 <Button 
-                   className="flex-1 h-12 bg-primary text-black font-black" 
-                   onClick={handlePasswordResetVerify} 
+                 <Button
+                   className="flex-1 h-12 bg-primary text-black font-black"
+                   onClick={handlePasswordResetVerify}
                    disabled={isSaving || !passwordOtp || !newPassword}
                  >
                    {isSaving ? "..." : "CONFIRMAR"}
@@ -525,7 +522,6 @@ export default function PerfilPage() {
         </div>
       )}
 
-    
       {/* MODAL ERRO DE SAQUE CUSTOMIZADO (Spribe/Mozbet UI) */}
       <Dialog open={showWithdrawErrorModal} onOpenChange={setShowWithdrawErrorModal}>
         <DialogContent className="bg-[#141516] border border-[#2A2F40]/50 rounded-3xl p-6 shadow-2xl max-w-[340px] focus:outline-none">
@@ -543,9 +539,9 @@ export default function PerfilPage() {
             <p className="text-[13px] text-gray-400 font-medium leading-relaxed mt-4 px-2">
               Para garantir a segurança, você precisa realizar pelo menos um depósito hoje para habilitar a função de levantamento.
             </p>
-            
+
             <div className="pt-4 space-y-3">
-              <Button 
+              <Button
                  onClick={() => {
                    setShowWithdrawErrorModal(false);
                    setDepositOpen(true);
@@ -555,7 +551,7 @@ export default function PerfilPage() {
                 <ArrowUpCircle size={18} />
                 DEPOSITAR AGORA
               </Button>
-              <Button 
+              <Button
                  onClick={() => setShowWithdrawErrorModal(false)}
                  variant="ghost"
                  className="w-full h-12 bg-[#1A1C24] text-gray-400 hover:text-white font-black text-xs uppercase rounded-xl cursor-pointer"
@@ -572,23 +568,23 @@ export default function PerfilPage() {
         <DialogContent className="bg-[#141516] border border-[#2A2F40]/50 rounded-3xl p-6 shadow-2xl max-w-[320px] focus:outline-none">
           <DialogTitle className="sr-only">Sair da Conta</DialogTitle>
           <DialogDescription className="sr-only">
-            Confirme se deseja sair da sua conta na MozBet.
+            Confirme se deseja terminar a sessão da sua conta.
           </DialogDescription>
           <div className="p-2 text-center space-y-5">
             <div className="mx-auto w-12 h-12 bg-red-500/10 rounded-full flex items-center justify-center mb-2">
               <LogOut className="w-6 h-6 text-red-500" />
             </div>
             <h3 className="text-white font-black text-xl uppercase tracking-widest">Sair da Conta?</h3>
-            <p className="text-gray-400 text-sm">Tens a certeza que desejas sair de mozbet.online?</p>
+            <p className="text-gray-400 text-sm">Tens a certeza que desejas terminar a sessão?</p>
             <div className="flex gap-3 pt-2">
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 onClick={() => setShowLogoutConfirm(false)}
                 className="flex-1 bg-[#1A1C24] text-white hover:bg-white/10 font-bold h-12 rounded-xl cursor-pointer"
               >
                 CANCELAR
               </Button>
-              <Button 
+              <Button
                 onClick={executeLogout}
                 className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold h-12 rounded-xl cursor-pointer"
               >
@@ -601,4 +597,3 @@ export default function PerfilPage() {
     </div>
   );
 }
-

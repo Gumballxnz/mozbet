@@ -9,33 +9,32 @@ import { useTranslation } from "@/hooks/useTranslation";
 import { formatMZN } from "@/lib/utils";
 import { toast } from "sonner";
 
-export function GamePlayer({ 
-  gameName, 
-  iframeUrl, 
+export function GamePlayer({
+  gameName,
+  iframeUrl,
   mode,
-  gameId 
-}: { 
-  gameName: string; 
-  iframeUrl: string; 
+  gameId
+}: {
+  gameName: string;
+  iframeUrl: string;
   mode: "real" | "demo";
   gameId: string;
 }) {
   const router = useRouter();
   const { t } = useTranslation();
   const { user, isLoggedIn, updateBalance, setRegisterOpen, setDepositOpen } = useAppStore();
-  
+
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [isIframeLoaded, setIsIframeLoaded] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  // Escutar mensagens vindas do motor isolado (Iframe Sandbox)
   useEffect(() => {
     const handleMessage = (e: MessageEvent) => {
       if (e.data.type === 'UPDATE_BALANCE' && mode === 'real') {
         updateBalance(e.data.balance);
       } else if (e.data.type === 'ENGINE_READY' && mode === 'real' && user) {
-        // Enviar o saldo atual para o Iframe assim que ele estiver pronto (restrito para a mesma origem)
+
         iframeRef.current?.contentWindow?.postMessage(
           { type: 'SYNC_BALANCE', balance: user.balance + (user.bonusBalance || 0) },
           window.location.origin
@@ -50,7 +49,6 @@ export function GamePlayer({
     return () => window.removeEventListener('message', handleMessage);
   }, [mode, updateBalance, user, router]);
 
-  // Proteção de Rota Client-Side
   useEffect(() => {
     if (mode === "real" && !isLoggedIn) {
       toast.error(t("error"), { description: t("loginRequired") });
@@ -71,7 +69,6 @@ export function GamePlayer({
     }
   };
 
-  // Prevenir tela preta se não estiver logado no modo real
   if (mode === "real" && !isLoggedIn) {
     return (
       <div className="w-full h-full flex flex-col items-center justify-center bg-black">
@@ -84,18 +81,18 @@ export function GamePlayer({
     <div className="relative w-full h-full flex flex-col bg-black text-white">
       {/* Game Header Overlay - Apenas Sair e Tela Cheia no Canto Superior Direito */}
       <div className="absolute top-2 right-2 sm:top-4 sm:right-4 z-50 flex items-center gap-2 pointer-events-none">
-          <Button 
-            variant="ghost" 
-            size="icon" 
+          <Button
+            variant="ghost"
+            size="icon"
             className="bg-black/60 hover:bg-black/80 backdrop-blur-md border border-white/20 text-white rounded-md pointer-events-auto h-8 w-8 sm:h-10 sm:w-10 transition-all shadow-xl"
             onClick={toggleFullscreen}
           >
             {isFullscreen ? <Minimize className="w-4 h-4 sm:w-5 sm:h-5" /> : <Maximize className="w-4 h-4 sm:w-5 sm:h-5" />}
           </Button>
 
-          <Button 
-            variant="ghost" 
-            size="icon" 
+          <Button
+            variant="ghost"
+            size="icon"
             className="bg-red-600/80 hover:bg-red-600 backdrop-blur-md border border-red-500/50 text-white rounded-md pointer-events-auto h-8 w-8 sm:h-10 sm:w-10 transition-all shadow-xl"
             onClick={() => {
               if (document.fullscreenElement) document.exitFullscreen();

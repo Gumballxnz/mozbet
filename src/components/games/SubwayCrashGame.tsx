@@ -54,7 +54,7 @@ const SubwayCrashGame = ({ onClose, balance, onBet }: SubwayCrashGameProps) => {
       });
       const data = await res.json();
       if (data.success) {
-        onBet(data.newBalance); // Usa callback do parent se ele esperar novo saldo, caso contrário ajustar props
+        onBet(data.newBalance);
         setTargetCrash(data.crashPoint);
         setIsPlaying(true);
         setIsCrashed(false);
@@ -90,22 +90,22 @@ const SubwayCrashGame = ({ onClose, balance, onBet }: SubwayCrashGameProps) => {
 
   return (
     <div className="fixed inset-0 z-[110] bg-[#0a0a0a] flex flex-col font-sans text-white overflow-hidden animate-in fade-in duration-300">
-      {/* Background Subway Tunnel */}
+      {}
       <div className="absolute inset-0 bg-gradient-to-b from-[#111] to-[#000]" />
-      
-      {/* Moving Tunnel Rails and Lines */}
+
+      {}
       <div className="absolute inset-0 overflow-hidden pointer-events-none perspective-[500px]">
-        {/* Rails */}
+        {}
         <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-48 h-full bg-[#1a1a1a] origin-bottom transform rotateX(60deg)" />
         <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[2px] h-full bg-yellow-500/20 shadow-[0_0_15px_rgba(234,179,8,0.2)] origin-bottom transform rotateX(60deg) -translate-x-20" />
         <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[2px] h-full bg-yellow-500/20 shadow-[0_0_15px_rgba(234,179,8,0.2)] origin-bottom transform rotateX(60deg) translate-x-20" />
-        
-        {/* Moving Lines */}
+
+        {}
         {[...Array(6)].map((_, i) => (
-          <div 
+          <div
             key={i}
             className="absolute left-1/2 -translate-x-1/2 w-48 h-2 bg-white/5"
-            style={{ 
+            style={{
               top: `${i * 20}%`,
               animation: isPlaying ? `subway-speed 0.3s linear infinite` : 'none',
               animationDelay: `${i * 0.05}s`
@@ -114,7 +114,7 @@ const SubwayCrashGame = ({ onClose, balance, onBet }: SubwayCrashGameProps) => {
         ))}
       </div>
 
-      {/* Header */}
+      {}
       <div className="flex items-center justify-between p-4 bg-black/40 backdrop-blur-md border-b border-white/5 relative z-10">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-yellow-600 rounded-lg flex items-center justify-center shadow-[0_0_15px_rgba(234,179,8,0.4)]">
@@ -128,7 +128,7 @@ const SubwayCrashGame = ({ onClose, balance, onBet }: SubwayCrashGameProps) => {
         <div className="flex items-center gap-4">
           <div className="bg-white/5 px-3 py-1.5 rounded-full border border-white/10 flex items-center gap-2">
             <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse" />
-            
+
           </div>
           <button onClick={onClose} className="p-1 hover:bg-white/10 rounded-full transition-colors">
             <X size={24} />
@@ -168,7 +168,7 @@ const SubwayCrashGame = ({ onClose, balance, onBet }: SubwayCrashGameProps) => {
         <div className={`mt-12 relative ${isPlaying ? 'animate-bounce' : ''}`}>
            {/* Visual Glow */}
            <div className="absolute -inset-10 bg-yellow-500/5 blur-[40px] rounded-full animate-pulse" />
-           
+
            {/* Runner Placeholder/Shape */}
            <div className="relative flex flex-col items-center">
               <div className="w-10 h-10 bg-[#333] border-2 border-yellow-500/40 rounded-full" />
@@ -196,8 +196,8 @@ const SubwayCrashGame = ({ onClose, balance, onBet }: SubwayCrashGameProps) => {
               </div>
               <div className="bg-black/40 rounded-xl p-1 flex items-center h-10 border border-white/5">
                  <button onClick={() => !isPlaying && setBetAmount(Math.max(1, betAmount - 1))} className="w-8 h-full flex items-center justify-center text-gray-500">-</button>
-                <input 
-                  type="number" 
+                <input
+                  type="number"
                   value={betAmount}
                   disabled={isPlaying}
                   onChange={(e) => setBetAmount(Number(e.target.value))}
@@ -211,14 +211,14 @@ const SubwayCrashGame = ({ onClose, balance, onBet }: SubwayCrashGameProps) => {
                 <button onClick={() => !isPlaying && setBetAmount(betAmount + 1)} className="w-8 h-full flex items-center justify-center text-gray-500">+</button>
               </div>
               {!isPlaying ? (
-                <button 
+                <button
                   onClick={handleStart}
                   className="w-full py-3 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-xl font-black text-xs tracking-wider shadow-[0_5px_15px_rgba(234,179,8,0.3)]"
                 >
                   CORRER
                 </button>
               ) : (
-                <button 
+                <button
                   onClick={handleCashout}
                   className="w-full py-3 bg-gradient-to-r from-orange-600 to-orange-700 rounded-xl font-black text-xs tracking-wider"
                 >

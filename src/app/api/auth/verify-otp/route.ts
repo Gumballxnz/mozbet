@@ -4,7 +4,6 @@ import { supabaseAdmin, signToken } from "@/lib/auth-server";
 export async function POST(req: Request) {
   try {
     const { phone, code, purpose } = await req.json();
-    // purpose: "register" | "reset"
 
     if (!phone || !code) {
       return NextResponse.json(
@@ -15,7 +14,6 @@ export async function POST(req: Request) {
 
     const cleanPhone = phone.replace(/\D/g, "");
 
-    // Buscar o código OTP mais recente para este número
     const { data: otpRecord, error: otpError } = await supabaseAdmin
       .from("otp_codes")
       .select("*")
@@ -30,9 +28,8 @@ export async function POST(req: Request) {
       );
     }
 
-    // Verificar se o código expirou
     if (new Date(otpRecord.expires_at) < new Date()) {
-      // Apagar código expirado
+
       await supabaseAdmin
         .from("otp_codes")
         .delete()
@@ -44,15 +41,13 @@ export async function POST(req: Request) {
       );
     }
 
-    // Código válido - apagar da tabela
     await supabaseAdmin
       .from("otp_codes")
       .delete()
       .eq("id", otpRecord.id);
 
-    // VERIFICAÇÃO DE REGISTO
     if (purpose === "register") {
-      // Marcar utilizador como verificado
+
       const { error: updateError } = await supabaseAdmin
         .from("users")
         .update({ is_verified: true })
@@ -66,7 +61,6 @@ export async function POST(req: Request) {
         );
       }
 
-      // Buscar dados do utilizador para gerar JWT
       const { data: user } = await supabaseAdmin
         .from("users")
         .select("id, phone, email, balance, has_deposited, created_at, is_admin")
@@ -102,15 +96,14 @@ export async function POST(req: Request) {
         sameSite: "lax",
         path: "/",
         maxAge: 60 * 60 * 24 * 7,
-        domain: process.env.NODE_ENV === "production" ? "mozbet.online" : undefined,
+        domain: process.env.COOKIE_DOMAIN || undefined,
       });
 
       return response;
     }
 
-    // VERIFICAÇÃO PARA RESET DE SENHA
     if (purpose === "reset") {
-      // Gerar um token temporário para permitir a alteração de senha
+
       const resetToken = await signToken({
         phone: cleanPhone,
         purpose: "reset",

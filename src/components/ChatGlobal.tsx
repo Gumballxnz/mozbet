@@ -24,7 +24,6 @@ interface ChatMessage {
   avatar?: string;
 }
 
-// ===== AVATARES DO SITE =====
 const SITE_AVATARS = [
   "https://api.dicebear.com/7.x/adventurer/svg?seed=Felix&backgroundColor=f59e0b",
   "https://api.dicebear.com/7.x/adventurer/svg?seed=Aneka&backgroundColor=10b981",
@@ -34,7 +33,6 @@ const SITE_AVATARS = [
   "https://api.dicebear.com/7.x/adventurer/svg?seed=Zoe&backgroundColor=ec4899",
 ];
 
-// Função de hash simples para distribuir avatares consistentemente
 function getConsistentAvatar(userId: string): string {
   if (!userId) return SITE_AVATARS[0];
   let hash = 0;
@@ -44,14 +42,12 @@ function getConsistentAvatar(userId: string): string {
   return SITE_AVATARS[Math.abs(hash) % SITE_AVATARS.length];
 }
 
-// Extrair avatar da mensagem
 function getAvatar(m: ChatMessage): string {
   if (m.avatar) return m.avatar;
   if (m.metadata?.avatar) return m.metadata.avatar;
   return getConsistentAvatar(m.user_id || m.username);
 }
 
-// Mostrar apenas ID Mascarado (Privacidade total)
 function maskId(username: string): string {
   if (!username) return "USER***";
   const cleanId = username.includes("-") ? username.split("-")[0] : username;
@@ -61,7 +57,6 @@ function maskId(username: string): string {
   return cleanId.slice(0, 4).toUpperCase() + "***";
 }
 
-// Online count dinâmico baseado na hora (funciona sem VPS)
 function getDynamicOnlineCount(): number {
   const hour = new Date().getHours();
   let base = 150;
@@ -73,21 +68,18 @@ function getDynamicOnlineCount(): number {
   return base + variation;
 }
 
-// ===== COMPONENTE PRINCIPAL =====
 export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalProps) {
   const { isLoggedIn, fakeChatMessages: messages, setFakeChatMessages: setMessages, onlineCount, setOnlineCount } = useAppStore();
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll
   const scrollToBottom = useCallback(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, []);
 
-  // Sincronizar online count
   useEffect(() => {
     const updateCount = () => setOnlineCount(getDynamicOnlineCount());
     const interval = setInterval(updateCount, 5000);
@@ -95,9 +87,8 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
     return () => clearInterval(interval);
   }, [setOnlineCount]);
 
-  // Carregar histórico + ouvir Realtime (fonte PRINCIPAL de mensagens)
   useEffect(() => {
-    // 1. Carregar histórico do banco
+
     const loadHistory = async () => {
       try {
         const res = await fetch("/api/chat/history");
@@ -112,7 +103,6 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
     };
     loadHistory();
 
-    // 2. Ouvir mensagens via SUPABASE REALTIME (fonte principal — global para todos)
     const channel = supabase.channel('global-chat-room')
       .on('postgres_changes', {
         event: 'INSERT',
@@ -128,11 +118,10 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
       })
       .subscribe((status, err) => {
         if (err && !err.message?.includes("1000") && !err.message?.includes("closed before")) {
-          // Apenas loga erros reais, ignora aborts de fechamento
+
         }
       });
 
-    // 3. Socket.io como bónus opcional (se VPS estiver a emitir por esta via)
     const onSocketMessage = (newMessage: ChatMessage) => {
       setMessages((prev: ChatMessage[]) => {
         if (prev.some(m => m.id === newMessage.id)) return prev;
@@ -185,7 +174,7 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
         className="surface-card w-[65%] sm:w-[55%] md:max-w-md h-full flex flex-col animate-slide-right relative z-10 shadow-2xl border-l border-white/5"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
+        {}
         <div className="flex items-center justify-between px-4 py-3 border-b border-border">
           <div className="flex items-center gap-2">
             <div className="w-9 h-9 rounded-xl bg-primary/15 flex items-center justify-center">
@@ -212,7 +201,7 @@ export default function ChatGlobal({ isOpen, onClose, onPlayGame }: ChatGlobalPr
           </div>
         </div>
 
-        {/* Mensagens */}
+        {}
         <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
           {messages.length === 0 && (
             <div className="text-center text-muted-foreground text-sm mt-10">

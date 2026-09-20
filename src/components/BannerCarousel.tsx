@@ -22,7 +22,6 @@ export function BannerCarousel({ initialBanners }: { initialBanners: Banner[] })
   const [serverOffset, setServerOffset] = useState(0);
   const router = useRouter();
 
-  // Sincroniza a hora com o servidor para o carrossel ser global de verdade (Ponto de Tempo)
   useEffect(() => {
     const syncTime = async () => {
       try {
@@ -30,14 +29,13 @@ export function BannerCarousel({ initialBanners }: { initialBanners: Banner[] })
         const res = await fetch("/api/time");
         const { serverTime } = await res.json();
         const end = Date.now();
-        const latency = (end - start) / 2; // Estima latência da rede
+        const latency = (end - start) / 2;
         setServerOffset(serverTime - (end - latency));
       } catch (e) {}
     };
     syncTime();
   }, []);
 
-  // Se initialBanners vier vazio por alguma falha do SSR, tenta carregar no client
   useEffect(() => {
     if (initialBanners.length === 0) {
       async function loadBanners() {
@@ -53,31 +51,28 @@ export function BannerCarousel({ initialBanners }: { initialBanners: Banner[] })
 
   const handleBannerClick = (link: string) => {
     if (!link) return;
-    
-    // Se o link for apenas o ID do jogo (ex: /aviator ou aviator), manda para /jogar/ID
+
     const gameId = link.startsWith('/') ? link.substring(1) : link;
-    
-    // VIP deve levar para o perfil para ver o nível de bónus
+
     if (gameId === 'vip') {
       router.push('/perfil');
       return;
     }
 
     const isSpecialPage = ['perfil', 'depositar', 'sacar', 'promocoes', 'ajuda', 'sobre'].includes(gameId);
-    
+
     if (isSpecialPage) {
       router.push(link.startsWith('/') ? link : `/${link}`);
     } else {
-      // Por padrão, assume que é um link de jogo
+
       router.push(`/jogar/${gameId}`);
     }
   };
 
-  // Realtime Supabase Banners
   useEffect(() => {
     const channel = supabase.channel('public-banners')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'banners' }, async () => {
-        // Quando alterado no CRM, puxa de novo os banners ativos
+
         const { data } = await supabase.from('banners').select('*').order('sort_order', { ascending: true });
         if (data && data.length > 0) setBanners(data);
       })
@@ -88,10 +83,9 @@ export function BannerCarousel({ initialBanners }: { initialBanners: Banner[] })
     };
   }, []);
 
-  // SINCRONIZAÇÃO GLOBAL (UTC) - Todos vêm o mesmo slide ao mesmo tempo
   useEffect(() => {
     if (banners.length <= 1) return;
-    
+
     const syncCarousel = () => {
       const now = Date.now() + serverOffset;
       const slideIndex = Math.floor(now / 5000) % banners.length;
@@ -99,7 +93,7 @@ export function BannerCarousel({ initialBanners }: { initialBanners: Banner[] })
     };
 
     syncCarousel();
-    const timer = setInterval(syncCarousel, 1000); // Checa a cada segundo para manter o sync
+    const timer = setInterval(syncCarousel, 1000);
     return () => clearInterval(timer);
   }, [banners.length]);
 
@@ -121,9 +115,9 @@ export function BannerCarousel({ initialBanners }: { initialBanners: Banner[] })
           to { width: 100%; }
         }
       `}</style>
-      
+
       {banners.map((slide, index) => (
-        <div 
+        <div
           key={slide.id}
           className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
             index === currentSlide ? "opacity-100 z-10" : "opacity-0 z-0"
@@ -138,7 +132,7 @@ export function BannerCarousel({ initialBanners }: { initialBanners: Banner[] })
             className="absolute inset-0 w-full h-full object-cover opacity-60 sm:opacity-80 transition-transform duration-[6000ms] ease-out scale-100 group-hover:scale-105"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-background via-background/90 to-transparent" />
-          
+
           <div className="absolute inset-0 flex flex-col justify-center px-6 sm:px-12 z-20">
             <span className="inline-block w-fit px-3 py-1 rounded-full bg-primary/20 border border-primary/50 text-primary text-[10px] font-extrabold tracking-widest uppercase mb-3 shadow-[0_0_15px_rgba(var(--primary),0.3)]">
               {slide.badge}
@@ -151,7 +145,7 @@ export function BannerCarousel({ initialBanners }: { initialBanners: Banner[] })
               {slide.description}
             </p>
             <div className="mt-5">
-              <button 
+              <button
                 onClick={() => handleBannerClick(slide.action_link)}
                 className="h-10 px-6 rounded-xl bg-primary text-primary-foreground font-extrabold text-sm shadow-[0_4px_0_0_hsl(var(--primary-dark))] active:translate-y-1 active:shadow-none transition-all"
               >
@@ -173,9 +167,9 @@ export function BannerCarousel({ initialBanners }: { initialBanners: Banner[] })
               }`}
             >
               {i === currentSlide && (
-                <div 
-                  className="h-full bg-primary" 
-                  style={{ animation: "fillProgress 5s linear forwards" }} 
+                <div
+                  className="h-full bg-primary"
+                  style={{ animation: "fillProgress 5s linear forwards" }}
                 />
               )}
             </button>

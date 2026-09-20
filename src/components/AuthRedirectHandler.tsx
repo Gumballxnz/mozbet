@@ -15,5 +15,5 @@ export function AuthRedirectHandler() {
     }
   }, [searchParams, openLogin]);
 
-  return null; // Não renderiza nada visualmente
+  return null;
 }

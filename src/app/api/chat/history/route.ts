@@ -1,8 +1,6 @@
-
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/auth-server";
 
-// Mensagens iniciais para semear o chat quando está completamente vazio
 const SEED_MESSAGES = [
   { msg: "Bom dia pessoal! Quem já fez lucro hoje? 💰", id: "A8B2C4F1" },
   { msg: "Aviator tá quente, acabei de sacar x5 🔥", id: "F9D3E2A0" },
@@ -27,7 +25,7 @@ const AVATARS = [
 
 export async function GET() {
   try {
-    // 1. Carregar as últimas 50 mensagens
+
     const { data, error } = await supabaseAdmin
       .from("chat_messages")
       .select("*")
@@ -36,7 +34,6 @@ export async function GET() {
 
     if (error) throw error;
 
-    // 2. Se o chat estiver completamente vazio, semear com mensagens iniciais
     if (!data || data.length < 5) {
       const seedData = SEED_MESSAGES.map((s, i) => ({
         user_id: `fake-${s.id}`,
@@ -49,7 +46,6 @@ export async function GET() {
 
       await supabaseAdmin.from("chat_messages").insert(seedData);
 
-      // Recarregar com as mensagens semeadas
       const { data: seededData } = await supabaseAdmin
         .from("chat_messages")
         .select("*")
@@ -60,7 +56,6 @@ export async function GET() {
       return NextResponse.json({ history });
     }
 
-    // Inverter para ordem cronológica (mais antiga primeiro)
     const history = (data || []).reverse();
 
     return NextResponse.json({ history });

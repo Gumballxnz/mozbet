@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/auth-server";
 
-// Endpoint for sending emails (Individual or Global) via Resend
 export async function POST(req: Request) {
   try {
     const { target, targetEmail, subject, body } = await req.json();
@@ -16,16 +15,19 @@ export async function POST(req: Request) {
     }
 
     if (target === "GLOBAL") {
-      // In a real advanced system, this would queue to a background worker
-      return NextResponse.json({ 
-        success: true, 
-        message: "Campanha global agendada. O sistema iniciará o envio de 2.000 emails/dia para toda a base ativa." 
+
+      return NextResponse.json({
+        success: true,
+        message: "Campanha global agendada. O sistema iniciará o envio de 2.000 emails/dia para toda a base ativa."
       });
     } else {
-      // Individual Email
+
       if (!targetEmail) {
         return NextResponse.json({ error: "Utilizador não tem email de destino válido." }, { status: 404 });
       }
+
+      const appName = process.env.NEXT_PUBLIC_APP_NAME || "MozBet";
+      const fromEmail = process.env.EMAIL_FROM || `${appName} Suporte <suporte@exemplo.com>`;
 
       const res = await fetch("https://api.resend.com/emails", {
         method: "POST",
@@ -34,11 +36,11 @@ export async function POST(req: Request) {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          from: "MozBet Suporte <onboarding@resend.dev>", // Obrigatório no plano gratuito do Resend
+          from: fromEmail,
           to: [targetEmail],
           subject: subject,
           html: `<div style="font-family: sans-serif; padding: 20px;">
-                  <h2>MozBet Suporte</h2>
+                  <h2>${appName} Suporte</h2>
                   <p>${body.replace(/\n/g, "<br>")}</p>
                  </div>`
         })

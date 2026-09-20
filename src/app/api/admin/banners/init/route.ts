@@ -3,13 +3,12 @@ import { supabaseAdmin, verifyToken } from "@/lib/auth-server";
 
 export async function POST(req: NextRequest) {
   try {
-    // 1. Verificar autenticação
+
     const token = req.cookies.get("mozbet_session")?.value;
     if (!token) return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
 
     const payload = await verifyToken<{ id: string; role: string }>(token);
-    
-    // Verificar se o utilizador é um admin
+
     const { data: user } = await supabaseAdmin
       .from("users")
       .select("is_admin")
@@ -26,7 +25,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Lista de banners inválida" }, { status: 400 });
     }
 
-    // 2. Inserir em massa
     const { error } = await supabaseAdmin
       .from("banners")
       .upsert(banners);

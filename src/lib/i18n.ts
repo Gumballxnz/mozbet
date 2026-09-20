@@ -1,11 +1,8 @@
-// Sistema de internacionalização — MOZBET
-// Idiomas: PT (padrão) e EN
-
 export type Locale = "pt" | "en";
 
 export const translations = {
   pt: {
-    // Geral
+
     brand: "MOZBET",
     slogan: "A melhor experiência de jogos online",
     loading: "Carregando...",
@@ -18,13 +15,11 @@ export const translations = {
     error: "Erro",
     success: "Sucesso",
 
-    // Header
     enter: "Entrar",
     register: "Registrar",
     deposit: "DEPÓSITO",
     currency: "MZN",
- 
-    // Auth
+
     createAccount: "Criar Conta",
     welcomeBack: "Bem-vindo de volta",
     joinPlayers: "Junte-se a milhares de jogadores e comece a ganhar hoje",
@@ -42,8 +37,7 @@ export const translations = {
     unexpectedError: "Erro inesperado. Tente novamente.",
     loginRequired: "O login é obrigatório para jogar a dinheiro real.",
     bestExperience: "A melhor experiência de jogos virtual",
- 
-    // Depósito
+
     depositTitle: "DEPÓSITO",
     depositMin: "O valor mínimo de depósito é 10 MT",
     depositMax: "Valor máximo é 25.000 MT",
@@ -55,7 +49,6 @@ export const translations = {
     withdraw: "Sacar",
     withdrawComingSoon: "Função de saque em breve!",
 
-    // Jogos
     allGames: "Todos os Jogos",
     casino: "Casino",
     popular: "Popular",
@@ -68,7 +61,6 @@ export const translations = {
     placeBet: "Apostar",
     cashOut: "Retirar",
 
-    // Perfil
     profile: "Perfil",
     balance: "Saldo",
     history: "Histórico",
@@ -76,22 +68,18 @@ export const translations = {
     phoneNumber: "Número de telefone",
     memberSince: "Membro desde",
 
-    // Bônus
     firstDepositBonus: "BÔNUS 500%",
     firstDepositBonusDesc: "No seu primeiro depósito!",
     bonusActive: "Bônus ativo",
 
-    // Suporte
     support: "Suporte",
     supportTitle: "Como posso ajudar?",
     typeMessage: "Escreva sua mensagem...",
     send: "Enviar",
 
-    // Chat
     globalChat: "Chat Global",
     typeHere: "Escreva aqui...",
 
-    // Footer
     allRightsReserved: "Todos os direitos reservados",
     termsConditions: "Termos & Condições",
     privacyPolicy: "Política de Privacidade",
@@ -103,13 +91,12 @@ export const translations = {
     security: "Segurança",
     entertainment: "A plataforma de entretenimento mais completa de Moçambique. Diversão garantida com os melhores slots, crash games e apostas exclusivas.",
 
-    // 404
     pageNotFound: "Página não encontrada",
     goHome: "Voltar ao Início",
   },
 
   en: {
-    // General
+
     brand: "MOZBET",
     slogan: "The best online gaming experience",
     loading: "Loading...",
@@ -122,13 +109,11 @@ export const translations = {
     error: "Error",
     success: "Success",
 
-    // Header
     enter: "Login",
     register: "Register",
     deposit: "Deposit",
     currency: "MZN",
 
-    // Auth
     createAccount: "Create Account",
     welcomeBack: "Welcome back",
     joinPlayers: "Join thousands of players and start winning today",
@@ -147,7 +132,6 @@ export const translations = {
     loginRequired: "Login is required to play for real money.",
     bestExperience: "The best virtual gaming experience",
 
-    // Deposit
     depositTitle: "DEPOSIT",
     depositMin: "Minimum deposit amount is 10 MT",
     depositMax: "Maximum amount is 25,000 MT",
@@ -159,7 +143,6 @@ export const translations = {
     withdraw: "Withdraw",
     withdrawComingSoon: "Withdrawal feature coming soon!",
 
-    // Games
     allGames: "All Games",
     casino: "Casino",
     popular: "Popular",
@@ -172,7 +155,6 @@ export const translations = {
     placeBet: "Place Bet",
     cashOut: "Cash Out",
 
-    // Profile
     profile: "Profile",
     balance: "Balance",
     history: "History",
@@ -180,22 +162,18 @@ export const translations = {
     phoneNumber: "Phone number",
     memberSince: "Member since",
 
-    // Bonus
     firstDepositBonus: "500% BONUS",
     firstDepositBonusDesc: "On your first deposit!",
     bonusActive: "Bonus active",
 
-    // Support
     support: "Support",
     supportTitle: "How can I help?",
     typeMessage: "Type your message...",
     send: "Send",
 
-    // Chat
     globalChat: "Global Chat",
     typeHere: "Type here...",
 
-    // Footer
     allRightsReserved: "All rights reserved",
     termsConditions: "Terms & Conditions",
     privacyPolicy: "Privacy Policy",
@@ -207,7 +185,6 @@ export const translations = {
     security: "Security",
     entertainment: "Mozambique's most complete entertainment platform. Guaranteed fun with the best slots, crash games and exclusive bets.",
 
-    // 404
     pageNotFound: "Page not found",
     goHome: "Go Home",
   },

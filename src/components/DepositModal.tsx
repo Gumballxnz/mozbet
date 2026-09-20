@@ -16,14 +16,8 @@ import { formatMZN } from "@/lib/utils";
 import { EMOLA_LOGO, MPESA_LOGO, MKESH_LOGO } from "@/lib/logos";
 import { Wallet, Check, Headphones, Lock, Loader2 } from "lucide-react";
 
-// Botões de valor rápido
 const QUICK_AMOUNTS = [50, 100, 250, 500, 1000, 5000];
 
-/**
- * Detecta automaticamente o método de pagamento com base no prefixo do número de telefone.
- * - Vodacom (84, 85) → M-Pesa
- * - Movitel (86, 87) → E-Mola
- */
 function detectPaymentMethod(phone: string, activeGateway: string): { method: "mpesa" | "emola" | "mkesh"; label: string } {
   const clean = phone.replace(/\D/g, "").replace(/^258/, "");
   const prefix = clean.substring(0, 2);
@@ -37,7 +31,7 @@ function detectPaymentMethod(phone: string, activeGateway: string): { method: "m
   if (activeGateway === "debitopay" && ["82", "83"].includes(prefix)) {
     return { method: "mkesh", label: "mKesh" };
   }
-  // Fallback
+
   return { method: "mpesa", label: "M-Pesa" };
 }
 
@@ -52,11 +46,9 @@ export function DepositModal() {
   const [showWithdrawErrorModal, setShowWithdrawErrorModal] = useState(false);
   const [acceptBonus, setAcceptBonus] = useState(true);
 
-  // Contador regressivo de 60 segundos após envio do depósito
   const [countdown, setCountdown] = useState(0);
   const countdownRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Configurações dinâmicas do backend
   const [config, setConfig] = useState({
     min_deposit: 0,
     max_deposit: 0,
@@ -68,7 +60,6 @@ export function DepositModal() {
   });
   const [isLoadingConfig, setIsLoadingConfig] = useState(true);
 
-  // Validação em tempo real do depósito (valor mínimo e máximo)
   const depositError = useMemo(() => {
     if (tab !== "deposit") return null;
     const num = Number(amount);
@@ -82,7 +73,6 @@ export function DepositModal() {
     return null;
   }, [amount, tab, config.min_deposit, config.max_deposit]);
 
-  // Validação em tempo real do levantamento (saque mínimo e saldo do usuário)
   const withdrawError = useMemo(() => {
     if (tab !== "withdraw") return null;
     const num = Number(amount);
@@ -97,7 +87,6 @@ export function DepositModal() {
     return null;
   }, [amount, tab, user?.balance, config.min_withdrawal]);
 
-  // Sincronizar aba ativa com a store global e definir valor padrão no input
   useEffect(() => {
     if (depositOpen) {
       setTab(depositTab);
@@ -109,7 +98,6 @@ export function DepositModal() {
     }
   }, [depositOpen, depositTab, config.default_deposit]);
 
-  // Busca configurações ao abrir o modal
   useEffect(() => {
     if (depositOpen) {
       setIsLoadingConfig(true);
@@ -139,13 +127,10 @@ export function DepositModal() {
     }
   }, [depositOpen, depositTab]);
 
-  // Telefone da conta do utilizador
   const phone = user?.phone || "";
 
-  // Detecção automática de operadora pelo número de telefone
   const paymentInfo = useMemo(() => detectPaymentMethod(phone, config.active_gateway), [phone, config.active_gateway]);
 
-  // Iniciar countdown de 60s quando o depósito for enviado com sucesso
   useEffect(() => {
     if (step === "sent" && tab === "deposit") {
       setCountdown(60);
@@ -162,14 +147,13 @@ export function DepositModal() {
         if (countdownRef.current) clearInterval(countdownRef.current);
       };
     }
-    // Para levantamento, fechar automaticamente após 5s
+
     if (step === "sent" && tab === "withdraw") {
       const timer = setTimeout(() => handleClose(), 5000);
       return () => clearTimeout(timer);
     }
   }, [step, tab]);
 
-  // Formatar segundos para M:SS
   const formatCountdown = useCallback((seconds: number) => {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
@@ -195,7 +179,6 @@ export function DepositModal() {
     }
   };
 
-  // Envio de Depósito
   const handleDepositSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -208,7 +191,7 @@ export function DepositModal() {
     }
 
     setIsLoading(true);
-    // Ir imediatamente para a tela de aguardando para mostrar o contador de 60s
+
     setStep("sent");
 
     fetch("/api/payments/deposit", {
@@ -222,15 +205,14 @@ export function DepositModal() {
         if (!res.ok) {
           toast.error("Erro no Pagamento", { description: data.error || "Ocorreu um erro no processamento." });
           setIsLoading(false);
-          setStep("form"); // Volta para o formulário se falhar
+          setStep("form");
           setCountdown(0);
           return;
         }
 
         setIsLoading(false);
-        setCountdown(0); // Para o contador e exibe o botão "OK, ENTENDI"
+        setCountdown(0);
 
-        // Atualizar saldo do usuário no header
         const meRes = await fetch("/api/auth/me", { cache: "no-store" });
         if (meRes.ok) {
           const meData = await meRes.json();
@@ -254,7 +236,6 @@ export function DepositModal() {
       });
   };
 
-  // Envio de Levantamento (Saque)
   const handleWithdrawSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -297,7 +278,6 @@ export function DepositModal() {
           description: `O seu pedido de levantamento de ${formatMZN(numAmount)} foi enviado e está sob análise manual.`,
         });
 
-        // Atualizar saldo do usuário localmente
         const meRes = await fetch("/api/auth/me", { cache: "no-store" });
         if (meRes.ok) {
           const meData = await meRes.json();
@@ -306,7 +286,7 @@ export function DepositModal() {
             updateBalance(Number(meData.user.balance));
           }
         }
-        
+
         handleClose();
       })
       .catch(() => {
@@ -381,7 +361,7 @@ export function DepositModal() {
                 <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest block">
                   Método de Pagamento Detectado
                 </span>
-                
+
                 <div className={`grid gap-3 ${config.active_gateway === "debitopay" ? "grid-cols-3" : "grid-cols-2"}`}>
                   {/* M-PESA BUTTON */}
                   <div
@@ -467,14 +447,14 @@ export function DepositModal() {
                   <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest block">
                     {tab === "deposit" ? "Valor do Depósito" : "Valor do Levantamento"}
                   </span>
-                  
+
                   {/* Container de Entrada Customizado (Visual Concorrente) */}
                   <div className="flex items-center bg-[#101116] border border-[#2A2F40]/60 rounded-2xl overflow-hidden focus-within:border-primary/50 transition-colors h-14">
                     {/* Bloco MZN */}
                     <div className="bg-white/5 px-4 h-full flex items-center border-r border-[#2A2F40]/50 select-none">
                       <span className="font-mono-data text-sm font-black text-gray-400">MZN</span>
                     </div>
-                    
+
                     {/* Input */}
                     <Input
                       type="text"
@@ -520,13 +500,13 @@ export function DepositModal() {
 
                 {/* Checkbox de Aceitar Bónus (Apenas no primeiro Depósito válido) */}
                 {tab === "deposit" && !user?.hasDeposited && !depositError && (
-                  <div 
+                  <div
                     className="flex items-center gap-2 mt-4 bg-white/5 border border-[#2A2F40]/30 rounded-2xl p-4 cursor-pointer select-none"
                     onClick={() => setAcceptBonus(!acceptBonus)}
                   >
                     <div className={`w-5 h-5 rounded-md flex items-center justify-center border transition-all ${
-                      acceptBonus 
-                        ? "bg-primary border-primary text-black" 
+                      acceptBonus
+                        ? "bg-primary border-primary text-black"
                         : "border-gray-500 text-transparent"
                     }`}>
                       ✓
@@ -596,13 +576,13 @@ export function DepositModal() {
               </div>
 
               <h3 className="text-xl font-black font-mono-data tracking-widest text-white uppercase mb-3">
-                {tab === "deposit" 
-                  ? (countdown > 0 ? "PEDIDO ENVIADO!" : "DEPÓSITO CONFIRMADO!") 
+                {tab === "deposit"
+                  ? (countdown > 0 ? "PEDIDO ENVIADO!" : "DEPÓSITO CONFIRMADO!")
                   : "SOLICITAÇÃO ENVIADA!"}
               </h3>
               <p className="text-[11px] text-gray-400 max-w-[280px] uppercase font-bold leading-relaxed mb-4">
-                {tab === "deposit" 
-                  ? (countdown > 0 
+                {tab === "deposit"
+                  ? (countdown > 0
                       ? "Pedido de depósito enviado com sucesso! Por favor, insere o PIN de confirmação no teu telemóvel. Obrigado!"
                       : "O teu depósito foi processado com sucesso e o saldo já está disponível na tua conta. Boas apostas!")
                   : "Pedido de levantamento solicitado com sucesso! A transação está sob análise e será processada manualmente. Obrigado!"}

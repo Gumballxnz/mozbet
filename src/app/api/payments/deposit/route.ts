@@ -2,16 +2,16 @@ import { NextResponse } from "next/server";
 import { verifyToken, supabaseAdmin } from "@/lib/auth-server";
 import { processE2Payment, type E2PaymentMethod } from "@/lib/e2payments";
 
-export const maxDuration = 60; // Permite timeout de até 60 segundos na Vercel
+export const maxDuration = 60;
 
 export async function POST(req: Request) {
   try {
-    // 1. Verificar se o utilizador está logado (segurança)
+
     const cookieHeader = req.headers.get("cookie");
     const sessionCookie = cookieHeader
       ?.split("; ")
       .find((row) => row.startsWith("mozbet_session="));
-    
+
     const token = sessionCookie?.split("=")[1];
 
     if (!token) {
@@ -23,12 +23,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Token inválido." }, { status: 401 });
     }
 
-    // 2. Extrair valor, método de pagamento e validar
     const { amount, method = "mpesa", acceptBonus = true } = await req.json();
     const numAmount = Number(amount);
     const paymentMethod: E2PaymentMethod = method === "emola" ? "emola" : "mpesa";
 
-    // Carregar limites e bónus do banco de dados (settings)
     let minDeposit = 10;
     let maxDeposit = 17500;
     let bonusPercent = 500;
@@ -57,7 +55,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: `O valor mínimo de depósito é ${minDeposit} MZN e o máximo é ${maxDeposit.toLocaleString("pt-MZ")} MZN.` }, { status: 400 });
     }
 
-    // 3. Criar o registo da transação como PENDENTE no Banco de Dados
     const { data: transaction, error: txError } = await supabaseAdmin
       .from("transactions")
       .insert([
@@ -80,8 +77,7 @@ export async function POST(req: Request) {
     const hasKeys = activeGateway === "debitopay"
       ? !!(process.env.DEBITOPAY_API_KEY || process.env.DEBITIPAY_API_KEY)
       : !!process.env.E2PAY_CLIENT_ID;
-    
-    // Em produção, nunca permitir o modo simulação se as chaves estiverem em falta
+
     if (!hasKeys && process.env.NODE_ENV === "production") {
       await supabaseAdmin.from("transactions").update({ status: "FAILED" }).eq("id", transaction.id);
       return NextResponse.json(
@@ -89,17 +85,16 @@ export async function POST(req: Request) {
         { status: 503 }
       );
     }
-    
-    // MODO SIMULAÇÃO RÁPIDO (Apenas para o teste falho de 2MT em dev/testes)
+
     if (!hasKeys && numAmount === 2) {
       await supabaseAdmin.from("transactions").update({ status: "FAILED" }).eq("id", transaction.id);
-      
+
       await supabaseAdmin.from('notifications').insert({
         user_id: decoded.id,
         message: `Falha no depósito de ${numAmount.toFixed(2)} MZN: Saldo insuficiente no M-pesa ou PIN incorreto. Tente novamente.`,
         type: "deposit_failed"
       });
-      
+
       return NextResponse.json({ error: "Falha simulada no M-pesa (Depósito de 2MT)." }, { status: 400 });
     }
 
@@ -110,14 +105,14 @@ export async function POST(req: Request) {
 
     if (hasKeys) {
       if (activeGateway === "debitopay") {
-        // ===== MODO DEBITOPAY =====
+
         const { processDebitoPayment } = await import("@/lib/debitopay");
         const debitoMethod = method === "mkesh" ? "mkesh" : method === "emola" ? "emola" : "mpesa";
-        
+
         const debitoRes = await processDebitoPayment(decoded.phone, numAmount, transaction.id, debitoMethod);
         if (debitoRes.success) {
           providerTxId = debitoRes.data?.payment_id || "";
-          
+
           if (debitoMethod === "emola" || debitoMethod === "mkesh") {
             isPendingConfirmation = true;
             paymentSuccess = true;
@@ -128,7 +123,7 @@ export async function POST(req: Request) {
           errorMessage = debitoRes.error || "Pagamento rejeitado pelo gateway DebitoPay.";
         }
       } else {
-        // ===== MODO E2PAYMENTS — PAGAMENTO REAL E INSTANTÂNEO =====
+
         const e2payRes = await processE2Payment(decoded.phone, numAmount, transaction.id, paymentMethod);
         if (e2payRes.success) {
           paymentSuccess = true;
@@ -137,17 +132,15 @@ export async function POST(req: Request) {
         }
       }
     } else {
-      // ===== MODO DESENVOLVIMENTO / TESTES =====
-      // Apenas simulamos um pequeno atraso de 1.5s e aprovamos
+
       await new Promise(resolve => setTimeout(resolve, 1500));
       paymentSuccess = true;
     }
 
     if (!paymentSuccess) {
-      // Registrar falha no banco de dados
+
       await supabaseAdmin.from("transactions").update({ status: "FAILED" }).eq("id", transaction.id);
-      
-      // Notificação de falha para o usuário (evita duplicar "Tente novamente")
+
       const formattedErrorMessage = errorMessage.endsWith("Tente novamente.")
         ? errorMessage
         : `${errorMessage} Tente novamente.`;
@@ -161,7 +154,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: errorMessage }, { status: 400 });
     }
 
-    // Se DebitoPay retornou ID externo, grava no campo reference
     if (providerTxId) {
       await supabaseAdmin
         .from("transactions")
@@ -169,7 +161,6 @@ export async function POST(req: Request) {
         .eq("id", transaction.id);
     }
 
-    // Se for confirmação assíncrona (Aguardando PIN), retorna status PENDING e encerra o request
     if (isPendingConfirmation) {
       await supabaseAdmin.from('notifications').insert({
         user_id: decoded.id,
@@ -185,11 +176,8 @@ export async function POST(req: Request) {
       }, { status: 200 });
     }
 
-    // ===== PROCESSO DE SUCESSO UNIFICADO (Saldo Real + Bónus Real) =====
-    // 1. Atualizar transação de depósito para COMPLETED
     await supabaseAdmin.from("transactions").update({ status: "COMPLETED" }).eq("id", transaction.id);
 
-    // Enviar Notificação no Telegram
     try {
       const { sendTelegramNotification } = await import("@/lib/telegram");
       const message = `venda aprovada!\nvalor: ${numAmount}MT\nOrigem: Mozbet`;
@@ -200,7 +188,6 @@ export async function POST(req: Request) {
       console.error("Erro ao importar ou iniciar notificação do Telegram:", telegramErr);
     }
 
-    // Registrar comissão de afiliado (50% do depósito)
     try {
       const { registerAffiliateActivity } = await import("@/lib/affiliate");
       await registerAffiliateActivity(decoded.id, "DEPOSIT", numAmount, transaction.id);
@@ -208,14 +195,12 @@ export async function POST(req: Request) {
       console.error("Erro ao processar comissão de afiliado para depósito:", affErr);
     }
 
-    // 2. Notificação de sucesso do depósito
     await supabaseAdmin.from('notifications').insert({
       user_id: decoded.id,
       message: `O seu depósito de ${numAmount.toFixed(2)} MZN foi aprovado com sucesso e creditado na sua conta. Boas apostas!`,
       type: "deposit_success"
     });
 
-    // 3. Buscar os dados do utilizador
     const { data: user } = await supabaseAdmin
       .from("users")
       .select("balance, bonus_balance, has_deposited")
@@ -230,13 +215,11 @@ export async function POST(req: Request) {
       newBonusBalance = Number(user.bonus_balance || 0);
       let bonus = 0;
 
-      // Aplica o Bónus se for o 1º depósito (500% ou dinâmico) e se foi aceito
       if (!user.has_deposited && acceptBonus) {
         const multiplier = bonusPercent / 100;
-        bonus = numAmount * multiplier; // bónus real entregue de facto
+        bonus = numAmount * multiplier;
         newBonusBalance += bonus;
 
-        // Inserir registro do bónus nas transações
         await supabaseAdmin.from("transactions").insert([{
           user_id: decoded.id,
           type: "BONUS",
@@ -245,7 +228,6 @@ export async function POST(req: Request) {
           phone: decoded.phone
         }]);
 
-        // Notificação de bónus para o usuário
         await supabaseAdmin.from('notifications').insert({
           user_id: decoded.id,
           message: `Acaba de receber ${bonus.toFixed(2)} MZN de Bónus (${bonusPercent}%) no seu primeiro depósito!`,
@@ -253,7 +235,6 @@ export async function POST(req: Request) {
         });
       }
 
-      // Atualizar o saldo real, bónus e flag de depósito do usuário no banco
       await supabaseAdmin.from("users").update({
         balance: newBalance,
         bonus_balance: newBonusBalance,

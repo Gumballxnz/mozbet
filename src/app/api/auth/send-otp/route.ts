@@ -3,9 +3,8 @@ import { supabaseAdmin } from "@/lib/auth-server";
 import { sendSMS, generateOTP, formatOTPMessage } from "@/lib/mozsms";
 import { isValidPhone } from "@/lib/utils";
 
-// Rate limit para evitar spam de SMS
 const otpRateLimit = new Map<string, number>();
-const OTP_COOLDOWN = 60 * 1000; // 60 segundos entre reenvios
+const OTP_COOLDOWN = 60 * 1000;
 
 export async function POST(req: Request) {
   try {
@@ -18,9 +17,8 @@ export async function POST(req: Request) {
 
     const cleanPhone = phone.replace(/\D/g, "");
 
-    // 1. Verificar limite diário (Máximo 3 SMS por dia por número ou IP)
     const today = new Date().toISOString().split("T")[0];
-    
+
     const { count: dailyCount } = await supabaseAdmin
       .from("otp_logs")
       .select("*", { count: "exact", head: true })
@@ -34,7 +32,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // 2. Cooldown: impedir envio de SMS em menos de 60s (Rate limit simples)
     const lastSent = otpRateLimit.get(cleanPhone);
     if (lastSent && Date.now() - lastSent < OTP_COOLDOWN) {
       const remaining = Math.ceil((OTP_COOLDOWN - (Date.now() - lastSent)) / 1000);
@@ -44,7 +41,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // 3. Para recuperação de senha, verificar se o número existe
     if (purpose === "reset") {
       const { data: existingUser } = await supabaseAdmin.from("users").select("id").eq("phone", cleanPhone).single();
       if (!existingUser) {
@@ -52,7 +48,6 @@ export async function POST(req: Request) {
       }
     }
 
-    // 4. Gerar e Salvar Código
     const code = generateOTP();
     await supabaseAdmin.from("otp_codes").delete().eq("phone", cleanPhone);
 
@@ -67,21 +62,18 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Erro interno ao gerar código." }, { status: 500 });
     }
 
-    // 5. Enviar SMS via MOZE SMS
     const smsResult = await sendSMS(cleanPhone, formatOTPMessage(code));
 
     if (!smsResult.success) {
       return NextResponse.json({ error: "Erro ao enviar SMS. Tente novamente." }, { status: 502 });
     }
 
-    // 6. Registrar Log de Envio (Ponto de Segurança)
     await supabaseAdmin.from("otp_logs").insert({
       phone: cleanPhone,
       ip_address: ip,
       sent_at: today
     });
 
-    // Marcar rate limit em memória
     otpRateLimit.set(cleanPhone, Date.now());
 
     return NextResponse.json({

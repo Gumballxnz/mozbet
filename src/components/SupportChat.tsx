@@ -17,7 +17,7 @@ export function SupportChat() {
   const { t } = useTranslation();
   const pathname = usePathname();
   const { supportOpen, setSupportOpen } = useAppStore();
-  
+
   const [messages, setMessages] = useState<Message[]>([
     { role: "model", content: "Olá! Sou o assistente de suporte da MOZBET. Como posso ajudar?" }
   ]);
@@ -26,7 +26,6 @@ export function SupportChat() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [historyLoaded, setHistoryLoaded] = useState(false);
 
-  // Carregar histórico ao abrir o chat
   useEffect(() => {
     if (supportOpen && !historyLoaded) {
       async function loadHistory() {
@@ -49,22 +48,19 @@ export function SupportChat() {
     }
   }, [supportOpen, historyLoaded]);
 
-  // Estado do botão flutuante: posição e visibilidade
   const [fabVisible, setFabVisible] = useState(true);
-  const [fabPosition, setFabPosition] = useState({ x: -1, y: -1 }); // -1 = posição padrão
+  const [fabPosition, setFabPosition] = useState({ x: -1, y: -1 });
   const [isDragging, setIsDragging] = useState(false);
   const [showCloseHint, setShowCloseHint] = useState(false);
   const dragRef = useRef<HTMLButtonElement>(null);
   const dragStart = useRef({ x: 0, y: 0, startX: 0, startY: 0, moved: false });
 
-  // Inicializar posição padrão
   useEffect(() => {
     if (fabPosition.x === -1) {
       setFabPosition({ x: window.innerWidth - 72, y: window.innerHeight - 140 });
     }
   }, [fabPosition.x]);
 
-  // Drag handlers (funciona com touch e mouse)
   const handleDragStart = useCallback((clientX: number, clientY: number) => {
     dragStart.current = { x: clientX, y: clientY, startX: fabPosition.x, startY: fabPosition.y, moved: false };
     setIsDragging(true);
@@ -76,7 +72,7 @@ export function SupportChat() {
     const dx = clientX - dragStart.current.x;
     const dy = clientY - dragStart.current.y;
     if (Math.abs(dx) > 15 || Math.abs(dy) > 15) dragStart.current.moved = true;
-    
+
     const newX = Math.max(0, Math.min(window.innerWidth - 56, dragStart.current.startX + dx));
     const newY = Math.max(0, Math.min(window.innerHeight - 56, dragStart.current.startY + dy));
     setFabPosition({ x: newX, y: newY });
@@ -90,7 +86,6 @@ export function SupportChat() {
     }
   }, [setSupportOpen]);
 
-  // Mouse events
   useEffect(() => {
     if (!isDragging) return;
     const onMove = (e: MouseEvent) => handleDragMove(e.clientX, e.clientY);
@@ -100,7 +95,6 @@ export function SupportChat() {
     return () => { window.removeEventListener("mousemove", onMove); window.removeEventListener("mouseup", onUp); };
   }, [isDragging, handleDragMove, handleDragEnd]);
 
-  // Auto-scroll para o fundo do chat
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -113,7 +107,7 @@ export function SupportChat() {
 
     const userMessage = input.trim();
     setInput("");
-    
+
     const newMessages: Message[] = [...messages, { role: "user", content: userMessage }];
     setMessages(newMessages);
     setLoading(true);
@@ -122,14 +116,14 @@ export function SupportChat() {
       const res = await fetch("/api/support/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           message: userMessage,
-          history: messages.filter(m => m.content !== "Olá! Sou o assistente de suporte da MOZBET. Como posso ajudar?") 
+          history: messages.filter(m => m.content !== "Olá! Sou o assistente de suporte da MOZBET. Como posso ajudar?")
         }),
       });
 
       const data = await res.json();
-      
+
       if (data.error) {
         setMessages([...newMessages, { role: "model", content: data.error }]);
       } else {
@@ -144,10 +138,10 @@ export function SupportChat() {
 
   return (
     <>
-      {/* Botão Flutuante Arrastável */}
+      {}
       {!supportOpen && fabVisible && pathname === "/" && (
         <div className="fixed z-50" style={{ left: fabPosition.x, top: fabPosition.y }}>
-          {/* Botão X para remover o fab */}
+          {}
           {showCloseHint && (
             <button
               onClick={(e) => { e.stopPropagation(); setFabVisible(false); }}
@@ -178,10 +172,10 @@ export function SupportChat() {
         </div>
       )}
 
-      {/* Janela de Chat de Suporte IA */}
+      {}
       {supportOpen && (
         <div className="fixed bottom-20 right-4 sm:bottom-6 sm:right-6 z-50 w-[calc(100vw-32px)] sm:w-[350px] h-[450px] max-h-[70vh] bg-surface-elevated border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-slide-up">
-          {/* Header */}
+          {}
           <div className="bg-primary/10 border-b border-primary/20 p-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center text-primary">
@@ -192,7 +186,7 @@ export function SupportChat() {
                 <p className="text-[10px] text-primary glow-primary">🟢 Online (IA)</p>
               </div>
             </div>
-            <button 
+            <button
               onClick={() => setSupportOpen(false)}
               className="text-muted-foreground hover:text-foreground"
             >
@@ -200,11 +194,11 @@ export function SupportChat() {
             </button>
           </div>
 
-          {/* Mensagens */}
+          {}
           <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4">
             {messages.map((msg, idx) => (
-              <div 
-                key={idx} 
+              <div
+                key={idx}
                 className={`flex gap-2 ${msg.role === "user" ? "flex-row-reverse" : "flex-row"}`}
               >
                 <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-1 ${
@@ -213,8 +207,8 @@ export function SupportChat() {
                   {msg.role === "user" ? <User className="w-3 h-3" /> : <Bot className="w-3 h-3" />}
                 </div>
                 <div className={`max-w-[75%] rounded-2xl px-3 py-2 text-sm ${
-                  msg.role === "user" 
-                    ? "bg-accent/20 border border-accent/30 text-white rounded-tr-sm" 
+                  msg.role === "user"
+                    ? "bg-accent/20 border border-accent/30 text-white rounded-tr-sm"
                     : "bg-background border border-border text-foreground rounded-tl-sm"
                 }`}>
                   {msg.content}
@@ -244,10 +238,10 @@ export function SupportChat() {
               className="flex-1 bg-background h-10"
               disabled={loading}
             />
-            <Button 
-              type="submit" 
-              size="icon" 
-              className="h-10 w-10 shrink-0" 
+            <Button
+              type="submit"
+              size="icon"
+              className="h-10 w-10 shrink-0"
               disabled={loading || !input.trim()}
             >
               <Send className="w-4 h-4" />

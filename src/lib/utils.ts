@@ -1,4 +1,3 @@
-// Utilitário para combinar classes CSS (substituto do cn/clsx)
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -6,7 +5,6 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-// Formatar valor em Meticais
 export function formatMZN(value: number): string {
   return value.toLocaleString("pt-BR", {
     minimumFractionDigits: 2,
@@ -14,7 +12,6 @@ export function formatMZN(value: number): string {
   });
 }
 
-// Validar número de telefone moçambicano
 export const VALID_PREFIXES = ["82", "83", "84", "85", "86", "87", "88"];
 
 export function isValidPhone(phone: string): boolean {
@@ -28,7 +25,6 @@ export function isValidPrefix(phone: string): boolean {
   return VALID_PREFIXES.some((p) => phone.startsWith(p));
 }
 
-// Gerar ID aleatório seguro
 export function generateId(length: number = 16): string {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   let result = "";
@@ -40,11 +36,10 @@ export function generateId(length: number = 16): string {
   return result;
 }
 
-// Limpar DDI (+258 / 258) e formatação de números de Moçambique, retornando apenas os 9 dígitos nacionais
 export function cleanMocambiquePhone(phone: string): string {
   if (!phone) return "";
   let cleaned = phone.trim().replace(/\s+/g, "").replace(/\+/g, "");
-  // Se começar com 258, remove
+
   if (cleaned.startsWith("258") && cleaned.length > 9) {
     cleaned = cleaned.substring(3);
   }

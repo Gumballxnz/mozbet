@@ -4,7 +4,7 @@ import { AdminAffiliatesTable } from "@/components/admin/AdminAffiliatesTable";
 export const dynamic = "force-dynamic";
 
 export default async function AdminAffiliatesPage() {
-  // 1. Buscar todos os afiliados
+
   const { data: users } = await supabaseAdmin
     .from("users")
     .select("id, email, username, phone, created_at, is_active, affiliate_code, affiliate_name, affiliate_phone, affiliate_saque_number, affiliate_saque_method, affiliate_balance")
@@ -13,7 +13,6 @@ export default async function AdminAffiliatesPage() {
 
   const affiliateIds = (users || []).map(a => a.id);
 
-  // 2. Buscar contagem de indicados
   let referrals: any[] = [];
   if (affiliateIds.length > 0) {
     const { data } = await supabaseAdmin
@@ -23,7 +22,6 @@ export default async function AdminAffiliatesPage() {
     referrals = data || [];
   }
 
-  // 3. Buscar todas as transações de comissão
   let txs: any[] = [];
   if (affiliateIds.length > 0) {
     const { data } = await supabaseAdmin
@@ -33,7 +31,6 @@ export default async function AdminAffiliatesPage() {
     txs = data || [];
   }
 
-  // 4. Mapear dados com agregações ricas
   const initialAffiliates = (users || []).map(aff => {
     const myReferrals = referrals.filter(r => r.referrer_id === aff.id);
     const myTxs = txs.filter(t => t.affiliate_id === aff.id);
@@ -61,7 +58,6 @@ export default async function AdminAffiliatesPage() {
     const totalDeposits = depositCommissions * 2;
     const netEarnings = Number((depositCommissions + subCommissions + winDeductions).toFixed(2));
 
-    // Extrair nome do titular se estiver concatenado no affiliate_name
     const rawName = aff.affiliate_name || aff.username || "Sem Nome";
     let displayName = rawName;
     let extractedSaqueName = "";

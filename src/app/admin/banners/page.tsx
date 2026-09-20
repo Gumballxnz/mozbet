@@ -8,8 +8,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Pencil, Lock, Loader2 } from "lucide-react";
 
-
-
 interface BannerData {
   id: string;
   title: string;
@@ -35,7 +33,7 @@ export default function AdminBannersPage() {
     try {
       const res = await fetch("/api/content/banners");
       const { banners: data } = await res.json();
-      
+
       if (data && data.length > 0) {
         setBanners(data);
         const origMap: Record<string, BannerData> = {};
@@ -59,10 +57,9 @@ export default function AdminBannersPage() {
     setBanners(prev => prev.map(b => b.id === id ? { ...b, [field]: value } : b));
   };
 
-  // Verifica se houve alteração real num banner específico
   const hasChanges = useCallback((banner: BannerData): boolean => {
     const orig = originals[banner.id];
-    if (!orig) return true; // Novo banner, nunca gravado
+    if (!orig) return true;
     return (
       orig.title !== banner.title ||
       orig.highlight !== banner.highlight ||
@@ -89,7 +86,7 @@ export default function AdminBannersPage() {
         throw new Error(errData.error || "Falha ao salvar");
       }
       toast.success("Banner atualizado com sucesso!");
-      // Atualizar a cópia original para refletir o novo estado gravado
+
       setOriginals(prev => ({ ...prev, [banner.id]: { ...banner } }));
       setEditingId(null);
     } catch (err: any) {
@@ -100,7 +97,7 @@ export default function AdminBannersPage() {
   };
 
   const handleCancelEdit = (bannerId: string) => {
-    // Reverter para os dados originais
+
     const orig = originals[bannerId];
     if (orig) {
       setBanners(prev => prev.map(b => b.id === bannerId ? { ...orig } : b));
@@ -136,15 +133,15 @@ export default function AdminBannersPage() {
 
           return (
             <div key={banner.id} className={`bg-surface p-6 rounded-2xl border ${banner.is_active ? 'border-white/10' : 'border-red-900/50 opacity-60'} ${isEditing ? 'ring-2 ring-primary/50' : ''} flex flex-col lg:flex-row gap-6 shadow-xl relative transition-all`}>
-              
-              {/* Preview Horizontal do Banner */}
+
+              {}
               <div className="w-full lg:w-[450px] shrink-0 bg-black rounded-xl overflow-hidden aspect-[21/9] relative border border-white/5">
                 {banner.image_url ? (
                   <>
-                    <img 
-                      src={banner.image_url} 
-                      alt="Preview" 
-                      className="absolute inset-0 w-full h-full object-cover opacity-60" 
+                    <img
+                      src={banner.image_url}
+                      alt="Preview"
+                      className="absolute inset-0 w-full h-full object-cover opacity-60"
                     />
                     <div className="absolute inset-0 flex flex-col justify-center p-6 bg-gradient-to-r from-black/80 to-transparent">
                       <span className="text-[10px] bg-primary/20 text-primary border border-primary px-2 py-0.5 rounded-full w-fit mb-2 font-black tracking-widest">{banner.badge || "BADGE"}</span>
@@ -167,18 +164,18 @@ export default function AdminBannersPage() {
                 {/* Botão de Editar / Bloquear */}
                 <div className="flex justify-end">
                   {!isEditing ? (
-                    <Button 
-                      size="sm" 
-                      variant="outline" 
+                    <Button
+                      size="sm"
+                      variant="outline"
                       onClick={() => setEditingId(banner.id)}
                       className="border-primary/30 text-primary hover:bg-primary/20 gap-2"
                     >
                       <Pencil className="w-3.5 h-3.5" /> Editar Dados
                     </Button>
                   ) : (
-                    <Button 
-                      size="sm" 
-                      variant="outline" 
+                    <Button
+                      size="sm"
+                      variant="outline"
                       onClick={() => handleCancelEdit(banner.id)}
                       className="border-red-500/30 text-red-400 hover:bg-red-500/20 gap-2"
                     >
@@ -192,12 +189,12 @@ export default function AdminBannersPage() {
                     <label className="text-xs font-bold text-gray-400">URL da Imagem</label>
                     <Input value={banner.image_url || ''} onChange={(e) => handleUpdate(banner.id, "image_url", e.target.value)} className="bg-black h-9" disabled={!isEditing} />
                   </div>
-                  
+
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-gray-400">Título Principal</label>
                     <Input value={banner.title || ''} onChange={(e) => handleUpdate(banner.id, "title", e.target.value)} className="bg-black h-9" disabled={!isEditing} />
                   </div>
-                  
+
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-gray-400">Destaque (Verde)</label>
                     <Input value={banner.highlight || ''} onChange={(e) => handleUpdate(banner.id, "highlight", e.target.value)} className="bg-black h-9" disabled={!isEditing} />
@@ -224,10 +221,10 @@ export default function AdminBannersPage() {
                     <Switch checked={banner.is_active !== false} onCheckedChange={(c) => handleUpdate(banner.id, "is_active", c)} disabled={!isEditing} />
                     <span className="text-sm font-bold text-white">Ativo (Visível)</span>
                   </div>
-                  
+
                   {isEditing && (
-                    <Button 
-                      onClick={() => handleSave(banner)} 
+                    <Button
+                      onClick={() => handleSave(banner)}
                       disabled={!changed || isSaving}
                       className="bg-primary text-black font-extrabold hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed gap-2"
                     >

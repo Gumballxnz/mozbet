@@ -22,8 +22,7 @@ interface TeamMember {
 export function AdminTeamTable({ initialTeam, currentUserRole, currentUserId }: { initialTeam: TeamMember[]; currentUserRole: string; currentUserId: string }) {
   const [team, setTeam] = useState<TeamMember[]>(initialTeam);
   const [search, setSearch] = useState("");
-  
-  // Modais de ação
+
   const [promoteModalOpen, setPromoteModalOpen] = useState(false);
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
@@ -32,7 +31,6 @@ export function AdminTeamTable({ initialTeam, currentUserRole, currentUserId }: 
     onConfirm: () => void;
   } | null>(null);
 
-  // Estados de Busca para Promoção
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -52,10 +50,10 @@ export function AdminTeamTable({ initialTeam, currentUserRole, currentUserId }: 
       toast.success(data.message || "Ação de equipa concluída com sucesso.", { id: "admin-team-action" });
 
       if (action === 'delete' || action === 'demote') {
-        // Remove da equipe local
+
         setTeam(prev => prev.filter(m => m.id !== userId));
       } else {
-        // Se promoveu, busca os dados atualizados do membro promovido
+
         const { data: updatedUser } = await supabase
           .from("users")
           .select("id, phone, email, username, created_at, is_active, is_admin, role")
@@ -97,7 +95,7 @@ export function AdminTeamTable({ initialTeam, currentUserRole, currentUserId }: 
     }
   };
 
-  const filteredTeam = team.filter(m => 
+  const filteredTeam = team.filter(m =>
     m.username.toLowerCase().includes(search.toLowerCase()) ||
     m.phone.includes(search) ||
     m.id.includes(search) ||
@@ -121,7 +119,7 @@ export function AdminTeamTable({ initialTeam, currentUserRole, currentUserId }: 
         </div>
 
         {isOwner && (
-          <Button 
+          <Button
             onClick={() => {
               setSearchQuery("");
               setSearchResults([]);
@@ -135,7 +133,7 @@ export function AdminTeamTable({ initialTeam, currentUserRole, currentUserId }: 
         )}
       </div>
 
-      {/* Tabela de Equipa Desktop */}
+      {}
       <div className="bg-[#101116] border border-[#2A2F40] rounded-2xl overflow-hidden shadow-xl hidden lg:block">
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">

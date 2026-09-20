@@ -1,22 +1,7 @@
-/**
- * Módulo de integração com a API DebitoPay
- * URL Base: https://gyqoaningqhurhvdugne.supabase.co/functions/v1
- * 
- * Suporta M-Pesa (síncrono), E-Mola (assíncrono) e M-Kesh (assíncrono).
- */
-
 export type DebitoPayMethod = "mpesa" | "emola" | "mkesh";
 
-const DEBITOPAY_BASE_URL = "https://gyqoaningqhurhvdugne.supabase.co/functions/v1";
+const DEBITOPAY_BASE_URL = process.env.DEBITOPAY_BASE_URL;
 
-/**
- * Processa um depósito via DebitoPay.
- * 
- * @param phone - Número do cliente (9 dígitos, sem prefixo 258)
- * @param amount - Valor do depósito em MZN
- * @param transactionId - ID interno da transação
- * @param method - Método de pagamento ("mpesa" | "emola" | "mkesh")
- */
 export async function processDebitoPayment(
   phone: string,
   amount: number,
@@ -24,10 +9,13 @@ export async function processDebitoPayment(
   method: DebitoPayMethod = "mpesa"
 ): Promise<{ success: boolean; data?: any; error?: string }> {
   try {
-    // Carregar credenciais suportando grafias DEBITOPAY_* e DEBITIPAY_*
+    if (!DEBITOPAY_BASE_URL) {
+      throw new Error("DEBITOPAY_BASE_URL não está configurada no .env.");
+    }
+
     const apiKey = process.env.DEBITOPAY_API_KEY || process.env.DEBITIPAY_API_KEY;
     const merchantId = process.env.DEBITOPAY_MERCHANT_ID || process.env.DEBITIPAY_MERCHANT_ID;
-    
+
     let walletCode = "";
     if (method === "mpesa") {
       walletCode = process.env.DEBITOPAY_MPESA_WALLET || process.env.DEBITIPAY_MPESA_WALLET || "";
@@ -41,7 +29,6 @@ export async function processDebitoPayment(
       throw new Error(`Credenciais DebitoPay não configuradas para o método ${method.toUpperCase()}. Verifique as variáveis no .env.`);
     }
 
-    // Limpar o telefone para obter os 9 dígitos (ex: 84XXXXXXX)
     let cleanPhone = phone.replace(/\D/g, "");
     if (cleanPhone.startsWith("258")) {
       cleanPhone = cleanPhone.substring(3);
@@ -67,7 +54,6 @@ export async function processDebitoPayment(
 
     console.log(`[DebitoPay] Iniciando pagamento via ${method.toUpperCase()} | Transação=${transactionId} | Valor=${amount} MZN | Telefone=${formattedPhone}`);
 
-    // AbortController com timeout de 60 segundos
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 60000);
 

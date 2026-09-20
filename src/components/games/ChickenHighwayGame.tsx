@@ -97,7 +97,7 @@ const ChickenHighwayGame = ({ onClose, balance, onBet }: ChickenHighwayGameProps
       });
       const data = await res.json();
       if (data.success) {
-        onBet(data.newBalance); 
+        onBet(data.newBalance);
         setTargetCrash(data.crashPoint);
         setIsPlaying(true);
         setIsCrashed(false);
@@ -133,7 +133,7 @@ const ChickenHighwayGame = ({ onClose, balance, onBet }: ChickenHighwayGameProps
 
   return (
     <div className="fixed inset-0 z-[110] bg-[#0a0a0a] flex flex-col font-sans text-white overflow-hidden animate-in fade-in duration-300">
-      {/* Header */}
+      {}
       <div className="flex items-center justify-between p-4 bg-black/40 backdrop-blur-md border-b border-white/5">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-yellow-500 rounded-lg flex items-center justify-center shadow-[0_0_15px_rgba(234,179,8,0.3)]">
@@ -148,13 +148,13 @@ const ChickenHighwayGame = ({ onClose, balance, onBet }: ChickenHighwayGameProps
         </div>
       </div>
 
-      {/* Game Area */}
+      {}
       <div className="flex-1 relative flex flex-col overflow-hidden">
-        {/* Background Split */}
+        {}
         <div className="absolute inset-0 flex">
-          {/* Desert Area */}
+          {}
           <div className="w-1/2 bg-gradient-to-br from-[#d4a373] to-[#a98467] relative overflow-hidden">
-            {/* Cactuses and stones */}
+            {}
             <div className="absolute top-1/4 left-1/4 w-4 h-8 bg-[#2d6a4f] rounded-full" />
             <div className="absolute top-2/3 left-1/3 w-3 h-6 bg-[#2d6a4f] rounded-full" />
             <div className="absolute top-1/2 left-1/2 w-6 h-3 bg-stone-600/30 rounded-full blur-[1px]" />
@@ -169,11 +169,11 @@ const ChickenHighwayGame = ({ onClose, balance, onBet }: ChickenHighwayGameProps
             {/* Speed lines effect */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
               {[...Array(5)].map((_, i) => (
-                <div 
+                <div
                   key={i}
                   className="absolute left-1/2 -translate-x-1/2 w-[1px] h-20 bg-white/10"
-                  style={{ 
-                    top: `${i * 30}%`, 
+                  style={{
+                    top: `${i * 30}%`,
                     animation: `highway-speed 0.5s linear infinite`,
                     animationDelay: `${i * 0.1}s`
                   }}
@@ -227,7 +227,7 @@ const ChickenHighwayGame = ({ onClose, balance, onBet }: ChickenHighwayGameProps
         <div className="flex justify-between items-center mb-4 px-2">
           <div className="flex items-center gap-2">
             <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Saldo</span>
-            
+
           </div>
           <div className="flex items-center gap-2">
             <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Aposta</span>
@@ -237,9 +237,9 @@ const ChickenHighwayGame = ({ onClose, balance, onBet }: ChickenHighwayGameProps
 
         <div className="flex gap-2 overflow-x-auto no-scrollbar mb-3 px-1">
           {[1, 5, 10, 50].map(v => (
-            <button 
-              key={v} 
-              onClick={() => !isPlaying && setBetAmount(prev => prev + v)} 
+            <button
+              key={v}
+              onClick={() => !isPlaying && setBetAmount(prev => prev + v)}
               disabled={isPlaying}
               className="bg-black/40 border border-white/5 px-4 py-2 rounded-xl text-[10px] font-black text-gray-500 hover:text-gray-300 transition-colors disabled:opacity-40"
             >
@@ -251,9 +251,9 @@ const ChickenHighwayGame = ({ onClose, balance, onBet }: ChickenHighwayGameProps
         <div className="grid grid-cols-2 gap-4 mb-5">
           <div className="bg-black/40 p-1 rounded-2xl border border-white/5 flex items-center">
             <button onClick={() => !isPlaying && setBetAmount(Math.max(1, betAmount - 1))} className="w-10 h-10 flex items-center justify-center text-xl font-bold text-gray-400 hover:text-white">-</button>
-            <input 
-              type="number" 
-              value={betAmount} 
+            <input
+              type="number"
+              value={betAmount}
               disabled={isPlaying}
               onChange={(e) => setBetAmount(Number(e.target.value))}
               onBlur={(e) => {
@@ -265,8 +265,8 @@ const ChickenHighwayGame = ({ onClose, balance, onBet }: ChickenHighwayGameProps
             />
             <button onClick={() => !isPlaying && setBetAmount(betAmount + 1)} className="w-10 h-10 flex items-center justify-center text-xl font-bold text-gray-400 hover:text-white">+</button>
           </div>
-          
-          <button 
+
+          <button
             onClick={() => setDifficulty(d => d === "Fácil" ? "Médio" : d === "Médio" ? "Difícil" : "Fácil")}
             className="bg-black/40 border border-white/5 rounded-2xl flex flex-col items-center justify-center px-4"
           >
@@ -276,14 +276,14 @@ const ChickenHighwayGame = ({ onClose, balance, onBet }: ChickenHighwayGameProps
         </div>
 
         {!isPlaying ? (
-          <button 
+          <button
             onClick={handleStart}
             className="w-full py-4 bg-gradient-to-r from-green-600 to-green-500 rounded-2xl font-black text-lg tracking-wider shadow-[0_8px_25px_rgba(34,197,94,0.3)] active:scale-[0.98] transition-all"
           >
             INICIAR
           </button>
         ) : (
-          <button 
+          <button
             onClick={handleCashout}
             className="w-full py-4 bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-2xl font-black text-lg tracking-wider shadow-[0_8px_25px_rgba(234,179,8,0.3)] active:scale-[0.98] transition-all"
           >

@@ -1,18 +1,14 @@
-// Script para criar os utilizadores administradores no Supabase
-// Executar via: POST /api/admin/seed (uma única vez)
-
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { supabaseAdmin } from "@/lib/auth-server";
 
-// Utilizadores administradores da MOZBET
 const ADMIN_USERS = [
   { phone: "840683435", password: "Roman700" },
   { phone: "858148698", password: "Roman700" },
 ];
 
 export async function POST(req: Request) {
-  // Segurança: verificar chave secreta no header
+
   const authKey = req.headers.get("x-seed-key");
   if (authKey !== process.env.JWT_SECRET) {
     return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
@@ -21,7 +17,7 @@ export async function POST(req: Request) {
   const results = [];
 
   for (const admin of ADMIN_USERS) {
-    // Verificar se já existe
+
     const { data: existing } = await supabaseAdmin
       .from("users")
       .select("id")
@@ -29,7 +25,7 @@ export async function POST(req: Request) {
       .single();
 
     if (existing) {
-      // Atualizar para admin se já existir
+
       await supabaseAdmin
         .from("users")
         .update({ is_admin: true, is_verified: true })
@@ -39,7 +35,6 @@ export async function POST(req: Request) {
       continue;
     }
 
-    // Criar novo utilizador admin
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(admin.password, salt);
 
@@ -61,8 +56,8 @@ export async function POST(req: Request) {
     }
   }
 
-  return NextResponse.json({ 
+  return NextResponse.json({
     message: "Seed de administradores concluída.",
-    results 
+    results
   });
 }

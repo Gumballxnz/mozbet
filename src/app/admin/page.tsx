@@ -5,10 +5,9 @@ import { cleanupPendingDeposits } from "@/app/admin/transactions/actions";
 export const dynamic = "force-dynamic";
 
 export default async function AdminDashboard() {
-  // Limpar depósitos pendentes antigos
+
   await cleanupPendingDeposits();
 
-  // Helper genérico para paginação segura
   async function fetchPagedData<T>(
     fetcher: (from: number, to: number) => Promise<{ data: T[] | null; error: any }>
   ): Promise<T[]> {
@@ -33,7 +32,6 @@ export default async function AdminDashboard() {
     return results;
   }
 
-  // 1. Contagem exata de usuários
   const { count: usersCount } = await supabaseAdmin
     .from("users")
     .select("*", { count: "exact", head: true });
@@ -42,7 +40,6 @@ export default async function AdminDashboard() {
 
   const pageSize = 1000;
 
-  // 2. Calcular totais gerais de depósitos concluídos (Paginado)
   let totalDepositsSum = 0;
   let hasMoreDeps = true;
   let depPage = 0;
@@ -64,7 +61,6 @@ export default async function AdminDashboard() {
     }
   }
 
-  // 3. Calcular totais gerais de levantamentos concluídos (Paginado)
   let totalWithdrawalsSum = 0;
   let hasMoreWithds = true;
   let withPage = 0;
@@ -86,7 +82,6 @@ export default async function AdminDashboard() {
     }
   }
 
-  // 4. Calcular total de depósitos que falharam
   let totalFailedSum = 0;
   let failedCount = 0;
   let hasMoreFailed = true;
@@ -110,7 +105,6 @@ export default async function AdminDashboard() {
     }
   }
 
-  // 5. Calcular saldo dos clientes (Passivo)
   let totalRetainedSum = 0;
   let hasMoreUsers = true;
   let userPage = 0;
@@ -130,7 +124,6 @@ export default async function AdminDashboard() {
     }
   }
 
-  // 6. Calcular receita via afiliados vs link direto
   const referredUserIds = await fetchPagedData<{ id: string }>(async (from, to) =>
     supabaseAdmin
       .from("users")
@@ -160,7 +153,6 @@ export default async function AdminDashboard() {
     }
   });
 
-  // Saldo pendente total de afiliados
   const affiliateBalances = await fetchPagedData<{ affiliate_balance: number }>(async (from, to) =>
     supabaseAdmin
       .from("users")
@@ -170,12 +162,11 @@ export default async function AdminDashboard() {
   );
   const totalAffiliateBalance = affiliateBalances.reduce((s, a) => s + Number(a.affiliate_balance || 0), 0);
 
-  // 7. Buscar dados dos últimos 90 dias para os gráficos
   const ninetyDaysAgo = new Date();
   ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
   const ninetyDaysAgoISO = ninetyDaysAgo.toISOString();
 
-  const usersRaw = await fetchPagedData(async (from, to) => 
+  const usersRaw = await fetchPagedData(async (from, to) =>
     supabaseAdmin
       .from("users")
       .select("created_at, balance")
@@ -183,7 +174,7 @@ export default async function AdminDashboard() {
       .range(from, to)
   );
 
-  const depositsRaw = await fetchPagedData(async (from, to) => 
+  const depositsRaw = await fetchPagedData(async (from, to) =>
     supabaseAdmin
       .from("transactions")
       .select("created_at, amount")
@@ -193,7 +184,7 @@ export default async function AdminDashboard() {
       .range(from, to)
   );
 
-  const withdrawalsRaw = await fetchPagedData(async (from, to) => 
+  const withdrawalsRaw = await fetchPagedData(async (from, to) =>
     supabaseAdmin
       .from("transactions")
       .select("created_at, amount")
@@ -203,7 +194,7 @@ export default async function AdminDashboard() {
       .range(from, to)
   );
 
-  const failedRaw = await fetchPagedData(async (from, to) => 
+  const failedRaw = await fetchPagedData(async (from, to) =>
     supabaseAdmin
       .from("transactions")
       .select("created_at, amount")
@@ -220,9 +211,9 @@ export default async function AdminDashboard() {
         <p className="text-muted-foreground">Métricas de crescimento, fluxo de caixa e atividade em tempo real.</p>
       </div>
 
-      <AdminCharts 
-        depositsRaw={depositsRaw || []} 
-        usersRaw={usersRaw || []} 
+      <AdminCharts
+        depositsRaw={depositsRaw || []}
+        usersRaw={usersRaw || []}
         withdrawalsRaw={withdrawalsRaw || []}
         failedRaw={failedRaw || []}
         usersCount={totalUsersCount}

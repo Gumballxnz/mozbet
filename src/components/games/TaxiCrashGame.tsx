@@ -11,7 +11,6 @@ interface Props {
   onBack: () => void;
 }
 
-// Componente BetPanel extraído para fora do render (evita reset de estado a cada re-render)
 interface BetPanelProps {
   n: 1 | 2;
   val: number;
@@ -43,8 +42,8 @@ const BetPanel = ({ n, val, setVal, auto, setAuto, has, cashed, phase, multiplie
       </div>
       <div className="flex items-center bg-[#0b1f3a] rounded-lg">
          <button onClick={() => setVal(Math.max(1, val - 1))} disabled={has} className="px-2 py-2 text-white disabled:opacity-40"><Minus size={14} /></button>
-        <input 
-          type="number" 
+        <input
+          type="number"
           value={val}
           disabled={has}
           onChange={(e) => setVal(Number(e.target.value))}
@@ -98,7 +97,7 @@ const TaxiCrashGame = ({ balance, onUpdateBalance, onBack }: Props) => {
     const has = n === 1 ? hasBet1 : hasBet2;
     const already = n === 1 ? cashed1 : cashed2;
     if (!has || already) return;
-    
+
     // Marcar como levantado localmente logo para não permitir cliques duplos
     if (n === 1) setCashed1(true); else setCashed2(true);
 
@@ -130,7 +129,7 @@ const TaxiCrashGame = ({ balance, onUpdateBalance, onBack }: Props) => {
 
     // Se houver apostas, pedimos o resultado real ao backend, senão apenas simulação visual
     let serverCrash = 0;
-    
+
     // Pequeno atraso para permitir apostas no último segundo
     let c = 4;
     const cd = setInterval(async () => {
@@ -138,7 +137,7 @@ const TaxiCrashGame = ({ balance, onUpdateBalance, onBack }: Props) => {
       setCountdown(c);
       if (c <= 0) {
         clearInterval(cd);
-        
+
         if (hasBet1 || hasBet2) {
             try {
               const totalBet = (hasBet1 ? bet1 : 0) + (hasBet2 ? bet2 : 0);
@@ -184,11 +183,11 @@ const TaxiCrashGame = ({ balance, onUpdateBalance, onBack }: Props) => {
           setPhase("crashed");
           return crashRef.current;
         }
-        
+
         // Auto cashout processing in effect
         if (auto1 && hasBet1 && !cashed1 && n >= 2) cashOut(1, n);
         if (auto2 && hasBet2 && !cashed2 && n >= 2) cashOut(2, n);
-        
+
         return parseFloat(n.toFixed(2));
       });
     }, 80);
@@ -225,7 +224,7 @@ const TaxiCrashGame = ({ balance, onUpdateBalance, onBack }: Props) => {
         <button onClick={onBack}><ArrowLeft size={20} /></button>
         <span className="text-xs font-bold">🚕 Taxi Crash</span>
         <div className="ml-auto flex items-center gap-2">
-          
+
           <button className="p-1.5 bg-[#1e3a5f] rounded-full"><Maximize2 size={14} /></button>
           <button className="p-1.5 bg-[#1e3a5f] rounded-full"><Menu size={14} /></button>
         </div>

@@ -1,28 +1,13 @@
-/**
- * Módulo de integração com a API E2Payments (Explicador Inc)
- * URL Base: https://mpesaemolatech.com
- * 
- * Fluxo:
- * 1. Gerar token OAuth2 com client_id + client_secret
- * 2. Usar token Bearer para fazer transações C2B (M-Pesa / E-Mola)
- * 3. Pagamentos são processados INSTANTANEAMENTE (sem webhook)
- */
-
 export type E2PaymentMethod = "mpesa" | "emola";
 
-const E2PAY_BASE_URL = "https://mpesaemolatech.com";
+const E2PAY_BASE_URL = process.env.E2PAY_BASE_URL || "https://mpesaemolatech.com";
 const E2PAY_TOKEN_URL = `${E2PAY_BASE_URL}/oauth/token`;
 
-// Armazenamento do token em memória para reutilização (evita gerar token a cada request)
 let cachedToken: string | null = null;
 let tokenExpiresAt: number = 0;
 
-/**
- * Gera ou reutiliza um token OAuth2 Bearer da E2Payments.
- * O token é armazenado em memória e renovado automaticamente após 23 horas.
- */
 async function getE2PayToken(): Promise<string> {
-  // Se o token ainda é válido, reutiliza
+
   if (cachedToken && Date.now() < tokenExpiresAt) {
     return cachedToken;
   }
@@ -62,23 +47,13 @@ async function getE2PayToken(): Promise<string> {
     throw new Error("Token de acesso não retornado pela E2Payments.");
   }
 
-  // Armazena o token com validade de 23 horas (margem de segurança sobre as 24h reais)
   cachedToken = `${data.token_type || "Bearer"} ${data.access_token}`;
-  tokenExpiresAt = Date.now() + 23 * 60 * 60 * 1000; // 23 horas
+  tokenExpiresAt = Date.now() + 23 * 60 * 60 * 1000;
 
   console.log("[E2Payments] Token gerado com sucesso. Válido por ~23h.");
   return cachedToken;
 }
 
-/**
- * Processa um pagamento C2B (Customer to Business) via M-Pesa ou E-Mola.
- * O pagamento é INSTANTÂNEO — retorna sucesso ou falha na mesma chamada.
- * 
- * @param phone - Número do cliente (9 dígitos, sem prefixo 258)
- * @param amount - Valor em MZN
- * @param transactionId - ID interno da transação (usado como reference)
- * @param method - "mpesa" ou "emola"
- */
 export async function processE2Payment(
   phone: string,
   amount: number,
@@ -96,20 +71,17 @@ export async function processE2Payment(
       throw new Error("Credenciais E2Payments não configuradas (wallet ou client_id em falta).");
     }
 
-    // Limpa o telefone: apenas 9 dígitos (sem 258, sem +, sem espaços)
     let cleanPhone = phone.replace(/\D/g, "");
     if (cleanPhone.startsWith("258")) {
       cleanPhone = cleanPhone.substring(3);
     }
-    // Garante exatamente 9 dígitos
+
     if (cleanPhone.length !== 9) {
       return { success: false, error: "Número de telefone inválido. Deve ter 9 dígitos." };
     }
 
-    // Gera/reutiliza o token OAuth2
     const token = await getE2PayToken();
 
-    // Endpoint C2B: /v1/c2b/mpesa-payment/{wallet_id} ou /v1/c2b/emola-payment/{wallet_id}
     const paymentPath = method === "emola" ? "emola-payment" : "mpesa-payment";
     const endpoint = `${E2PAY_BASE_URL}/v1/c2b/${paymentPath}/${walletId}`;
 
@@ -122,7 +94,6 @@ export async function processE2Payment(
 
     console.log(`[E2Payments] Iniciando pagamento C2B via ${method.toUpperCase()} | Transação=${transactionId} | Valor=${amount} MZN | Telefone=***${cleanPhone.slice(-3)}`);
 
-    // AbortController para timeout de segurança (60s — a E2Payments pode demorar enquanto espera o PIN)
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 60000);
 
@@ -157,7 +128,6 @@ export async function processE2Payment(
       return { success: false, error: `Erro no Gateway (HTTP ${response.status}): resposta inesperada.` };
     }
 
-    // Se o HTTP status for erro ou a resposta indicar falha
     if (!response.ok) {
       console.error(`[E2Payments] Erro na API (HTTP ${response.status}):`, data);
       return {

@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { 
-  Gamepad2, Flame, Heart, Rocket, 
+import {
+  Gamepad2, Flame, Heart, Rocket,
   Target, Dices, Cherry, Swords,
   ChevronLeft, ChevronRight, Headphones, HelpCircle, Shield, Handshake
 } from "lucide-react";
@@ -28,10 +28,8 @@ export function DesktopSidebar() {
     setMounted(true);
   }, []);
 
-  // Esconder a sidebar em certas páginas
   if (pathname && (pathname.startsWith("/admin") || pathname.startsWith("/jogar"))) return null;
 
-  // Links do menu — todos funcionais
   const menuItems = [
     { id: "all", icon: Gamepad2, label: "Todos os Jogos", color: "text-primary" },
     { id: "crash", icon: Flame, label: "Crash Games", color: "text-orange-500" },
@@ -75,7 +73,6 @@ export function DesktopSidebar() {
     router.push(`/jogar/${gameId}`);
   };
 
-  // Jogos em destaque — links diretos para jogar
   const featuredGames = [
     { game: GAMES.find(g => g.id === "aviator")!, icon: Rocket, color: "text-red-500" },
     { game: GAMES.find(g => g.id === "taxi-crash")!, icon: Rocket, color: "text-purple-500" },
@@ -83,7 +80,6 @@ export function DesktopSidebar() {
     { game: GAMES.find(g => g.id === "plinko")!, icon: Dices, color: "text-cyan-400" },
   ];
 
-  // Links de páginas informativas reais
   const infoLinks = [
     { href: "/sobre-nos", label: "Sobre Nós" },
     { href: "/termos-e-condicoes", label: "Termos" },
@@ -95,7 +91,7 @@ export function DesktopSidebar() {
     <aside className={`hidden lg:flex flex-col bg-surface border-r border-white/5 h-screen sticky top-0 overflow-y-auto scrollbar-hide transition-all duration-300 ${
       collapsed ? "w-[70px]" : "w-64"
     }`}>
-      {/* Logo + Botão Colapsar */}
+      {}
       <div className="p-4 h-16 flex items-center justify-between border-b border-white/5">
         {!collapsed && (
           <Link href="/" className="text-xl font-extrabold tracking-tight text-white flex items-center gap-2">
@@ -105,7 +101,7 @@ export function DesktopSidebar() {
             MOZ<span className="text-primary glow-primary">BET</span>
           </Link>
         )}
-        <button 
+        <button
           onClick={() => setCollapsed(!collapsed)}
           className={`w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-muted-foreground hover:text-white transition-colors ${collapsed ? "mx-auto" : ""}`}
           title={collapsed ? "Expandir menu" : "Recolher menu"}
@@ -115,7 +111,7 @@ export function DesktopSidebar() {
       </div>
 
       <div className="p-3 flex-1 space-y-5">
-        {/* MENU PRINCIPAL */}
+        {}
         <div>
           {!collapsed && <h3 className="px-2 text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Menu</h3>}
           <nav className="space-y-0.5">
@@ -123,8 +119,8 @@ export function DesktopSidebar() {
               const activeCategory = searchParams.get("category") || "all";
               const isActive = activeCategory === item.id;
               return (
-                <button 
-                  key={item.id} 
+                <button
+                  key={item.id}
                   onClick={() => handleMenuClick(item.id)}
                   className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
                     isActive ? "bg-white/10 text-white" : "text-muted-foreground hover:bg-white/5 hover:text-white"
@@ -144,8 +140,8 @@ export function DesktopSidebar() {
           {!collapsed && <h3 className="px-2 text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Destaques</h3>}
           <nav className="space-y-0.5">
             {featuredGames.map(({ game, icon: Icon, color }) => (
-              <button 
-                key={game.id} 
+              <button
+                key={game.id}
                 onClick={() => handleGameClick(game.id)}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-white/5 hover:text-white transition-colors ${collapsed ? "justify-center px-0" : ""}`}
                 title={collapsed ? game.name : undefined}
@@ -160,16 +156,14 @@ export function DesktopSidebar() {
         {/* PROGRAMA DE AFILIADOS */}
         <div>
           {!collapsed && <h3 className="px-2 text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Parceiros</h3>}
-          <a 
-            href="https://afiliados.mozbet.online/registar" 
-            target="_blank" 
-            rel="noopener noreferrer"
+          <Link
+            href="/afiliados/registar"
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 transition-colors border border-emerald-500/10 ${collapsed ? "justify-center px-0" : ""}`}
             title={collapsed ? "Programa de Afiliados" : undefined}
           >
             <Handshake className="w-5 h-5 flex-shrink-0" />
             {!collapsed && <span className="text-sm font-bold">Programa de Afiliados</span>}
-          </a>
+          </Link>
         </div>
 
         {/* PÁGINAS LEGAIS */}
@@ -192,13 +186,8 @@ export function DesktopSidebar() {
       {/* Botão Admin (apenas para admins) */}
       {isLoggedIn && user?.isAdmin && (
         <div className="p-3 border-t border-white/5">
-          <Link 
-            href={
-              typeof window !== "undefined" && window.location.hostname.includes("localhost")
-                ? "http://admin.localhost:3000"
-                : "https://admin.mozbet.online"
-            } 
-            target="_blank"
+          <Link
+            href="/admin"
             className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 transition-colors ${collapsed ? "justify-center px-0" : ""}`}
             title={collapsed ? "Painel Admin" : undefined}
           >
@@ -216,7 +205,7 @@ export function DesktopSidebar() {
             {mounted ? `${onlineCount} Online` : "200 Online"}
           </span>
         </div>
-        <button 
+        <button
           onClick={() => setSupportOpen(true)}
           className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary transition-colors ${collapsed ? "justify-center px-0" : ""}`}
           title={collapsed ? "Suporte" : undefined}
@@ -228,7 +217,7 @@ export function DesktopSidebar() {
 
       {/* Seletor de Idioma */}
       <div className="p-3 border-t border-white/5">
-        <button 
+        <button
           onClick={() => setLocale(locale === "pt" ? "en" : "pt")}
           className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg bg-surface hover:bg-white/5 transition-colors border border-white/5 ${collapsed ? "justify-center px-0" : "justify-between"}`}
           title={collapsed ? "Mudar Idioma" : undefined}

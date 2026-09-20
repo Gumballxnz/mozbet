@@ -3,10 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatMZN } from "@/lib/utils";
-import { 
-  ArrowLeft, ShieldAlert, UserCheck, Mail, Ban, 
-  PauseCircle, HandCoins, Trash2, Send, AtSign, MessageCircle, 
-  User, Calendar, CreditCard, Landmark, Shield 
+import {
+  ArrowLeft, ShieldAlert, UserCheck, Mail, Ban,
+  PauseCircle, HandCoins, Trash2, Send, AtSign, MessageCircle,
+  User, Calendar, CreditCard, Landmark, Shield
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,17 +30,14 @@ interface UserData {
 export function AdminUserDetails({ user: initialUser, currentUserRole }: { user: UserData, currentUserRole: string }) {
   const router = useRouter();
   const [user, setUser] = useState<UserData>(initialUser);
-  
-  // Modais de envio de comunicação
+
   const [messageModalOpen, setMessageModalOpen] = useState(false);
   const [emailModalOpen, setEmailModalOpen] = useState(false);
-  
-  // Estados dos formulários de comunicação
+
   const [msgTitle, setMsgTitle] = useState("");
   const [msgBody, setMsgBody] = useState("");
   const [msgTargetEmail, setMsgTargetEmail] = useState(user.email || "");
 
-  // Modal de confirmação customizado para ações administrativas
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
     title: string;
@@ -61,12 +58,12 @@ export function AdminUserDetails({ user: initialUser, currentUserRole }: { user:
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action, userId })
       });
-      
+
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Erro ao executar ação");
-      
+
       toast.success(data.message || "Ação concluída.", { id: "admin-action" });
-      
+
       if (action === 'delete') {
         router.push("/admin/users");
       } else {
@@ -75,7 +72,7 @@ export function AdminUserDetails({ user: initialUser, currentUserRole }: { user:
         if (action === 'activate') updates.is_active = true;
         if (action === 'promote') { updates.role = 'admin'; updates.is_admin = true; }
         if (action === 'demote') { updates.role = 'user'; updates.is_admin = false; }
-        
+
         setUser(prev => ({ ...prev, ...updates }));
       }
     } catch (err: any) {
@@ -159,7 +156,7 @@ export function AdminUserDetails({ user: initialUser, currentUserRole }: { user:
 
   const handleRetainBalance = async (userId: string, currentStatus?: boolean) => {
     const actionText = currentStatus ? "Liberar" : "Reter";
-    const actionDesc = currentStatus 
+    const actionDesc = currentStatus
       ? `Tem a certeza que deseja LIBERAR o saldo do utilizador +${user.phone}? Ele poderá voltar a apostar e levantar fundos normalmente.`
       : `Tem a certeza que deseja RETER o saldo do utilizador +${user.phone}? O saldo ficará bloqueado e ele não poderá jogar nem efetuar levantamentos.`;
 
@@ -175,20 +172,20 @@ export function AdminUserDetails({ user: initialUser, currentUserRole }: { user:
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ action: 'retain', userId, balanceRetainedStatus: currentStatus })
           });
-          
+
           const data = await res.json();
           if (!res.ok) throw new Error(data.error || "Erro ao reter saldo");
-          
+
           toast.success(!currentStatus ? "Saldo Bloqueado com sucesso! O cliente não pode jogar nem levantar." : "Saldo desbloqueado!", { id: "admin-action" });
-          
+
           setUser(prev => ({ ...prev, balance_retained: !currentStatus }));
         } catch (err: any) {
           toast.error(err.message || "Erro ao reter saldo.", { id: "admin-action" });
         }
       },
       confirmText: `${actionText} Saldo`,
-      buttonClass: currentStatus 
-        ? "bg-emerald-600 hover:bg-emerald-700 text-white" 
+      buttonClass: currentStatus
+        ? "bg-emerald-600 hover:bg-emerald-700 text-white"
         : "bg-orange-600 hover:bg-orange-700 text-white",
       borderClass: currentStatus ? "border-emerald-500" : "border-orange-500",
       titleColor: currentStatus ? "text-emerald-400" : "text-orange-400",
@@ -198,7 +195,7 @@ export function AdminUserDetails({ user: initialUser, currentUserRole }: { user:
 
   const executeSendSiteMessage = async () => {
     if (!msgTitle || !msgBody) return toast.error("Preencha o título e a mensagem");
-    
+
     toast.loading("A enviar notificação...", { id: "msg" });
     try {
       const res = await fetch("/api/admin/notifications", {
@@ -211,7 +208,7 @@ export function AdminUserDetails({ user: initialUser, currentUserRole }: { user:
          const errorData = await res.json();
          throw new Error(errorData.error || "Erro ao comunicar com o servidor");
       }
-      
+
       toast.success(`Notificação inserida com sucesso!`, { id: "msg" });
       setMessageModalOpen(false);
       setMsgTitle("");
@@ -226,16 +223,16 @@ export function AdminUserDetails({ user: initialUser, currentUserRole }: { user:
     if (!msgTargetEmail) return toast.error("Insira o e-mail de destino");
 
     toast.loading("A enviar e-mail...", { id: "email" });
-    
+
     try {
       const response = await fetch('/api/admin/email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ target: user.id, targetEmail: msgTargetEmail, subject: msgTitle, body: msgBody })
       });
-      
+
       if (!response.ok) throw new Error("Falha no disparo.");
-      
+
       toast.success(`E-mail enviado com sucesso!`, { id: "email" });
       setEmailModalOpen(false);
       setMsgTitle("");
@@ -247,13 +244,13 @@ export function AdminUserDetails({ user: initialUser, currentUserRole }: { user:
 
   return (
     <div className="space-y-8 max-w-5xl mx-auto pb-12">
-      {/* Topbar com Botão de Voltar */}
+      {}
       <div className="flex items-center justify-between border-b border-[#2A2F40] pb-5">
         <div className="flex items-center gap-4">
-          <Button 
-            variant="outline" 
-            size="icon" 
-            onClick={() => router.push("/admin/users")} 
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => router.push("/admin/users")}
             className="border-[#2A2F40] bg-[#101116] hover:bg-[#1A1D27] text-gray-400 hover:text-white rounded-xl cursor-pointer"
           >
             <ArrowLeft className="w-5 h-5" />
@@ -275,14 +272,14 @@ export function AdminUserDetails({ user: initialUser, currentUserRole }: { user:
 
       {/* Grid de Conteúdo */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
+
         {/* Coluna 1: Informações Cadastrais e Stats Financeiras */}
         <div className="lg:col-span-2 space-y-6">
-          
+
           {/* Card Principal do Usuário */}
           <div className="bg-[#101116] border border-[#2A2F40] rounded-2xl p-6 space-y-6 shadow-xl relative overflow-hidden">
             <div className="absolute top-0 left-0 w-2 h-full bg-primary" />
-            
+
             <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
               <div>
                 <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider block">ID Único (UUID)</span>
@@ -341,7 +338,7 @@ export function AdminUserDetails({ user: initialUser, currentUserRole }: { user:
 
           {/* Cards Financeiros */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            
+
             <div className={`p-5 rounded-2xl border ${user.balance_retained ? 'bg-orange-950/20 border-orange-500/40' : 'bg-[#101116] border-[#2A2F40]'} shadow-md`}>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Saldo em Caixa</span>
@@ -383,14 +380,14 @@ export function AdminUserDetails({ user: initialUser, currentUserRole }: { user:
 
         {/* Coluna 2: Ações, Segurança e Auditoria */}
         <div className="space-y-6">
-          
+
           {/* Comunicações Diretas */}
           <div className="bg-[#101116] border border-[#2A2F40] rounded-2xl p-6 space-y-4 shadow-xl">
             <h3 className="text-xs font-black text-gray-400 uppercase tracking-wider">Comunicações Diretas</h3>
-            
+
             <div className="flex flex-col gap-2">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="w-full border-[#2A2F40] bg-[#1A1D27] hover:bg-primary/20 hover:text-primary justify-start h-11 font-bold text-xs rounded-xl cursor-pointer"
                 onClick={() => setMessageModalOpen(true)}
               >
@@ -398,8 +395,8 @@ export function AdminUserDetails({ user: initialUser, currentUserRole }: { user:
                 Notificação Interna (Site)
               </Button>
 
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 disabled={!user.email}
                 className="w-full border-[#2A2F40] bg-[#1A1D27] hover:bg-sky-500/20 hover:text-sky-400 justify-start h-11 font-bold text-xs rounded-xl cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                 onClick={() => setEmailModalOpen(true)}
@@ -408,8 +405,8 @@ export function AdminUserDetails({ user: initialUser, currentUserRole }: { user:
                 Enviar Notificação E-mail
               </Button>
 
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="w-full border-[#2A2F40] bg-[#1A1D27] hover:bg-green-500/20 hover:text-green-500 justify-start h-11 font-bold text-xs rounded-xl cursor-pointer"
                 onClick={() => window.open(`https://wa.me/258${user.phone.replace(/\D/g, '')}?text=${encodeURIComponent('Olá! Sou do suporte da MozBet.')}`, '_blank')}
               >
@@ -433,8 +430,8 @@ export function AdminUserDetails({ user: initialUser, currentUserRole }: { user:
             )}
 
             <div className="grid grid-cols-2 gap-2">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 disabled={user.role === 'super_admin' || (user.role === 'admin' && currentUserRole === 'admin')}
                 className={`h-16 flex flex-col items-center justify-center gap-1.5 rounded-xl text-[10px] font-bold cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed ${user.balance_retained ? 'border-orange-500 bg-orange-500/10 text-orange-400 hover:bg-orange-500/20' : 'border-[#2A2F40] bg-[#1A1D27] hover:bg-orange-500/10 hover:text-orange-400'}`}
                 onClick={() => handleRetainBalance(user.id, user.balance_retained)}
@@ -444,8 +441,8 @@ export function AdminUserDetails({ user: initialUser, currentUserRole }: { user:
               </Button>
 
               {user.is_active ? (
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   disabled={user.role === 'super_admin' || (user.role === 'admin' && currentUserRole === 'admin')}
                   className="h-16 border-[#2A2F40] bg-[#1A1D27] hover:bg-yellow-500/10 hover:text-yellow-500 flex flex-col items-center justify-center gap-1.5 rounded-xl text-[10px] font-bold cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                   onClick={() => handleAction('suspend', user.id)}
@@ -454,8 +451,8 @@ export function AdminUserDetails({ user: initialUser, currentUserRole }: { user:
                   Suspender
                 </Button>
               ) : (
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   disabled={user.role === 'super_admin' || (user.role === 'admin' && currentUserRole === 'admin')}
                   className="h-16 border-[#2A2F40] bg-[#1A1D27] hover:bg-primary/10 hover:text-primary flex flex-col items-center justify-center gap-1.5 rounded-xl text-[10px] font-bold cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                   onClick={() => handleAction('activate', user.id)}
@@ -465,8 +462,8 @@ export function AdminUserDetails({ user: initialUser, currentUserRole }: { user:
                 </Button>
               )}
 
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 disabled={user.role === 'super_admin' || (user.role === 'admin' && currentUserRole === 'admin')}
                 className="h-16 border-[#2A2F40] bg-[#1A1D27] hover:bg-red-500/10 hover:text-red-500 flex flex-col items-center justify-center gap-1.5 rounded-xl text-[10px] font-bold cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                 onClick={() => handleAction('ban', user.id)}
@@ -475,8 +472,8 @@ export function AdminUserDetails({ user: initialUser, currentUserRole }: { user:
                 Banimento
               </Button>
 
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 disabled={user.role === 'super_admin' || (user.role === 'admin' && currentUserRole === 'admin')}
                 className="h-16 border-red-950/20 bg-red-950/10 text-red-500 hover:bg-red-600 hover:text-white flex flex-col items-center justify-center gap-1.5 rounded-xl text-[10px] font-bold cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                 onClick={() => handleAction('delete', user.id)}
@@ -491,16 +488,16 @@ export function AdminUserDetails({ user: initialUser, currentUserRole }: { user:
           {currentUserRole === 'super_admin' && (
             <div className="bg-[#101116] border border-[#2A2F40] rounded-2xl p-6 space-y-4 shadow-xl">
               <h3 className="text-xs font-black text-purple-400 uppercase tracking-wider">Gestão de Equipa (Dono)</h3>
-              
+
               {user.role === 'user' ? (
-                <Button 
+                <Button
                   className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold h-11 text-xs rounded-xl cursor-pointer"
                   onClick={() => handleAction('promote', user.id)}
                 >
                   <Shield className="w-4 h-4 mr-2" /> Promover a Administrador
                 </Button>
               ) : user.role === 'admin' ? (
-                <Button 
+                <Button
                   variant="destructive"
                   className="w-full font-bold h-11 text-xs rounded-xl cursor-pointer bg-red-600 hover:bg-red-700"
                   onClick={() => handleAction('demote', user.id)}
@@ -527,19 +524,19 @@ export function AdminUserDetails({ user: initialUser, currentUserRole }: { user:
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <label className="text-xs font-bold text-gray-400">Título da Mensagem</label>
-              <Input 
-                value={msgTitle} 
-                onChange={(e) => setMsgTitle(e.target.value)} 
-                placeholder="Ex: Bónus Disponível 🎉" 
+              <Input
+                value={msgTitle}
+                onChange={(e) => setMsgTitle(e.target.value)}
+                placeholder="Ex: Bónus Disponível 🎉"
                 className="bg-black border-[#2A2F40] text-white"
               />
             </div>
             <div className="space-y-2">
               <label className="text-xs font-bold text-gray-400">Conteúdo (Aparece no Dropdown do Cliente)</label>
-              <textarea 
-                value={msgBody} 
-                onChange={(e) => setMsgBody(e.target.value)} 
-                placeholder="Escreva a mensagem aqui..." 
+              <textarea
+                value={msgBody}
+                onChange={(e) => setMsgBody(e.target.value)}
+                placeholder="Escreva a mensagem aqui..."
                 className="flex w-full rounded-md border border-input px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary disabled:cursor-not-allowed disabled:opacity-50 bg-black border-[#2A2F40] min-h-[100px] text-white"
               />
             </div>
@@ -563,27 +560,27 @@ export function AdminUserDetails({ user: initialUser, currentUserRole }: { user:
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <label className="text-xs font-bold text-gray-400">E-mail de Destino</label>
-              <Input 
-                value={msgTargetEmail} 
-                onChange={(e) => setMsgTargetEmail(e.target.value)} 
+              <Input
+                value={msgTargetEmail}
+                onChange={(e) => setMsgTargetEmail(e.target.value)}
                 className="bg-black border-[#2A2F40] text-white"
               />
             </div>
             <div className="space-y-2">
               <label className="text-xs font-bold text-gray-400">Assunto</label>
-              <Input 
-                value={msgTitle} 
-                onChange={(e) => setMsgTitle(e.target.value)} 
-                placeholder="Assunto do e-mail..." 
+              <Input
+                value={msgTitle}
+                onChange={(e) => setMsgTitle(e.target.value)}
+                placeholder="Assunto do e-mail..."
                 className="bg-black border-[#2A2F40] text-white"
               />
             </div>
             <div className="space-y-2">
               <label className="text-xs font-bold text-gray-400">Corpo do E-mail (HTML permitido)</label>
-              <textarea 
-                value={msgBody} 
-                onChange={(e) => setMsgBody(e.target.value)} 
-                placeholder="Olá jogador, ..." 
+              <textarea
+                value={msgBody}
+                onChange={(e) => setMsgBody(e.target.value)}
+                placeholder="Olá jogador, ..."
                 className="flex w-full rounded-md border border-input px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary disabled:cursor-not-allowed disabled:opacity-50 bg-black border-[#2A2F40] min-h-[120px] text-white"
               />
             </div>
@@ -608,11 +605,11 @@ export function AdminUserDetails({ user: initialUser, currentUserRole }: { user:
           <p className="text-sm text-gray-400 py-3 leading-relaxed">{confirmModal?.description}</p>
           <div className="flex justify-end gap-3 mt-4">
             <Button variant="outline" onClick={() => setConfirmModal(null)} className="border-[#2A2F40] bg-[#1A1C24] hover:bg-white/5 text-gray-300 hover:text-white rounded-xl h-11 px-4 cursor-pointer">Cancelar</Button>
-            <Button 
+            <Button
               onClick={() => {
                 confirmModal?.onConfirm();
                 setConfirmModal(null);
-              }} 
+              }}
               className={`font-bold cursor-pointer rounded-xl h-11 px-5 ${confirmModal?.buttonClass || 'bg-primary text-black'}`}
             >
               {confirmModal?.confirmText || 'Confirmar'}

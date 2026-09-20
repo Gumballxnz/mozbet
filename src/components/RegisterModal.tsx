@@ -18,13 +18,12 @@ import { toast } from "sonner";
 import { isValidPhone } from "@/lib/utils";
 import { Eye, EyeOff, KeyRound, ArrowLeft } from "lucide-react";
 
-// Modos do modal
 type ModalStep = "form" | "otp" | "forgot" | "forgot-otp" | "new-password";
 
 export function RegisterModal() {
   const { t } = useTranslation();
   const { registerOpen, setRegisterOpen, login: setGlobalUser, authMode } = useAppStore();
-  
+
   const [isLogin, setIsLogin] = useState(authMode === "login");
   const [step, setStep] = useState<ModalStep>("form");
   const [phone, setPhone] = useState("");
@@ -37,17 +36,14 @@ export function RegisterModal() {
   const [loading, setLoading] = useState(false);
   const [activeGateway, setActiveGateway] = useState("e2payments");
 
-  // OTP
   const [otpValues, setOtpValues] = useState(["", "", "", "", "", ""]);
   const [otpCountdown, setOtpCountdown] = useState(0);
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  // Reset password
   const [resetToken, setResetToken] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
 
-  // Countdown para reenvio de OTP
   useEffect(() => {
     if (otpCountdown <= 0) return;
     const timer = setInterval(() => {
@@ -56,7 +52,6 @@ export function RegisterModal() {
     return () => clearInterval(timer);
   }, [otpCountdown]);
 
-  // Sincronizar com o store quando o modal abre
   useEffect(() => {
     if (registerOpen) {
       setIsLogin(authMode === "login");
@@ -72,7 +67,6 @@ export function RegisterModal() {
     }
   }, [registerOpen, authMode]);
 
-  // Validação dinâmica do formulário
   const isFormValid = isLogin
     ? phone.length >= 8 && password.length >= 4
     : phone.length >= 8 && password.length >= 4 && password === confirmPassword && agreeTerms;
@@ -90,7 +84,6 @@ export function RegisterModal() {
     setStep("form");
   };
 
-  // ─── REGISTO / LOGIN ────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -102,8 +95,8 @@ export function RegisterModal() {
     const cleanPhone = phone.replace(/\D/g, "");
     const prefix = cleanPhone.replace(/^258/, "").substring(0, 2);
     if (activeGateway === "e2payments" && ["82", "83"].includes(prefix)) {
-      toast.error("Rede em Manutenção", { 
-        description: "A rede Tmcel (mKesh) está em manutenção temporária. Por favor, use M-Pesa ou e-Mola." 
+      toast.error("Rede em Manutenção", {
+        description: "A rede Tmcel (mKesh) está em manutenção temporária. Por favor, use M-Pesa ou e-Mola."
       });
       return;
     }
@@ -127,7 +120,7 @@ export function RegisterModal() {
 
     try {
       if (isLogin) {
-        // LOGIN direto
+
         const res = await fetch("/api/auth/login", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -146,7 +139,7 @@ export function RegisterModal() {
         setRegisterOpen(false);
       } else {
         const affiliateCode = typeof window !== "undefined" ? localStorage.getItem("affiliate_ref") || undefined : undefined;
-        // REGISTO
+
         const res = await fetch("/api/auth/register", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -164,7 +157,7 @@ export function RegisterModal() {
           setStep("otp");
           setOtpCountdown(60);
         } else if (data.user) {
-          // OTP desativado - Login direto
+
           toast.success("Conta criada com sucesso!");
           setGlobalUser(data.user);
           resetForm();
@@ -178,7 +171,6 @@ export function RegisterModal() {
     }
   };
 
-  // ─── VERIFICAÇÃO OTP ────────────────────────────────────
   const handleOtpChange = (index: number, value: string) => {
     if (!/^\d*$/.test(value)) return;
 
@@ -186,7 +178,6 @@ export function RegisterModal() {
     newValues[index] = value.slice(-1);
     setOtpValues(newValues);
 
-    // Avançar automaticamente para o próximo campo
     if (value && index < 5) {
       otpRefs.current[index + 1]?.focus();
     }
@@ -248,7 +239,6 @@ export function RegisterModal() {
     }
   };
 
-  // ─── REENVIAR OTP ────────────────────────────────────
   const handleResendOtp = async (purpose: "register" | "reset") => {
     if (otpCountdown > 0) return;
 
@@ -276,7 +266,6 @@ export function RegisterModal() {
     }
   };
 
-  // ─── RECUPERAR SENHA ────────────────────────────────────
   const handleForgotSend = async () => {
     if (!isValidPhone(phone)) {
       toast.error("Erro", { description: "Introduza um número válido." });
@@ -308,7 +297,6 @@ export function RegisterModal() {
     }
   };
 
-  // ─── REDEFINIR SENHA ────────────────────────────────────
   const handleResetPassword = async () => {
     if (newPassword.length < 4) {
       toast.error("Erro", { description: "A senha deve ter pelo menos 4 caracteres." });
@@ -348,7 +336,6 @@ export function RegisterModal() {
     if (value.length <= 9) setPhone(value);
   };
 
-  // ─── COMPONENTE OTP (6 quadradinhos) ────────────────────
   const OtpInputs = () => (
     <div className="flex justify-center gap-2 my-6" onPaste={handleOtpPaste}>
       {otpValues.map((val, idx) => (
@@ -372,7 +359,7 @@ export function RegisterModal() {
       <DialogContent className="sm:max-w-[420px] bg-surface border-white/5 p-6 rounded-2xl">
         <DialogTitle className="sr-only">Autenticação</DialogTitle>
         <DialogDescription className="sr-only">Formulário de autenticação da MozBet</DialogDescription>
-        
+
         {/* ════════ STEP: FORMULÁRIO DE LOGIN/REGISTO ════════ */}
         {step === "form" && (
           <>
@@ -397,7 +384,7 @@ export function RegisterModal() {
                     value={phone} onChange={handlePhoneChange} disabled={loading} required
                   />
                 </div>
-                
+
               </div>
 
               {/* Palavra-passe */}

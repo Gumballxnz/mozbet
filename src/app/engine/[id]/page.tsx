@@ -2,7 +2,6 @@
 
 import { use, useEffect, useState, Suspense, lazy } from "react";
 
-// Lazy loading para garantir que o cliente só descarrega O jogo específico.
 const AviatorGame = lazy(() => import("@/components/games/AviatorGame"));
 const TaxiCrashGame = lazy(() => import("@/components/games/TaxiCrashGame"));
 const EarplaneGame = lazy(() => import("@/components/games/EarplaneGame"));
@@ -27,31 +26,28 @@ export default function GameEnginePage({
   const resolvedParams = use(params);
   const gameId = resolvedParams.id;
 
-  // Estado Local (no Iframe) sincronizado com o PAI
   const [balance, setBalance] = useState(0);
 
   useEffect(() => {
-    // Dizer ao site Pai que acordamos
+
     window.parent.postMessage({ type: 'ENGINE_READY' }, '*');
 
-    // Ouvir mensagens do site Pai
     const handleMessage = (e: MessageEvent) => {
       if (e.data.type === 'SYNC_BALANCE') {
         setBalance(e.data.balance);
       }
     };
-    
+
     window.addEventListener('message', handleMessage);
-    
+
     return () => {
       window.removeEventListener('message', handleMessage);
     };
   }, []);
 
-  // Callbacks para os jogos
   const onUpdateBalance = (newBal: number) => {
-    setBalance(newBal); // Optimistic UI
-    // Avisar o PAI para ele fazer update global e sincronizar BD
+    setBalance(newBal);
+
     window.parent.postMessage({ type: 'UPDATE_BALANCE', balance: newBal }, '*');
   };
 

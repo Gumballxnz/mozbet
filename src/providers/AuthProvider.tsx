@@ -8,7 +8,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    // Tenta carregar a sessão do usuário assim que o app abre
+
     const checkSession = async () => {
       try {
         const res = await fetch("/api/auth/me", {
@@ -30,13 +30,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.error("Erro ao verificar sessão:", error);
         logout();
       } finally {
-        setIsReady(true); // Evita flash da tela de login piscando
+        setIsReady(true);
       }
     };
 
     checkSession();
 
-    // Sincronização em tempo real do SALDO e DADOS do perfil (Ponto 8)
     let channel: any;
     const setupRealtime = async () => {
        const res = await fetch("/api/auth/me");
@@ -44,9 +43,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
        if (user) {
          channel = import("@/lib/supabase").then(({ supabase }) => {
            return supabase.channel(`user-sync-${user.id}`)
-            .on('postgres_changes', { 
-              event: 'UPDATE', 
-              schema: 'public', 
+            .on('postgres_changes', {
+              event: 'UPDATE',
+              schema: 'public',
               table: 'users',
               filter: `id=eq.${user.id}`
             }, (payload) => {
@@ -71,7 +70,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
     setupRealtime();
 
-    // Contador Online Sincronizado (Ponto 1)
     const fetchOnline = async () => {
       try {
         const res = await fetch("/api/stats/online");
@@ -80,7 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } catch (e) {}
     };
     fetchOnline();
-    const onlineInterval = setInterval(fetchOnline, 60000); // Atualiza a cada 1 min
+    const onlineInterval = setInterval(fetchOnline, 60000);
 
     return () => {
       if (channel) channel.then((c: any) => c && import("@/lib/supabase").then(({ supabase }) => supabase.removeChannel(c)));

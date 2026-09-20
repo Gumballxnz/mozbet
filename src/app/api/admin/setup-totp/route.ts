@@ -1,6 +1,3 @@
-// Rota para configurar TOTP (Google Authenticator) na primeira vez
-// Gera segredo + QR Code para o admin escanear
-
 import { NextResponse } from "next/server";
 import { supabaseAdmin, verifyToken } from "@/lib/auth-server";
 import { generateTOTPSecret } from "@/lib/totp";
@@ -9,7 +6,7 @@ import QRCode from "qrcode";
 
 export async function POST(req: Request) {
   try {
-    // Verificar se é admin autenticado
+
     const cookieStore = await cookies();
     const token = cookieStore.get("mozbet_session")?.value;
 
@@ -24,7 +21,6 @@ export async function POST(req: Request) {
 
     const phone = payload.phone as string;
 
-    // Verificar se já tem TOTP configurado
     const { data: user } = await supabaseAdmin
       .from("users")
       .select("totp_secret, totp_enabled")
@@ -32,23 +28,19 @@ export async function POST(req: Request) {
       .single();
 
     if (user?.totp_enabled) {
-      return NextResponse.json({ 
+      return NextResponse.json({
         message: "TOTP já está configurado. Use o código do Authenticator para entrar.",
         alreadyEnabled: true,
       }, { status: 200 });
     }
 
-    // Gerar novo segredo TOTP
     const { secret, uri } = generateTOTPSecret(phone);
 
-    // Guardar o segredo (ainda não ativado) no banco de dados
     await supabaseAdmin
       .from("users")
       .update({ totp_secret: secret, totp_enabled: false })
       .eq("phone", phone);
 
-    // Gerar QR Code como Data URL (imagem base64)
-    // Cores padrão: pontos pretos (#000000) sobre fundo branco (#FFFFFF)
     const qrCodeDataUrl = await QRCode.toDataURL(uri, {
       width: 256,
       margin: 2,
@@ -58,7 +50,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       message: "Escaneie o QR Code com o Google Authenticator.",
       qrCode: qrCodeDataUrl,
-      secret: secret, // Para inserir manualmente se preferir
+      secret: secret,
       uri: uri,
     });
   } catch (error) {

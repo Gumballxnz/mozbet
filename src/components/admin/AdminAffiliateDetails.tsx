@@ -3,9 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatMZN, cleanMocambiquePhone } from "@/lib/utils";
-import { 
-  ArrowLeft, Percent, Users, MessageCircle, Ban, 
-  UserCheck, ShieldAlert, Wallet, Copy, Check, Save, Trash2 
+import {
+  ArrowLeft, Percent, Users, MessageCircle, Ban,
+  UserCheck, ShieldAlert, Wallet, Copy, Check, Save, Trash2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,17 +46,16 @@ interface ReferralUser {
   totalDeposited?: number;
 }
 
-export function AdminAffiliateDetails({ 
-  affiliate: initialAffiliate, 
-  referrals 
-}: { 
-  affiliate: AffiliateData, 
-  referrals: ReferralUser[] 
+export function AdminAffiliateDetails({
+  affiliate: initialAffiliate,
+  referrals
+}: {
+  affiliate: AffiliateData,
+  referrals: ReferralUser[]
 }) {
   const router = useRouter();
   const [affiliate, setAffiliate] = useState<AffiliateData>(initialAffiliate);
-  
-  // Comissão Dinâmica
+
   const [commissionInput, setCommissionInput] = useState(
     affiliate.affiliate_percent !== undefined && affiliate.affiliate_percent !== null
       ? String(affiliate.affiliate_percent)
@@ -64,10 +63,8 @@ export function AdminAffiliateDetails({
   );
   const [savingCommission, setSavingCommission] = useState(false);
 
-  // Pagamento manual (payout)
   const [payoutModalOpen, setPayoutModalOpen] = useState(false);
 
-  // Modal de confirmação para banir/reativar
   const [actionModal, setActionModal] = useState<{
     isOpen: boolean;
     action: 'ban' | 'activate';
@@ -76,7 +73,6 @@ export function AdminAffiliateDetails({
   } | null>(null);
   const [isProcessingPayout, setIsProcessingPayout] = useState(false);
 
-  // Cópia do Telefone
   const [copied, setCopied] = useState(false);
 
   const cleanNumber = cleanMocambiquePhone(affiliate.saqueNumber);
@@ -132,7 +128,7 @@ export function AdminAffiliateDetails({
       if (!res.ok) throw new Error(data.error || "Erro ao efetuar payout");
 
       toast.success(data.message || "Pagamento liquidado com sucesso!", { id: "payout-action" });
-      
+
       const netAmount = affiliate.balance - (affiliate.balance >= 100 ? 20 : 0);
       setAffiliate(prev => ({
         ...prev,
@@ -166,7 +162,6 @@ export function AdminAffiliateDetails({
     }
   };
 
-  // Estado do modal de exclusão permanente
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -185,7 +180,7 @@ export function AdminAffiliateDetails({
 
       toast.success("Conta apagada permanentemente.", { id: "delete-action" });
       setDeleteModalOpen(false);
-      // Redirecionar para a lista de afiliados após exclusão
+
       router.push("/admin/affiliates");
     } catch (err: any) {
       toast.error(err.message || "Erro ao apagar conta.", { id: "delete-action" });
@@ -196,14 +191,14 @@ export function AdminAffiliateDetails({
 
   return (
     <div className="space-y-8 max-w-6xl mx-auto pb-12">
-      
-      {/* Topbar com Botão de Voltar */}
+
+      {}
       <div className="flex items-center justify-between border-b border-[#2A2F40] pb-5">
         <div className="flex items-center gap-4">
-          <Button 
-            variant="outline" 
-            size="icon" 
-            onClick={() => router.push("/admin/affiliates")} 
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => router.push("/admin/affiliates")}
             className="border-[#2A2F40] bg-[#101116] hover:bg-[#1A1D27] text-gray-400 hover:text-white rounded-xl cursor-pointer"
           >
             <ArrowLeft className="w-5 h-5" />
@@ -216,7 +211,7 @@ export function AdminAffiliateDetails({
             <p className="text-xs text-muted-foreground mt-0.5">Visão do afiliado, comissões e indicados.</p>
           </div>
         </div>
-        
+
         <div className="flex items-center gap-2">
           <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider ${
             affiliate.is_active ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" : "bg-red-500/20 text-red-500 border border-red-500/30"
@@ -227,10 +222,10 @@ export function AdminAffiliateDetails({
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
+
         {/* Coluna 1: Dados do Parceiro e Finanças */}
         <div className="lg:col-span-2 space-y-6">
-          
+
           {/* Card de Cadastro */}
           <div className="bg-[#101116] border border-[#2A2F40] rounded-2xl p-6 space-y-5 shadow-xl relative overflow-hidden">
             <div className="absolute top-0 left-0 w-2 h-full bg-emerald-500" />
@@ -280,9 +275,9 @@ export function AdminAffiliateDetails({
 
             <div className="flex items-center gap-3">
               <div className="relative flex-1">
-                <Input 
-                  type="number" 
-                  value={commissionInput} 
+                <Input
+                  type="number"
+                  value={commissionInput}
                   onChange={(e) => setCommissionInput(e.target.value)}
                   placeholder="Porcentagem de comissão (ex: 70)"
                   className="bg-black border-[#2A2F40] h-11 text-white pr-8 font-bold"
@@ -291,7 +286,7 @@ export function AdminAffiliateDetails({
                 />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold">%</span>
               </div>
-              <Button 
+              <Button
                 onClick={handleSaveCommission}
                 disabled={savingCommission}
                 className="bg-primary hover:bg-primary/80 text-black font-bold h-11 px-5 rounded-xl cursor-pointer flex items-center gap-2"
@@ -305,7 +300,7 @@ export function AdminAffiliateDetails({
           {/* Finanças Acumuladas */}
           <div className="bg-[#101116] border border-[#2A2F40] rounded-2xl p-6 space-y-4 shadow-xl">
             <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider">Lucros e Transações</h3>
-            
+
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="bg-[#0B0C10] p-4 rounded-xl border border-[#2A2F40] text-center">
                 <span className="text-[9px] text-gray-500 font-bold uppercase tracking-wider block mb-1">Depósitos dos Indicados</span>
@@ -345,7 +340,7 @@ export function AdminAffiliateDetails({
 
         {/* Coluna 2: Dados Bancários, Payout e Contatos */}
         <div className="space-y-6">
-          
+
           {/* Dados Bancários */}
           <div className="bg-[#101116] border border-[#2A2F40] rounded-2xl p-6 space-y-4 shadow-xl">
             <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider">Dados de Saque</h3>
@@ -361,15 +356,15 @@ export function AdminAffiliateDetails({
                   <span className="font-bold text-emerald-400 block">{affiliate.saqueName || "Não Informado"}</span>
                 </div>
               </div>
-              
+
               <div className="pt-2 border-t border-[#2A2F40]/40 flex justify-between items-center">
                 <div>
                   <span className="text-[9px] text-gray-500 uppercase tracking-wider block">Número (Formatado)</span>
                   <span className="font-mono font-black text-white text-base tracking-wider">{cleanNumber}</span>
                 </div>
-                <Button 
-                  size="icon" 
-                  variant="ghost" 
+                <Button
+                  size="icon"
+                  variant="ghost"
                   onClick={handleCopy}
                   className="w-10 h-10 border border-[#2A2F40] bg-[#1A1D27] hover:bg-white/5 rounded-xl cursor-pointer text-gray-400 hover:text-white"
                 >
@@ -380,7 +375,7 @@ export function AdminAffiliateDetails({
 
             {/* Payout Manual */}
             {affiliate.balance > 0 && (
-              <Button 
+              <Button
                 onClick={() => setPayoutModalOpen(true)}
                 className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-11 rounded-xl cursor-pointer flex items-center justify-center gap-2 border-none shadow-[0_0_15px_rgba(16,185,129,0.15)]"
               >
@@ -395,8 +390,8 @@ export function AdminAffiliateDetails({
             <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider">Ações</h3>
 
             <div className="flex flex-col gap-2">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="w-full border-[#2A2F40] bg-[#1A1D27] hover:bg-emerald-500/20 hover:text-emerald-400 justify-start h-11 font-bold text-xs rounded-xl cursor-pointer"
                 onClick={() => window.open(`https://wa.me/258${affiliate.phone.replace(/\D/g, '')}`, '_blank')}
               >
@@ -405,8 +400,8 @@ export function AdminAffiliateDetails({
               </Button>
 
               {affiliate.is_active ? (
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="w-full border-[#2A2F40] bg-[#1A1D27] hover:bg-red-500/20 hover:text-red-500 justify-start h-11 font-bold text-xs rounded-xl cursor-pointer"
                   onClick={() => setActionModal({
                     isOpen: true,
@@ -419,8 +414,8 @@ export function AdminAffiliateDetails({
                   Banir Parceiro
                 </Button>
               ) : (
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="w-full border-[#2A2F40] bg-[#1A1D27] hover:bg-primary/20 hover:text-primary justify-start h-11 font-bold text-xs rounded-xl cursor-pointer"
                   onClick={() => setActionModal({
                     isOpen: true,
@@ -434,8 +429,8 @@ export function AdminAffiliateDetails({
                 </Button>
               )}
 
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="w-full border-[#2A2F40] bg-[#1A1D27] hover:bg-primary/20 hover:text-primary justify-start h-11 font-bold text-xs rounded-xl cursor-pointer"
                 onClick={() => router.push(`/admin/users?search=${affiliate.id}`)}
               >
@@ -445,8 +440,8 @@ export function AdminAffiliateDetails({
 
               {/* Separador visual */}
               <div className="border-t border-red-500/20 pt-2 mt-1">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="w-full border-red-500/30 bg-red-500/5 hover:bg-red-500/20 hover:text-red-400 text-red-500/70 justify-start h-11 font-bold text-xs rounded-xl cursor-pointer"
                   onClick={() => setDeleteModalOpen(true)}
                 >
@@ -510,9 +505,9 @@ export function AdminAffiliateDetails({
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <Button 
+                    <Button
                       onClick={() => router.push(`/admin/users/${ref.id}`)}
-                      size="sm" 
+                      size="sm"
                       className="h-7 bg-[#2A2F40] hover:bg-primary hover:text-black font-bold text-[10px] text-white cursor-pointer border-none"
                     >
                       Acessar Ficha
@@ -520,7 +515,7 @@ export function AdminAffiliateDetails({
                   </td>
                 </tr>
               ))}
-              
+
               {referrals.length === 0 && (
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground">
@@ -546,7 +541,7 @@ export function AdminAffiliateDetails({
             <p>
               Você está registrando um pagamento manual realizado para o parceiro **{affiliate.name}** no valor acumulado de **{formatMZN(affiliate.balance)}**.
             </p>
-            
+
             <div className="bg-[#0B0C10]/80 p-3 rounded-lg border border-[#2A2F40] text-xs font-mono space-y-1">
               <div>
                 <span className="text-gray-500">TITULAR CONTA:</span> <span className="text-emerald-400 font-bold">{affiliate.saqueName}</span>
@@ -570,8 +565,8 @@ export function AdminAffiliateDetails({
             <Button variant="outline" onClick={() => setPayoutModalOpen(false)} className="bg-transparent border-[#2A2F40] cursor-pointer" disabled={isProcessingPayout}>
               Cancelar
             </Button>
-            <Button 
-              onClick={executePayout} 
+            <Button
+              onClick={executePayout}
               disabled={isProcessingPayout}
               className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold cursor-pointer border-none shadow-[0_0_15px_rgba(16,185,129,0.2)]"
             >

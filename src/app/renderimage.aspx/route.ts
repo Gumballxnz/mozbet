@@ -7,9 +7,8 @@ export async function GET(req: NextRequest) {
 
     let svgBanner = "";
 
-    // Banners dinâmicos estilizados premium baseados no Banner ID (bid)
     if (bid === "1723" || bid === "1") {
-      // Banner 1: Aviator & Mines Promo
+
       svgBanner = `
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 300" width="100%" height="100%">
           <defs>
@@ -27,7 +26,7 @@ export async function GET(req: NextRequest) {
             </linearGradient>
           </defs>
           <rect width="100%" height="100%" fill="url(#bg)" rx="16" />
-          
+
           <!-- Brilhos decorativos -->
           <circle cx="200" cy="150" r="250" fill="#00FF7F" opacity="0.04" filter="blur(80px)" />
           <circle cx="1000" cy="150" r="250" fill="#ff3333" opacity="0.04" filter="blur(80px)" />
@@ -39,12 +38,12 @@ export async function GET(req: NextRequest) {
           <text x="80" y="100" font-family="'Plus Jakarta Sans', 'Segoe UI', sans-serif" font-weight="900" font-size="52" fill="#ffffff" letter-spacing="3">
             MOZ<tspan fill="url(#primaryGrad)">BET</tspan>
           </text>
-          
+
           <!-- Slogan -->
           <text x="80" y="150" font-family="'Plus Jakarta Sans', 'Segoe UI', sans-serif" font-weight="700" font-size="28" fill="#cbd5e1">
             BÓNUS DE BOAS-VINDAS DE <tspan fill="#00FF7F" font-weight="800">500%</tspan>
           </text>
-          
+
           <text x="80" y="210" font-family="'Plus Jakarta Sans', 'Segoe UI', sans-serif" font-weight="600" font-size="20" fill="#94a3b8">
             Joga Aviator, Mines, Slots e muito mais!
           </text>
@@ -66,14 +65,14 @@ export async function GET(req: NextRequest) {
             <!-- Rastro de fumaça -->
             <path d="M-60,-10 Q-100,-30 -160,-20 Q-200,-10 -250,-30" fill="none" stroke="#ff3333" stroke-width="4" stroke-linecap="round" opacity="0.3" stroke-dasharray="10, 5" />
           </g>
-          
+
           <!-- Selo 18+ -->
           <circle cx="1120" cy="245" r="22" fill="none" stroke="#ff3333" stroke-width="3" />
           <text x="1120" y="251" font-family="sans-serif" font-weight="900" font-size="16" fill="#ff3333" text-anchor="middle">18+</text>
         </svg>
       `;
     } else {
-      // Banner 2: Apostas Esportivas Promo (Geral)
+
       svgBanner = `
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 300" width="100%" height="100%">
           <defs>
@@ -94,12 +93,12 @@ export async function GET(req: NextRequest) {
           <text x="80" y="100" font-family="'Plus Jakarta Sans', 'Segoe UI', sans-serif" font-weight="900" font-size="52" fill="#ffffff" letter-spacing="3">
             MOZ<tspan fill="url(#primaryGrad)">BET</tspan>
           </text>
-          
+
           <!-- Destaque Esportes -->
           <text x="80" y="150" font-family="'Plus Jakarta Sans', 'Segoe UI', sans-serif" font-weight="700" font-size="28" fill="#cbd5e1">
             AS MELHORES PROPORÇÕES DE APOSTAS
           </text>
-          
+
           <text x="80" y="210" font-family="'Plus Jakarta Sans', 'Segoe UI', sans-serif" font-weight="600" font-size="20" fill="#94a3b8">
             Levantamentos instantâneos via M-Pesa &amp; e-Mola!
           </text>
@@ -118,7 +117,7 @@ export async function GET(req: NextRequest) {
             <path d="M0,-20 L0,-60 M17,-8 L51,-24 M10,12 L35,48 M-10,12 L-35,48 M-17,-8 L-51,-24" stroke="#1e293b" stroke-width="4" />
             <polygon points="0,-60 15,-55 25,-40" fill="#1e293b" opacity="0.2" />
           </g>
-          
+
           <!-- Selo 18+ -->
           <circle cx="1120" cy="245" r="22" fill="none" stroke="#ff3333" stroke-width="3" />
           <text x="1120" y="251" font-family="sans-serif" font-weight="900" font-size="16" fill="#ff3333" text-anchor="middle">18+</text>
@@ -129,7 +128,7 @@ export async function GET(req: NextRequest) {
     return new NextResponse(svgBanner, {
       headers: {
         "Content-Type": "image/svg+xml",
-        "Cache-Control": "public, max-age=86400" // Cache de 1 dia para performance
+        "Cache-Control": "public, max-age=86400"
       }
     });
   } catch (error) {

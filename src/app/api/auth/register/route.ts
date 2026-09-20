@@ -19,7 +19,6 @@ function checkRateLimit(ip: string): boolean {
   return true;
 }
 
-// FLAG: Quando tiveres saldo na MOZ SMS, muda para true para ativar verificação por SMS
 const OTP_ENABLED = false;
 
 export async function POST(req: Request) {
@@ -46,7 +45,6 @@ export async function POST(req: Request) {
 
     const cleanPhone = phone.replace(/\D/g, "");
 
-    // Verificar se o gateway ativo é e2payments e bloquear Tmcel (82/83)
     let activeGateway = "e2payments";
     try {
       const { data: gatewaySetting } = await supabaseAdmin
@@ -75,7 +73,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // Ler o cookie de afiliado para vincular a conta ou usar o código enviado pelo body
     const cookieHeader = req.headers.get("cookie") || "";
     const affiliatePidCookie = cookieHeader
       ?.split("; ")
@@ -100,7 +97,6 @@ export async function POST(req: Request) {
       }
     }
 
-    // Verificar se o número já existe
     const { data: existingUser } = await supabaseAdmin
       .from("users")
       .select("id, is_verified")
@@ -114,11 +110,9 @@ export async function POST(req: Request) {
       );
     }
 
-    // Hash da senha
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Inserir no banco de dados
     const { data: newUser, error: dbError } = await supabaseAdmin
       .from("users")
       .insert([
@@ -128,7 +122,7 @@ export async function POST(req: Request) {
           balance: 0.00,
           has_deposited: false,
           is_admin: false,
-          is_verified: !OTP_ENABLED, // Se OTP está desativado, já fica verificado
+          is_verified: !OTP_ENABLED,
           referrer_id: referrerId,
         },
       ])
@@ -143,9 +137,8 @@ export async function POST(req: Request) {
       );
     }
 
-    // Se OTP está ativado, enviar SMS e aguardar verificação
     if (OTP_ENABLED) {
-      // Importação dinâmica para não quebrar quando OTP está desativado
+
       const { sendSMS, generateOTP, formatOTPMessage } = await import("@/lib/mozsms");
       const code = generateOTP();
 
@@ -163,7 +156,6 @@ export async function POST(req: Request) {
       }, { status: 201 });
     }
 
-    // OTP desativado — login direto
     const token = await signToken({
       id: newUser.id,
       phone: newUser.phone,
@@ -190,7 +182,7 @@ export async function POST(req: Request) {
       sameSite: "lax",
       path: "/",
       maxAge: 60 * 60 * 24 * 7,
-      domain: process.env.NODE_ENV === "production" ? "mozbet.online" : undefined,
+      domain: process.env.COOKIE_DOMAIN || undefined,
     });
 
     return response;

@@ -17,7 +17,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Sessão inválida" }, { status: 401 });
     }
 
-    // Validar privilégios de administrador
     const { data: adminUser } = await supabaseAdmin
       .from("users")
       .select("is_admin")
@@ -37,7 +36,6 @@ export async function POST(req: Request) {
 
     const grossAmount = Number(amount);
 
-    // Buscar saldo do afiliado para garantir que ele tem fundos
     const { data: affiliate, error: affErr } = await supabaseAdmin
       .from("users")
       .select("affiliate_balance, is_affiliate")
@@ -54,7 +52,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: `Saldo insuficiente. O afiliado possui apenas ${currentBalance.toFixed(2)} MZN.` }, { status: 400 });
     }
 
-    // 1. Debitar o saldo do afiliado
     const newBalance = Number((currentBalance - grossAmount).toFixed(2));
     const { error: updateErr } = await supabaseAdmin
       .from("users")
@@ -65,18 +62,17 @@ export async function POST(req: Request) {
       throw updateErr;
     }
 
-    // 2. Gravar a transação de WITHDRAW com valor negativo correspondente ao valor bruto debitado
     const { error: txErr } = await supabaseAdmin
       .from("affiliate_transactions")
       .insert({
         affiliate_id: affiliateId,
         type: "WITHDRAW",
         amount: -grossAmount,
-        referred_user_id: payload.id // Vinculado ao admin que executou
+        referred_user_id: payload.id
       });
 
     if (txErr) {
-      // Rollback do saldo caso a gravação da transação falhe
+
       await supabaseAdmin
         .from("users")
         .update({ affiliate_balance: currentBalance })
@@ -84,7 +80,6 @@ export async function POST(req: Request) {
       throw txErr;
     }
 
-    // Calcular taxa e valor líquido correspondente para feedback na resposta
     const hasTax = grossAmount >= 100;
     const tax = hasTax ? 20 : 0;
     const netAmount = grossAmount - tax;

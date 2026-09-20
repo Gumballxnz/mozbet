@@ -12,7 +12,6 @@ export async function GET(req: Request) {
     const decoded = await verifyToken<{ id: string }>(token);
     if (!decoded) return NextResponse.json({ session: null });
 
-    // Buscar sessão ativa de Mines para este usuário
     const { data: session, error } = await supabaseAdmin
       .from("game_sessions")
       .select("*")
@@ -25,7 +24,6 @@ export async function GET(req: Request) {
       return NextResponse.json({ session: null });
     }
 
-    // Retornar os dados necessários para o frontend restaurar o estado
     return NextResponse.json({
       session: {
         id: session.id,

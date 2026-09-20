@@ -11,10 +11,10 @@ interface PageProps {
 }
 
 export default async function UserDetailsPage({ params }: PageProps) {
-  // 1. Validar se o admin atual está autenticado e tem permissões
+
   const cookieStore = await cookies();
   const token = cookieStore.get("mozbet_session")?.value;
-  
+
   if (!token) {
     notFound();
   }
@@ -24,7 +24,6 @@ export default async function UserDetailsPage({ params }: PageProps) {
     notFound();
   }
 
-  // Obter role do administrador ativo
   const { data: adminUser } = await supabaseAdmin
     .from("users")
     .select("role, is_admin")
@@ -38,7 +37,6 @@ export default async function UserDetailsPage({ params }: PageProps) {
   const currentUserRole = adminUser.role || "admin";
   const { id } = await params;
 
-  // 2. Buscar dados do usuário específico
   const { data: user } = await supabaseAdmin
     .from("users")
     .select("*")
@@ -49,7 +47,6 @@ export default async function UserDetailsPage({ params }: PageProps) {
     notFound();
   }
 
-  // 3. Buscar dados adicionais do Auth (como e-mail se não estiver na tabela users)
   const { data: authData } = await supabaseAdmin.auth.admin.getUserById(id).catch(() => ({ data: null }));
 
   const mappedUser = {

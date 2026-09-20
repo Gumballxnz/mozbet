@@ -1,4 +1,3 @@
-
 import { NextResponse } from "next/server";
 import { verifyToken, supabaseAdmin } from "@/lib/auth-server";
 
@@ -35,12 +34,11 @@ export async function POST(req: Request) {
     const { message, avatar } = await req.json();
     if (!message) return NextResponse.json({ error: "Mensagem vazia" }, { status: 400 });
 
-    // 1. Salvar mensagem do utilizador real (Usamos o ID, NUNCA o número de telefone)
     const { data: userMsg, error: userErr } = await supabaseAdmin
       .from("chat_messages")
       .insert({
         user_id: decoded.id,
-        username: decoded.id.split('-')[0].toUpperCase(), // Usar o ID, não o telefone
+        username: decoded.id.split('-')[0].toUpperCase(),
         message: message,
         type: "message",
         metadata: avatar ? { avatar } : {}
@@ -50,12 +48,11 @@ export async function POST(req: Request) {
 
     if (userErr) throw userErr;
 
-    // 2. Chance de 60% de um BOT responder (Chat mais ativo)
     if (Math.random() < 0.6) {
       setTimeout(async () => {
         const randomSlang = MOZ_SLANG[Math.floor(Math.random() * MOZ_SLANG.length)];
         const fakeId = Math.random().toString(36).substring(2, 10).toUpperCase();
-        
+
         await supabaseAdmin.from("chat_messages").insert({
           user_id: `fake-${fakeId}`,
           username: fakeId,
@@ -65,7 +62,6 @@ export async function POST(req: Request) {
       }, 1500);
     }
 
-    // 3. Chance de 8% de gerar um anúncio de vitória (Espaçado para não poluir)
     if (Math.random() < 0.08) {
       setTimeout(async () => {
         const game = GAMES[Math.floor(Math.random() * GAMES.length)];

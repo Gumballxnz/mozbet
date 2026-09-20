@@ -32,7 +32,7 @@ export function Footer() {
 
         {/* Seção MolaBet-style de Contato e Afiliação */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-6 border-b border-white/5 pb-6 text-left">
-          <Link href="https://afiliados.mozbet.online/" target="_blank" className="flex items-center justify-between p-4 bg-slate-900/50 hover:bg-slate-900 border border-white/5 rounded-2xl group transition-all duration-200 cursor-pointer">
+          <Link href="/afiliados" className="flex items-center justify-between p-4 bg-slate-900/50 hover:bg-slate-900 border border-white/5 rounded-2xl group transition-all duration-200 cursor-pointer">
             <div>
               <h4 className="font-extrabold text-sm text-white flex items-center gap-2">
                 🤝 Torne-se Afiliado
@@ -44,12 +44,12 @@ export function Footer() {
             <span className="text-muted-foreground group-hover:text-primary transition-colors text-lg">→</span>
           </Link>
 
-          <a href="mailto:suporte@mozbet.online" className="flex flex-col justify-center p-4 bg-slate-900/50 hover:bg-slate-900 border border-white/5 rounded-2xl group transition-all duration-200 cursor-pointer">
+          <a href={`mailto:${process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "suporte@exemplo.com"}`} className="flex flex-col justify-center p-4 bg-slate-900/50 hover:bg-slate-900 border border-white/5 rounded-2xl group transition-all duration-200 cursor-pointer">
             <h4 className="font-extrabold text-sm text-white flex items-center gap-2">
               ✉️ Fale Connosco
             </h4>
             <p className="text-xs text-muted-foreground mt-1 group-hover:text-primary transition-colors">
-              suporte@mozbet.online
+              {process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "suporte@exemplo.com"}
             </p>
           </a>
 

@@ -2,12 +2,9 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { supabaseAdmin, signToken } from "@/lib/auth-server";
 
-// Sistema simples de Rate Limiting em memória (previne força bruta por IP)
-// Em produção na Vercel com Edge, IPs diferentes vão para instâncias diferentes, 
-// mas ainda protege contra spam local. A defesa definitiva será no Cloudflare (Fase 8).
 const rateLimitMap = new Map<string, { count: number; lastReset: number }>();
-const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minuto
-const MAX_ATTEMPTS = 5; // 5 tentativas por minuto
+const RATE_LIMIT_WINDOW = 60 * 1000;
+const MAX_ATTEMPTS = 5;
 
 function checkRateLimit(ip: string): boolean {
   const now = Date.now();
@@ -42,7 +39,6 @@ export async function POST(req: Request) {
 
     const cleanPhone = phone.replace(/\D/g, "");
 
-    // Verificar se o gateway ativo é e2payments e bloquear Tmcel (82/83)
     let activeGateway = "e2payments";
     try {
       const { data: gatewaySetting } = await supabaseAdmin
@@ -64,7 +60,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // 1. Verificar se o IP está banido
     const { data: isBanned } = await supabaseAdmin
       .from("banned_ips")
       .select("id")
@@ -75,7 +70,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Acesso negado por segurança." }, { status: 403 });
     }
 
-    // 2. Buscar usuário com colunas de segurança
     const { data: user, error: dbError } = await supabaseAdmin
       .from("users")
       .select("id, phone, email, password_hash, balance, has_deposited, created_at, is_active, is_admin, is_suspended, failed_attempts, lockout_until, avatar_url, vip_level, bonus_balance, unlocked_balance")
@@ -83,12 +77,11 @@ export async function POST(req: Request) {
       .single();
 
     if (dbError || !user) {
-      // Registrar tentativa falha por IP para detectar brute force
+
       await supabaseAdmin.from("login_attempts").insert({ ip_address: ip, identifier: cleanPhone, success: false });
       return NextResponse.json({ error: "Número ou palavra-passe incorretos." }, { status: 401 });
     }
 
-    // 3. Verificar suspensão ou bloqueio temporário
     if (user.is_suspended) {
       return NextResponse.json({ error: "Esta conta foi suspensa por múltiplas tentativas de invasão. Contacte o suporte." }, { status: 403 });
     }
@@ -98,9 +91,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: `Muitas tentativas falhas. Tente novamente em ${remainingHours} horas.` }, { status: 403 });
     }
 
-    // 4. Verificar senha
     const isPasswordValid = await bcrypt.compare(password, user.password_hash);
-    
+
     if (!isPasswordValid) {
       const newAttempts = (user.failed_attempts || 0) + 1;
       const updateData: Record<string, unknown> = { failed_attempts: newAttempts };
@@ -108,7 +100,7 @@ export async function POST(req: Request) {
       if (newAttempts >= 10) {
         updateData.is_suspended = true;
       } else if (newAttempts >= 5) {
-        // Bloqueio de 12 horas
+
         updateData.lockout_until = new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString();
       }
 
@@ -118,10 +110,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Número ou palavra-passe incorretos." }, { status: 401 });
     }
 
-    // 5. Verificar limite de dispositivos (Máximo 3 sessões ativas)
-    // Limpar sessões antigas (mais de 7 dias) antes de contar
     await supabaseAdmin.from("active_sessions").delete().lt("last_active", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
-    
+
     const { count: sessionCount } = await supabaseAdmin
       .from("active_sessions")
       .select("*", { count: "exact", head: true })
@@ -131,16 +121,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Limite de dispositivos atingido. Termine sessão num dos seus aparelhos." }, { status: 403 });
     }
 
-    // 6. Sucesso! Resetar tentativas falhas
     await supabaseAdmin.from("users").update({ failed_attempts: 0, lockout_until: null }).eq("id", user.id);
     await supabaseAdmin.from("login_attempts").insert({ ip_address: ip, identifier: cleanPhone, success: true });
 
-    // 7. Gerar JWT e registrar sessão
     const token = await signToken({ id: user.id, phone: user.phone, isAdmin: user.is_admin });
 
     await supabaseAdmin.from("active_sessions").insert({
       user_id: user.id,
-      session_id: token.substring(0, 50), // Guardamos apenas o início por segurança
+      session_id: token.substring(0, 50),
       ip_address: ip,
       device_info: req.headers.get("user-agent") || "unknown"
     });
@@ -170,8 +158,8 @@ export async function POST(req: Request) {
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       path: "/",
-      maxAge: 60 * 60 * 24 * 7, // 7 dias
-      domain: process.env.NODE_ENV === "production" ? "mozbet.online" : undefined,
+      maxAge: 60 * 60 * 24 * 7,
+      domain: process.env.COOKIE_DOMAIN || undefined,
     });
 
     return response;

@@ -26,7 +26,7 @@ export default function AdminSettingsPage() {
     min_withdrawal: "65",
     max_withdrawal_daily: "25000",
   });
-  
+
   const [originalConfig, setOriginalConfig] = useState<SettingsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -118,7 +118,7 @@ export default function AdminSettingsPage() {
             <span>Tabela 'settings' não encontrada no Supabase</span>
           </div>
           <p className="text-xs text-gray-300">
-            A tabela de configurações não existe no seu banco de dados Supabase. O sistema está rodando com valores padrão (fallbacks). 
+            A tabela de configurações não existe no seu banco de dados Supabase. O sistema está rodando com valores padrão (fallbacks).
             Por favor, execute o seguinte comando no <strong>SQL Editor</strong> do seu painel do Supabase para criar a tabela e habilitar a gravação:
           </p>
           <pre className="bg-black/80 p-4 rounded-xl text-xs font-mono text-green-400 overflow-x-auto select-all">
@@ -140,20 +140,20 @@ ON CONFLICT (key) DO NOTHING;`}
       )}
 
       <form onSubmit={handleSave} className="space-y-6 max-w-4xl">
-        {/* CARD 1: Gateway Ativo */}
+        {}
         <div className="bg-surface p-6 rounded-2xl border border-white/10 shadow-xl space-y-4">
           <div className="flex items-center gap-3 border-b border-white/5 pb-3">
             <CreditCard className="w-5 h-5 text-primary" />
             <h2 className="text-lg font-bold text-white">Gateway de Pagamentos Ativo</h2>
           </div>
-          
+
           <p className="text-sm text-gray-400">
             Selecione qual gateway de pagamentos processará as transações da MozBet.
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
             {/* OPÇÃO 1: E2Payments */}
-            <div 
+            <div
               onClick={() => handleChange("active_gateway", "e2payments")}
               className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex flex-col justify-between h-36 ${
                 config.active_gateway === "e2payments"
@@ -179,7 +179,7 @@ ON CONFLICT (key) DO NOTHING;`}
             </div>
 
             {/* OPÇÃO 2: DebitoPay */}
-            <div 
+            <div
               onClick={() => handleChange("active_gateway", "debitopay")}
               className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex flex-col justify-between h-36 ${
                 config.active_gateway === "debitopay"

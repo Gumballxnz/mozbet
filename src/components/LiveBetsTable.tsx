@@ -6,7 +6,6 @@ import { supabase } from "@/lib/supabase";
 import { socket } from "@/lib/socket";
 import { GAMES } from "@/lib/games";
 
-// Mostrar apenas ID Mascarado (Sincronizado com o Chat)
 function maskId(username: string): string {
   if (!username) return "USER***";
   const cleanId = username.includes("-") ? username.split("-")[0] : username;
@@ -16,13 +15,12 @@ function maskId(username: string): string {
   return cleanId.slice(0, 4).toUpperCase() + "***";
 }
 
-// Sanitizar URLs de banners antigas ou quebradas
 function sanitizeBanner(icon: string, gameId?: string): string {
   if (!icon || icon.includes('banner-fishinator') || (icon === 'banner-fishinator')) {
     const game = GAMES.find(g => g.id === 'fishinator');
     return game?.banner || 'https://objectstorage.ca-montreal-1.oraclecloud.com/n/ax44xafhjvwf/b/mozbet-assets/o/games/fishinator-1777832153235.png';
   }
-  // Fallback geral para banners que vêm apenas com o nome
+
   if (!icon.includes('http') && gameId) {
      const game = GAMES.find(g => g.id === gameId);
      if (game) return game.banner;
@@ -90,8 +88,7 @@ export function LiveBetsTable() {
 
   useEffect(() => {
     isMounted.current = true;
-    
-    // Solicitar o fluxo atual de apostas mal o componente estiver pronto
+
     socket.emit("request_live_bets");
 
     socket.on("initial_live_bets", (history: any[]) => {
@@ -105,7 +102,6 @@ export function LiveBetsTable() {
       }
     });
 
-    // Escutar o fluxo global contínuo
     socket.on("live_bet", (fakeBet) => {
       if (isMounted.current) {
         const sanitized = {
@@ -119,29 +115,28 @@ export function LiveBetsTable() {
         });
       }
     });
-    
-    // 2. Ouvir o servidor Supabase para Apostas Reais verdadeiras da plataforma
+
     const channel = supabase.channel('live-bets-sync')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'bets' }, async (payload) => {
          const bet = payload.new;
          if (isMounted.current) {
-           // Busca o nome e banner do jogo real da nossa lista local para ser rápido
-                       const game = GAMES.find(g => g.id === bet.game_id) || { 
-              name: bet.game_id.toUpperCase(), 
-              banner: `https://objectstorage.ca-montreal-1.oraclecloud.com/n/ax44xafhjvwf/b/mozbet-assets/o/games/${bet.game_id}.webp` 
+
+                       const game = GAMES.find(g => g.id === bet.game_id) || {
+              name: bet.game_id.toUpperCase(),
+              banner: `https://objectstorage.ca-montreal-1.oraclecloud.com/n/ax44xafhjvwf/b/mozbet-assets/o/games/${bet.game_id}.webp`
             };
-           
+
            const realBet = {
                game: game.name,
                gameIcon: sanitizeBanner(game.banner, bet.game_id),
-               id: bet.user_id.split('-')[0].toUpperCase(), // ID real formatado e anonimizado
+               id: bet.user_id.split('-')[0].toUpperCase(),
                time: new Date(bet.created_at).toLocaleTimeString('pt-PT', {hour12: false}),
                betAmount: bet.amount,
                multiplier: bet.multiplier || (bet.payout > 0 ? (bet.payout/bet.amount) : 1.00),
                payout: bet.payout || 0,
                isLoss: (bet.payout || 0) === 0,
                isNew: true,
-               isReal: true // Flag mantida apenas no modelo de dados
+               isReal: true
            };
            setActivities(prev => [realBet, ...prev].slice(0, 15));
          }
@@ -155,7 +150,6 @@ export function LiveBetsTable() {
     };
   }, []);
 
-  // Filtragem e Ordenação com base na Tab ativa
   const getDisplayData = () => {
     if (activeTab === "high_rollers") {
       return [...activities].sort((a, b) => b.betAmount - a.betAmount).slice(0, 8);
@@ -176,29 +170,29 @@ export function LiveBetsTable() {
             <h2 className="font-black text-white text-lg tracking-tight">Jogos instantâneos</h2>
           </div>
         </div>
-        
+
         {/* Tabs Funcionais */}
         <div className="px-4 pt-3 pb-1 flex gap-2 overflow-x-auto no-scrollbar">
-          <button 
+          <button
             onClick={() => setActiveTab("all")}
             className={`${activeTab === "all" ? "bg-white/10 text-white" : "text-muted-foreground hover:text-white"} font-bold text-xs px-4 py-2 rounded-lg whitespace-nowrap transition-colors`}
           >
             Todas as apostas
           </button>
-          <button 
+          <button
             onClick={() => setActiveTab("high_rollers")}
             className={`${activeTab === "high_rollers" ? "bg-white/10 text-white" : "text-muted-foreground hover:text-white"} font-bold text-xs px-4 py-2 rounded-lg whitespace-nowrap transition-colors`}
           >
             Maiores apostadores
           </button>
-          <button 
+          <button
             onClick={() => setActiveTab("biggest_wins")}
             className={`${activeTab === "biggest_wins" ? "bg-white/10 text-white" : "text-muted-foreground hover:text-white"} font-bold text-xs px-4 py-2 rounded-lg whitespace-nowrap transition-colors`}
           >
             Maiores premiados
           </button>
         </div>
-        
+
         <div className="overflow-x-auto no-scrollbar mt-2">
           <table className="w-full text-left border-collapse">
             <thead>
@@ -213,15 +207,15 @@ export function LiveBetsTable() {
             </thead>
             <tbody className="divide-y divide-white/5">
               {displayData.map((act, i) => (
-                <tr 
-                  key={`${act.time}-${act.id}-${i}`} 
+                <tr
+                  key={`${act.time}-${act.id}-${i}`}
                   className={`group transition-all duration-500 ease-in-out ${act.isNew && activeTab === "all" ? 'bg-white/5' : 'hover:bg-white/[0.02]'}`}
                 >
                   <td className="px-2 md:px-4 py-2 md:py-3 max-w-[80px] md:max-w-none truncate">
                     <span className="font-bold text-white text-[10px] md:text-xs flex items-center gap-1.5 md:gap-2">
                       <div className="hidden md:block w-5 h-5 rounded overflow-hidden bg-white/5 shrink-0">
-                        <img 
-                          src={act.gameIcon} 
+                        <img
+                          src={act.gameIcon}
                           alt={act.game}
                           className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
                           onError={(e) => {

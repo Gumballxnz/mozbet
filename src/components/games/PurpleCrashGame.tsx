@@ -11,9 +11,7 @@ interface Props {
 }
 
 const PurpleCrashGame = ({ balance, onUpdateBalance, onBack }: Props) => {
-  
-  
-  
+
   const [bet1, setBet1] = useState(5);
   const [bet2, setBet2] = useState(5);
   const [auto1, setAuto1] = useState(false);
@@ -25,17 +23,9 @@ const PurpleCrashGame = ({ balance, onUpdateBalance, onBack }: Props) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [statsTab, setStatsTab] = useState("apostas");
   const [lang, setLang] = useState("PT");
-  
-  
+
   const { phase, multiplier, countdown, roundId: currentRoundIdRef, startedAt, multiplierRef } = useGameEngine("crash");
   const currentRoundId = { current: currentRoundIdRef };
-
-  
-
-  
-
-  
-
 
   const place = async (n: 1 | 2) => {
     const amt = n === 1 ? bet1 : bet2;
@@ -70,7 +60,7 @@ const PurpleCrashGame = ({ balance, onUpdateBalance, onBack }: Props) => {
     const has = n === 1 ? hasBet1 : hasBet2;
     const already = n === 1 ? cashed1 : cashed2;
     if (!has || already) return;
-    
+
     if (n === 1) setCashed1(true); else setCashed2(true);
 
     try {
@@ -138,8 +128,8 @@ const PurpleCrashGame = ({ balance, onUpdateBalance, onBack }: Props) => {
         </div>
         <div className="flex items-center bg-[#063030] rounded-lg">
            <button onClick={() => setVal(Math.max(1, val - 1))} disabled={has} className="px-2 py-2 text-white disabled:opacity-40"><Minus size={14} /></button>
-          <input 
-            type="number" 
+          <input
+            type="number"
             value={val}
             disabled={has}
             onChange={(e) => setVal(Number(e.target.value))}
@@ -176,7 +166,7 @@ const PurpleCrashGame = ({ balance, onUpdateBalance, onBack }: Props) => {
         <button onClick={onBack}><ArrowLeft size={20} /></button>
         <span className="text-sm font-bold">âœˆï¸ Crash</span>
         <div className="ml-auto flex items-center gap-2">
-          
+
           <button className="p-1.5 bg-[#0f3d3e] rounded-full"><Maximize2 size={13} /></button>
           <button className="p-1.5 bg-[#0f3d3e] rounded-full"><Volume2 size={13} /></button>
           <button onClick={() => setMenuOpen(true)} className="p-1.5 bg-[#0f3d3e] rounded-full"><Menu size={13} /></button>
@@ -256,4 +246,3 @@ const PurpleCrashGame = ({ balance, onUpdateBalance, onBack }: Props) => {
 };
 
 export default PurpleCrashGame;
-

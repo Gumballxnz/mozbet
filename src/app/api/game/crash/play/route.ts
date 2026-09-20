@@ -3,8 +3,6 @@ import crypto from "crypto";
 import { verifyToken, supabaseAdmin } from "@/lib/auth-server";
 import { validateBet, deductBalance, creditBalance, shouldPlayerWin } from "@/lib/game-controller";
 
-// Simula um Crash Game.
-// O frontend envia a aposta e o "targetMultiplier" (auto-cashout)
 export async function POST(req: Request) {
   try {
     const token = req.headers.get("cookie")?.split("mozbet_session=")[1]?.split(";")[0];
@@ -16,20 +14,17 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { betAmount, gameId } = body;
 
-    // 1. Validar aposta
     const validation = await validateBet(payload.id, Number(betAmount));
     if (!validation.valid) {
       return NextResponse.json({ error: validation.error }, { status: 400 });
     }
 
-    // 2. Descontar saldo da aposta imediatamente
     const newBalance = await deductBalance(payload.id, validation.balance!, Number(betAmount));
 
-    // 3. Se for um jogo GLOBAL (Aviator, Earplane, Crash Global)
     const GLOBAL_GAMES = ["aviator", "earplane", "crash"];
-    
+
     if (GLOBAL_GAMES.includes(gameId)) {
-      // Buscar ronda activa 'waiting' no Supabase
+
       const { data: round, error: roundErr } = await supabaseAdmin
         .from("game_rounds")
         .select("id, status")
@@ -43,7 +38,6 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "Aguarde a próxima ronda para apostar." }, { status: 400 });
       }
 
-      // Inserir aposta na tabela 'bets'
       const { error: betErr } = await supabaseAdmin
         .from("bets")
         .insert({
@@ -66,7 +60,6 @@ export async function POST(req: Request) {
       });
     }
 
-    // 4. Lógica para jogos individuais (Chicken Highway, Subway, etc)
     const wins = await shouldPlayerWin(payload.id);
     let finalCrash = 1.00;
     if (wins) {
@@ -75,12 +68,11 @@ export async function POST(req: Request) {
       finalCrash = Number((1.00 + Math.random() * 0.40).toFixed(2));
     }
 
-    // Criar uma "ronda privada" para este jogo individual para guardar o segredo do servidor
     const { data: round, error: roundErr } = await supabaseAdmin
       .from("game_rounds")
       .insert({
         game_id: gameId,
-        status: "crashed", // Já definimos o fim
+        status: "crashed",
         crash_point: finalCrash,
         server_seed: crypto.randomBytes(16).toString("hex"),
       })
@@ -89,7 +81,6 @@ export async function POST(req: Request) {
 
     if (roundErr) throw roundErr;
 
-    // Criar a aposta vinculada a este segredo
     const { error: betErr } = await supabaseAdmin
       .from("bets")
       .insert({

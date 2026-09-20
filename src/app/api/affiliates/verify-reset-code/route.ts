@@ -15,7 +15,6 @@ export async function POST(req: Request) {
     const cleanEmail = email.toLowerCase().trim();
     const affEmail = cleanEmail.startsWith("aff_") ? cleanEmail : `aff_${cleanEmail}`;
 
-    // 1. Verificar se o afiliado existe
     const { data: user } = await supabaseAdmin
       .from("users")
       .select("id, is_affiliate")
@@ -30,7 +29,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // 2. Verificar código OTP (sem apagar - será apagado ao redefinir a senha)
     const { data: otpRecord } = await supabaseAdmin
       .from("otp_codes")
       .select("*")
@@ -45,7 +43,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // 3. Verificar se o código expirou
     if (new Date() > new Date(otpRecord.expires_at)) {
       await supabaseAdmin.from("otp_codes").delete().eq("id", otpRecord.id);
       return NextResponse.json(
@@ -54,7 +51,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // Código válido - não apagar ainda (será usado na etapa de reset)
     return NextResponse.json({
       success: true,
       message: "Código verificado com sucesso!",

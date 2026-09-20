@@ -45,7 +45,6 @@ export function MobileNavigation() {
     router.push(`/jogar/${gameId}`);
   };
 
-  // Esconder a barra de navegação quando estiver a jogar ou no admin
   if (pathname.startsWith("/jogar/") || pathname.startsWith("/admin")) {
     return null;
   }
@@ -83,13 +82,13 @@ export function MobileNavigation() {
 
   return (
     <>
-      {/* Search Overlay */}
+      {}
       {searchOpen && (
         <div className="fixed inset-0 z-[60] bg-black/95 flex flex-col p-4 animate-in fade-in duration-200">
           <div className="flex items-center gap-3 mb-6">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-              <input 
+              <input
                 autoFocus
                 type="text"
                 placeholder="Procurar jogos..."
@@ -102,13 +101,13 @@ export function MobileNavigation() {
               <X className="w-5 h-5" />
             </button>
           </div>
-          
+
           <div className="flex-1 overflow-y-auto space-y-2 pb-20">
             {searchQuery && filteredGames.length === 0 && (
               <p className="text-center text-muted-foreground mt-10">Nenhum jogo encontrado.</p>
             )}
             {searchQuery && filteredGames.map(game => (
-              <button 
+              <button
                 key={game.id}
                 onClick={() => handleGameClick(game.id)}
                 className="w-full flex items-center gap-4 p-3 bg-white/5 hover:bg-white/10 rounded-xl text-left transition-colors"
@@ -140,14 +139,14 @@ export function MobileNavigation() {
             >
               <div
                 className={`relative flex items-center justify-center w-10 h-10 rounded-full transition-all duration-300 ${
-                  item.isActive 
-                    ? "bg-primary/20 text-primary shadow-[0_0_15px_rgba(0,255,127,0.2)]" 
+                  item.isActive
+                    ? "bg-primary/20 text-primary shadow-[0_0_15px_rgba(0,255,127,0.2)]"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 <Icon className={`w-5 h-5 ${item.isActive ? "glow-primary" : ""}`} />
               </div>
-              <span 
+              <span
                 className={`text-[10px] font-bold ${
                   item.isActive ? "text-primary" : "text-muted-foreground"
                 }`}

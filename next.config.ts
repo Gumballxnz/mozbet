@@ -1,14 +1,27 @@
 import type { NextConfig } from "next";
 
-// SEGURANÇA: IP do servidor VPS fixado diretamente para evitar problemas de variáveis de ambiente incorretas na Vercel
-const VPS_URL = "http://155.248.224.133:3001";
+const socketUrl =
+  process.env.VPS_SOCKET_URL ||
+  process.env.NEXT_PUBLIC_SOCKET_URL ||
+  "http://localhost:3001";
+
+const appUrl = process.env.NEXT_PUBLIC_APP_URL || "";
+let extraConnectSrc = "";
+if (socketUrl) {
+  try {
+    const parsed = new URL(socketUrl);
+    const wsProto = parsed.protocol === "https:" ? "wss:" : "ws:";
+    extraConnectSrc = `${socketUrl} ${wsProto}//${parsed.host}`;
+  } catch {
+    extraConnectSrc = socketUrl;
+  }
+}
 
 const nextConfig: NextConfig = {
-  // Otimizações de performance
-  poweredByHeader: false, // Remove header "X-Powered-By" (segurança)
-  compress: true, // Compressão gzip
-  
-  // Headers de segurança
+  output: "standalone",
+  poweredByHeader: false,
+  compress: true,
+
   async headers() {
     return [
       {
@@ -25,8 +38,8 @@ const nextConfig: NextConfig = {
               "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://apis.google.com https://static.cloudflareinsights.com https://www.googletagmanager.com",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
-              "img-src 'self' blob: data: https://api.dicebear.com https://objectstorage.ca-montreal-1.oraclecloud.com https://www.mozbet.online https://www.google-analytics.com https://www.googletagmanager.com",
-              "connect-src 'self' wss://*.supabase.co https://*.supabase.co https://cloudflareinsights.com https://www.google-analytics.com ws://155.248.224.133:3001 http://155.248.224.133:3001 https://api.mozbet.online wss://api.mozbet.online https://mpesaemolatech.com",
+              `img-src 'self' blob: data: https://api.dicebear.com https://objectstorage.ca-montreal-1.oraclecloud.com https://www.google-analytics.com https://www.googletagmanager.com ${appUrl}`.trim(),
+              `connect-src 'self' wss://*.supabase.co https://*.supabase.co https://cloudflareinsights.com https://www.google-analytics.com https://mpesaemolatech.com ${extraConnectSrc}`.trim(),
               "frame-ancestors 'self'",
             ].join("; ") + ";",
           },
@@ -39,17 +52,15 @@ const nextConfig: NextConfig = {
     ];
   },
 
-  // Proxy WebSocket para a VPS (Oracle Cloud)
   async rewrites() {
     return [
       {
         source: "/socket.io/:path*",
-        destination: `${VPS_URL}/socket.io/:path*`,
+        destination: `${socketUrl}/socket.io/:path*`,
       },
     ];
   },
 
-  // Otimização de imagens
   images: {
     formats: ["image/webp", "image/avif"],
     deviceSizes: [360, 414, 768, 1024, 1440],

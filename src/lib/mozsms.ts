@@ -1,11 +1,8 @@
-// Biblioteca de integração com a API da MOZE SMS (Moçambique)
-// Documentação: https://api.mozesms.com
-// Autenticação: Bearer Token (API Secret)
-
-const MOZSMS_API_URL = process.env.MOZSMS_API_URL || "https://api.mozesms.com";
+const MOZSMS_API_URL = process.env.MOZSMS_API_URL || "https://api.mozesms.com/v4";
 const MOZSMS_API_KEY = process.env.MOZSMS_API_KEY || "";
 const MOZSMS_SECRET = process.env.MOZSMS_SECRET || "";
-const MOZSMS_SENDER_ID = process.env.MOZSMS_SENDER_ID || "MOZBET";
+const MOZSMS_SENDER_ID = process.env.MOZSMS_SENDER_ID || "OTP";
+const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || "Plataforma";
 
 interface MozSmsResponse {
   success: boolean;
@@ -13,12 +10,12 @@ interface MozSmsResponse {
   error?: string;
 }
 
-/**
- * Envia uma SMS para um número moçambicano via MOZE SMS API.
- * Documentação: https://api.mozesms.com/sms/send
- */
 export async function sendSMS(to: string, text: string): Promise<MozSmsResponse> {
-  // O número deve estar no formato internacional (ex: 258841234567)
+  if (!MOZSMS_API_KEY || !MOZSMS_SECRET) {
+    console.error("[MOZSMS] Erro: MOZSMS_API_KEY ou MOZSMS_SECRET não configuradas no .env.");
+    return { success: false, error: "Serviço de SMS não configurado." };
+  }
+
   const formattedNumber = to.startsWith("258") ? to : `258${to}`;
 
   try {
@@ -38,7 +35,6 @@ export async function sendSMS(to: string, text: string): Promise<MozSmsResponse>
 
     const data = await res.json();
 
-    // A API devolve sempre { success: false, error: "..." } em caso de erro
     if (!data.success) {
       console.error("[MOZSMS] Erro ao enviar SMS:", data);
       return { success: false, error: data.error || "Erro ao enviar SMS" };
@@ -52,24 +48,14 @@ export async function sendSMS(to: string, text: string): Promise<MozSmsResponse>
   }
 }
 
-/**
- * Gera um código OTP de 6 dígitos aleatório e seguro.
- */
 export function generateOTP(): string {
-  // Gera um número entre 100000 e 999999
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-/**
- * Formata a mensagem OTP padrão da MOZBET.
- */
 export function formatOTPMessage(code: string): string {
-  return `MOZBET: O seu codigo de verificacao e ${code}. Valido por 5 minutos. Nao partilhe com ninguem.`;
+  return `${APP_NAME}: O seu codigo de verificacao e ${code}. Valido por 5 minutos. Nao partilhe com ninguem.`;
 }
 
-/**
- * Formata a mensagem de recuperação de senha.
- */
 export function formatResetMessage(code: string): string {
-  return `MOZBET: O seu codigo para recuperar a palavra-passe e ${code}. Valido por 5 minutos.`;
+  return `${APP_NAME}: O seu codigo para recuperar a palavra-passe e ${code}. Valido por 5 minutos.`;
 }

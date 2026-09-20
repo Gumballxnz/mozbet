@@ -1,13 +1,10 @@
-// API: Revelar célula do Mines — verifica no servidor se acertou mina
-// POST /api/game/mines/reveal — { sessionId, cellIndex }
-
 import { NextRequest, NextResponse } from "next/server";
 import { verifyToken, supabaseAdmin } from "@/lib/auth-server";
 import { registerPresence } from "@/lib/game-controller";
 
 export async function POST(req: NextRequest) {
   try {
-    // 1. Verificar autenticação
+
     const token = req.cookies.get("mozbet_session")?.value;
     if (!token) {
       return NextResponse.json({ error: "Faça login" }, { status: 401 });
@@ -26,7 +23,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Posição inválida" }, { status: 400 });
     }
 
-    // 2. Buscar sessão activa
     const { data: session, error: sessionErr } = await supabaseAdmin
       .from("game_sessions")
       .select("*")
@@ -42,16 +38,14 @@ export async function POST(req: NextRequest) {
     const gameData = session.game_data;
     const { minePositions, revealedCells, mineCount } = gameData;
 
-    // 3. Verificar se a célula já foi revelada
     if (revealedCells.includes(cellIndex)) {
       return NextResponse.json({ error: "Célula já revelada" }, { status: 400 });
     }
 
-    // 4. Verificar se acertou uma mina
     const isMine = minePositions.includes(cellIndex);
 
     if (isMine) {
-      // PERDEU! Revelar todas as minas e encerrar sessão
+
       await supabaseAdmin
         .from("game_sessions")
         .update({
@@ -60,7 +54,6 @@ export async function POST(req: NextRequest) {
         })
         .eq("id", sessionId);
 
-      // Marcar aposta como perdida
       await supabaseAdmin
         .from("bets")
         .update({ status: "lost" })
@@ -69,15 +62,13 @@ export async function POST(req: NextRequest) {
 
       return NextResponse.json({
         result: "mine",
-        minePositions, // Revelar TODAS as minas quando perde
+        minePositions,
         cellIndex,
       });
     }
 
-    // 5. SEGURO! Actualizar células reveladas
     const newRevealedCells = [...revealedCells, cellIndex];
 
-    // Calcular multiplicador actual
     const totalSafe = 25 - mineCount;
     let currentMultiplier = 1.0;
     for (let i = 0; i < newRevealedCells.length; i++) {
@@ -85,7 +76,6 @@ export async function POST(req: NextRequest) {
     }
     currentMultiplier = parseFloat(currentMultiplier.toFixed(2));
 
-    // Calcular próximo multiplicador
     let nextMultiplier = currentMultiplier;
     const nextIdx = newRevealedCells.length;
     if (nextIdx < totalSafe) {
@@ -93,14 +83,12 @@ export async function POST(req: NextRequest) {
       nextMultiplier = parseFloat(nextMultiplier.toFixed(2));
     }
 
-    // Verificar se revelou TODAS as células seguras (vitória total)
     const allSafeRevealed = newRevealedCells.length >= totalSafe;
 
     if (allSafeRevealed) {
-      // Vitória total! Auto-cashout
+
       const winnings = parseFloat((session.bet_amount * currentMultiplier).toFixed(2));
 
-      // Creditar saldo
       const { data: user } = await supabaseAdmin
         .from("users")
         .select("balance")
@@ -112,7 +100,6 @@ export async function POST(req: NextRequest) {
         .update({ balance: newBalance })
         .eq("id", payload.id);
 
-      // Encerrar sessão
       await supabaseAdmin
         .from("game_sessions")
         .update({
@@ -138,7 +125,6 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Actualizar sessão com nova célula revelada
     await supabaseAdmin
       .from("game_sessions")
       .update({

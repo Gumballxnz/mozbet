@@ -16,7 +16,7 @@ export function GameCatalog({ initialGames = [] }: { initialGames?: any[] }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const catalogRef = useRef<HTMLDivElement>(null);
-  
+
   const [games, setGames] = useState<any[]>(initialGames);
   const [featuredGames, setFeaturedGames] = useState<any[]>(
     initialGames.filter((g: any) => g.is_active !== false).slice(0, 6)
@@ -24,19 +24,17 @@ export function GameCatalog({ initialGames = [] }: { initialGames?: any[] }) {
   const [loading, setLoading] = useState(initialGames.length === 0);
   const [activeFilter, setActiveFilter] = useState("all");
 
-  // Sincronizar filtro com a URL (Sidebar)
   useEffect(() => {
     const category = searchParams.get("category");
     if (category) {
       setActiveFilter(category);
-      // Scroll suave para os jogos se houver uma categoria selecionada
+
       catalogRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     } else {
       setActiveFilter("all");
     }
   }, [searchParams]);
 
-  // Sorteia os destaques no cliente para evitar hydration mismatch e garantir reatividade
   useEffect(() => {
     const activeGames = initialGames.filter((g: any) => g.is_active !== false);
     if (activeGames.length > 0) {
@@ -47,11 +45,11 @@ export function GameCatalog({ initialGames = [] }: { initialGames?: any[] }) {
 
   useEffect(() => {
     async function loadGames() {
-      if (initialGames.length > 0) return; // Se já veio do SSR, não faz fetch no cliente
+      if (initialGames.length > 0) return;
       try {
         const res = await fetch("/api/content/games");
         const data = await res.json();
-        
+
         if (data.games) {
           setGames(data.games);
           const activeGames = data.games.filter((g: any) => g.is_active !== false);
@@ -67,7 +65,6 @@ export function GameCatalog({ initialGames = [] }: { initialGames?: any[] }) {
     loadGames();
   }, [initialGames]);
 
-  // Realtime: quando o admin altera jogos, o catálogo actualiza ao vivo
   useEffect(() => {
     const channel = supabase.channel('public-games')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'games' }, async () => {
@@ -84,7 +81,7 @@ export function GameCatalog({ initialGames = [] }: { initialGames?: any[] }) {
   const handleGameClick = (gameId: string) => {
     playSound('click');
     if (!isLoggedIn) {
-      // Sem modo demo — obrigar registo/login para jogar
+
       useAppStore.getState().openRegister();
       return;
     }
@@ -108,7 +105,6 @@ export function GameCatalog({ initialGames = [] }: { initialGames?: any[] }) {
       return;
     }
 
-    // Regra de segurança: Usuário comum precisa ter feito pelo menos um depósito para jogar (exceto aviator e mines)
     const isFreeAccessGame = gameId === "aviator" || gameId === "mines";
     if (!isFreeAccessGame && !user?.isAdmin && !user?.hasDeposited) {
       playSound('notification');
@@ -133,7 +129,7 @@ export function GameCatalog({ initialGames = [] }: { initialGames?: any[] }) {
 
   const filteredGames = games.filter(g => {
     if (g.is_active === false) return false;
-    
+
     if (activeFilter === "all") return true;
     const cat = g.category?.toLowerCase() || "";
     if (activeFilter === "casino") return cat.includes("casino") || cat.includes("slot");
@@ -141,11 +137,10 @@ export function GameCatalog({ initialGames = [] }: { initialGames?: any[] }) {
     if (activeFilter === "new") return g.is_new;
     return cat.includes(activeFilter);
   }).sort((a, b) => {
-    // 1. Jogos HOT sempre primeiro (60% de prioridade visual)
+
     if (a.is_hot && !b.is_hot) return -1;
     if (!a.is_hot && b.is_hot) return 1;
-    
-    // 2. Ordem de sorteio manual do Admin
+
     return (a.sort_order || 99) - (b.sort_order || 99);
   });
 
@@ -159,7 +154,7 @@ export function GameCatalog({ initialGames = [] }: { initialGames?: any[] }) {
 
   return (
     <div ref={catalogRef} className="px-3 pt-2 pb-6">
-      {/* 6 Jogos Recomendados (Destaques no topo) */}
+      {}
       {!loading && featuredGames.length > 0 && (
         <div className="grid grid-cols-2 gap-3 mb-6">
           {featuredGames.map((game) => (
@@ -176,7 +171,7 @@ export function GameCatalog({ initialGames = [] }: { initialGames?: any[] }) {
                 className="absolute inset-0 w-full h-full object-cover"
               />
 
-              {/* Badge HOT */}
+              {}
               {game.is_hot && (
                 <div className="absolute top-0 left-0 w-20 h-20 overflow-hidden pointer-events-none z-10">
                   <div className="absolute top-3 -left-6 rotate-[-45deg] bg-red-600 text-white text-[11px] font-extrabold px-7 py-0.5 shadow-md">
@@ -185,7 +180,7 @@ export function GameCatalog({ initialGames = [] }: { initialGames?: any[] }) {
                 </div>
               )}
 
-              {/* Botão de favorito */}
+              {}
               <div className="absolute top-2 right-2 w-8 h-8 bg-black/80 rounded-lg flex items-center justify-center z-10 shadow-md">
                 <Heart size={16} className="text-yellow-400" fill="none" />
               </div>
@@ -218,8 +213,8 @@ export function GameCatalog({ initialGames = [] }: { initialGames?: any[] }) {
               key={filter.id}
               onClick={() => setActiveFilter(filter.id)}
               className={`flex items-center gap-2 whitespace-nowrap px-4 py-2.5 rounded-full text-sm font-bold transition-colors shrink-0 border ${
-                isActive 
-                  ? "bg-primary/20 text-primary border-primary shadow-[0_0_15px_rgba(0,255,127,0.2)]" 
+                isActive
+                  ? "bg-primary/20 text-primary border-primary shadow-[0_0_15px_rgba(0,255,127,0.2)]"
                   : "bg-surface border-white/5 text-muted-foreground hover:bg-white/5 hover:text-white"
               }`}
             >
@@ -238,7 +233,7 @@ export function GameCatalog({ initialGames = [] }: { initialGames?: any[] }) {
             {activeFilter === "all" ? "Jogos De Todos" : filters.find(f => f.id === activeFilter)?.label}
           </h2>
         </div>
-        <button 
+        <button
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           className="flex items-center gap-1 text-xs text-muted-foreground hover:text-white transition-colors"
         >

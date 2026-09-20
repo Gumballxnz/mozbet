@@ -3,46 +3,33 @@ import "./globals.css";
 import { AuthProvider } from "@/providers/AuthProvider";
 import { LayoutWrapper } from "@/components/LayoutWrapper";
 
+const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+const appName = process.env.NEXT_PUBLIC_APP_NAME || "MozBet";
+
 export const metadata: Metadata = {
-  metadataBase: new URL("https://mozbet.online"),
+  metadataBase: new URL(appUrl),
   title: {
-    default: "MOZBET — A Melhor Casa de Apostas Online em Moçambique 🇲🇿",
-    template: "%s | MOZBET"
+    default: `${appName} — Apostas Online e Casino`,
+    template: `%s | ${appName}`
   },
   description:
-    "Aposta na MOZBET, a plataforma #1 de Moçambique. Aviator, Mines, Crash Games e Casino ao vivo. Depósitos instantâneos via M-Pesa e E-Mola. Regista-te e ganha bónus!",
-  authors: [{ name: "MOZBET" }],
-  keywords: [
-    "mozbet",
-    "moz bet",
-    "mozbet aviator",
-    "aviator moz bet",
-    "mines moz",
-    "mines moz bet",
-    "mozbet moçambique",
-    "apostas online moçambique",
-    "casino online mpesa",
-    "jogar aviator moçambique",
-    "moçambique apostas desportivas",
-    "ganhar dinheiro online moçambique",
-    "emola apostas",
-    "jogos de crash moçambique",
-  ],
+    `${appName} — Plataforma de Apostas Online, Aviator, Mines, Crash Games e Casino ao vivo. Depósitos instantâneos e seguros.`,
+  authors: [{ name: appName }],
   alternates: {
     canonical: "/",
   },
   openGraph: {
     type: "website",
-    title: "MOZBET — Casa de Apostas e Casino Online",
-    description: "A melhor plataforma de apostas de Moçambique. Joga Aviator, Mines e ganha bónus exclusivos.",
-    siteName: "MOZBET",
+    title: `${appName} — Casa de Apostas e Casino Online`,
+    description: `A melhor plataforma de apostas. Joga Aviator, Mines e ganha bónus exclusivos na ${appName}.`,
+    siteName: appName,
     locale: "pt_MZ",
-    url: "https://mozbet.online",
+    url: appUrl,
   },
   twitter: {
     card: "summary_large_image",
-    title: "MOZBET — Casa de Apostas Online",
-    description: "A melhor plataforma de apostas de Moçambique. Joga e ganha com M-Pesa.",
+    title: `${appName} — Casa de Apostas Online`,
+    description: "A melhor plataforma de apostas. Joga e ganha!",
   },
   robots: {
     index: true,
@@ -55,9 +42,11 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
-  verification: {
-    google: "C98B2UI1pB5Ki8PKaMf8z3euE9wpZtNc4mlfl9kFnrc",
-  },
+  ...(process.env.GOOGLE_SITE_VERIFICATION ? {
+    verification: {
+      google: process.env.GOOGLE_SITE_VERIFICATION,
+    }
+  } : {}),
 };
 
 export const viewport: Viewport = {
@@ -91,8 +80,8 @@ export default async function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
-        
-        {/* Google Analytics (Ponto de SEO) */}
+
+        {}
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-64DZY3WQEB"
           strategy="afterInteractive"

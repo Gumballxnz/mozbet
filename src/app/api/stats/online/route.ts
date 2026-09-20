@@ -1,15 +1,14 @@
 import { NextResponse } from "next/server";
 
-export const revalidate = 60; // Cache por 1 minuto
+export const revalidate = 60;
 
 export async function GET() {
   const now = new Date();
   const hour = now.getHours();
   const minute = now.getMinutes();
-  
-  // Seed determinística baseada no tempo global para que todos vejam o mesmo número
+
   const seed = (now.getDate() * 24 * 60) + (hour * 60) + minute;
-  
+
   let rangeMin = 80;
   let rangeMax = 150;
 

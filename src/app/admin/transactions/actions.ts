@@ -25,7 +25,7 @@ export async function cleanupPendingDeposits() {
 }
 
 export async function getLatestTransactions(typeFilter?: "DEPOSIT" | "WITHDRAW") {
-  // Limpar transações expiradas antes de listar
+
   await cleanupPendingDeposits();
 
   let query = supabaseAdmin
@@ -49,7 +49,7 @@ export async function getLatestTransactions(typeFilter?: "DEPOSIT" | "WITHDRAW")
 }
 
 export async function getMoreTransactions(offset: number, typeFilter?: "DEPOSIT" | "WITHDRAW") {
-  // Limpar transações expiradas antes de listar mais
+
   await cleanupPendingDeposits();
 
   let query = supabaseAdmin
@@ -79,29 +79,27 @@ export async function forceApproveDeposit(txId: string) {
       return { success: false, error: "Transação inválida ou já aprovada." };
     }
 
-    // 1. Marcar como COMPLETED
     await supabaseAdmin.from("transactions").update({ status: "COMPLETED" }).eq("id", txId);
 
-    // 2. Processar saldo e bónus corretamente
     const numAmount = Number(tx.amount);
     const { data: user } = await supabaseAdmin.from("users").select("balance, bonus_balance, has_deposited").eq("id", tx.user_id).single();
-    
+
     if (user) {
       const finalBalance = Number(user.balance) + numAmount;
       let newBonusBalance = Number(user.bonus_balance || 0);
       let bonus = 0;
-      
+
       if (!user.has_deposited) {
         bonus = Math.min(numAmount * 5, 25000);
         newBonusBalance += bonus;
-        
+
         await supabaseAdmin.from('notifications').insert({
           user_id: tx.user_id,
           message: `Acaba de receber ${bonus.toFixed(2)} MZN de Bónus no seu primeiro depósito!`,
           type: "promo"
         });
       }
-      
+
       await supabaseAdmin.from("users").update({
         balance: finalBalance,
         ...(bonus > 0 && { bonus_balance: newBonusBalance }),
@@ -133,10 +131,8 @@ export async function approveWithdraw(txId: string) {
       return { success: false, error: "Transação inválida ou já processada." };
     }
 
-    // 1. Atualizar transação para COMPLETED
     await supabaseAdmin.from("transactions").update({ status: "COMPLETED" }).eq("id", txId);
 
-    // 2. Notificação de sucesso do levantamento (com aviso de até 48 horas)
     const msg = `O seu pedido de levantamento de ${Number(tx.amount).toFixed(2)} MZN foi aprovado e processado com sucesso! O valor será creditado na sua conta cadastrada em até 48 horas.`;
     await supabaseAdmin.from('notifications').insert({
       user_id: tx.user_id,
@@ -144,15 +140,16 @@ export async function approveWithdraw(txId: string) {
       type: "deposit_success"
     });
 
-    // 3. Enviar e-mail de aviso se o utilizador possuir e-mail cadastrado
     const email = Array.isArray(tx.users) ? (tx.users[0] as any)?.email : (tx.users as any)?.email;
-    if (email) {
+    if (email && process.env.RESEND_API_KEY) {
       try {
-        const resend = new Resend(process.env.RESEND_API_KEY || "re_dummy_key");
+        const resend = new Resend(process.env.RESEND_API_KEY);
+        const fromEmail = process.env.EMAIL_FROM || "Suporte <suporte@exemplo.com>";
+        const appName = process.env.NEXT_PUBLIC_APP_NAME || "MozBet";
         await resend.emails.send({
-          from: "MozBet <suporte@mozbet.online>",
+          from: fromEmail,
           to: [email],
-          subject: "Levantamento Aprovado - MozBet",
+          subject: `Levantamento Aprovado - ${appName}`,
           html: `
             <div style="font-family: sans-serif; max-width: 500px; margin: 0 auto; background-color: #0f172a; color: white; padding: 40px; border-radius: 20px;">
               <h1 style="color: #00FF7F; text-align: center;">Levantamento Aprovado</h1>
@@ -184,17 +181,14 @@ export async function rejectWithdraw(txId: string) {
       return { success: false, error: "Transação inválida ou já processada." };
     }
 
-    // 1. Atualizar transação para FAILED
     await supabaseAdmin.from("transactions").update({ status: "FAILED" }).eq("id", txId);
 
-    // 2. Devolver saldo ao utilizador
     const { data: user } = await supabaseAdmin.from("users").select("balance").eq("id", tx.user_id).single();
     if (user) {
       const returnedBalance = Number(user.balance) + Number(tx.amount);
       await supabaseAdmin.from("users").update({ balance: returnedBalance }).eq("id", tx.user_id);
     }
 
-    // 3. Notificação de rejeição de levantamento
     await supabaseAdmin.from('notifications').insert({
       user_id: tx.user_id,
       message: `O seu pedido de levantamento de ${Number(tx.amount).toFixed(2)} MZN foi rejeitado. O valor foi devolvido ao seu saldo.`,
@@ -234,7 +228,6 @@ export async function approveAllPendingWithdrawals() {
 
     await supabaseAdmin.from("notifications").insert(notifications);
 
-    // Enviar e-mails em paralelo para quem tiver e-mail cadastrado
     const getEmail = (tx: any) => {
       if (!tx.users) return null;
       if (Array.isArray(tx.users)) {
@@ -247,12 +240,15 @@ export async function approveAllPendingWithdrawals() {
       .filter(tx => getEmail(tx))
       .map(async (tx) => {
         const email = getEmail(tx);
+        if (!email || !process.env.RESEND_API_KEY) return;
         try {
-          const resend = new Resend(process.env.RESEND_API_KEY || "re_dummy_key");
+          const resend = new Resend(process.env.RESEND_API_KEY);
+          const fromEmail = process.env.EMAIL_FROM || "Suporte <suporte@exemplo.com>";
+          const appName = process.env.NEXT_PUBLIC_APP_NAME || "MozBet";
           await resend.emails.send({
-            from: "MozBet <suporte@mozbet.online>",
+            from: fromEmail,
             to: [email],
-            subject: "Levantamento Aprovado - MozBet",
+            subject: `Levantamento Aprovado - ${appName}`,
             html: `
               <div style="font-family: sans-serif; max-width: 500px; margin: 0 auto; background-color: #0f172a; color: white; padding: 40px; border-radius: 20px;">
                 <h1 style="color: #00FF7F; text-align: center;">Levantamento Aprovado</h1>
@@ -325,7 +321,7 @@ export async function rejectAllPendingWithdrawals() {
 export async function searchUsersAdmin(term: string) {
   try {
     const cleanPhoneSearch = term.replace(/\D/g, "");
-    
+
     let query = supabaseAdmin
       .from("users")
       .select("*")
@@ -349,7 +345,7 @@ export async function searchUsersAdmin(term: string) {
     if (roleFilter) {
       orConditions += `,role.eq.${roleFilter}`;
     }
-    
+
     query = query.or(orConditions);
 
     const { data, error } = await query.limit(50);
@@ -357,7 +353,7 @@ export async function searchUsersAdmin(term: string) {
 
     const authDataRaw = await supabaseAdmin.auth.admin.listUsers().catch(() => null);
     const authUsers = authDataRaw?.data?.users || [];
-    
+
     return (data || []).map(u => {
       const authUser = authUsers.find((au: any) => au.id === u.id);
       return {
@@ -375,14 +371,14 @@ export async function searchUsersAdmin(term: string) {
 export async function searchTransactionsAdmin(term: string, typeFilter?: "DEPOSIT" | "WITHDRAW") {
   try {
     const cleanPhoneSearch = term.replace(/\D/g, "");
-    
+
     let userIds: string[] = [];
     if (cleanPhoneSearch && cleanPhoneSearch.length > 2) {
       const { data: matchedUsers } = await supabaseAdmin
         .from("users")
         .select("id")
         .or(`phone.ilike.%${cleanPhoneSearch}%,phone.ilike.%${term}%`);
-      
+
       if (matchedUsers && matchedUsers.length > 0) {
         userIds = matchedUsers.map(u => u.id);
       }
@@ -402,7 +398,7 @@ export async function searchTransactionsAdmin(term: string, typeFilter?: "DEPOSI
     if (userIds.length > 0) {
       orConditions += `,user_id.in.(${userIds.join(",")})`;
     }
-    
+
     query = query.or(orConditions);
 
     const { data: transactionsRaw, error } = await query

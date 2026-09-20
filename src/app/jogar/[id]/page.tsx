@@ -5,7 +5,6 @@ import { use, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { GamePlayer } from "@/components/GamePlayer";
 
-// Mapa de nomes para exibir no Header
 const GAME_NAMES: Record<string, string> = {
   "aviator": "Aviator",
   "taxi-crash": "Taxi Crash",
@@ -34,7 +33,6 @@ export default function PlayGamePage({
   const resolvedParams = use(params);
   const gameId = resolvedParams.id;
 
-  // Proteção: Se não estiver logado ou não tiver saldo (não admin), redirecionar
   useEffect(() => {
     if (!isLoggedIn) {
       useAppStore.getState().openRegister();
@@ -42,7 +40,7 @@ export default function PlayGamePage({
     } else {
       const totalBalance = (user?.balance || 0) + (user?.bonusBalance || 0);
       if (!user?.isAdmin && totalBalance <= 0) {
-        // Bloqueio extra para acesso direto via URL sem saldo
+
         useAppStore.getState().setDepositOpen(true);
         router.push("/");
       }
@@ -71,7 +69,7 @@ export default function PlayGamePage({
   return (
     <div className="w-full max-w-[1400px] mx-auto pt-2 pb-8 px-0 sm:px-4">
       <div className="w-full h-[650px] md:h-[calc(100vh-140px)] lg:h-[calc(100vh-140px)] rounded-none sm:rounded-2xl overflow-hidden shadow-2xl bg-black border sm:border-white/10">
-        <GamePlayer 
+        <GamePlayer
           gameId={gameId}
           gameName={GAME_NAMES[gameId]}
           iframeUrl={engineUrl}

@@ -19,8 +19,7 @@ const FishinatorGame = ({ onClose, balance, onBet }: FishinatorGameProps) => {
   const [targetCrash, setTargetCrash] = useState(0);
   const [history, setHistory] = useState<number[]>([]);
 
-  // Pré-calcula dados das bolhas para manter o render puro (sem Math.random inline)
-  const bubbleData = useMemo(() => 
+  const bubbleData = useMemo(() =>
     Array.from({ length: 15 }, () => ({
       size: Math.random() * 8 + 4,
       left: Math.random() * 100,
@@ -105,7 +104,7 @@ const FishinatorGame = ({ onClose, balance, onBet }: FishinatorGameProps) => {
       });
       const data = await res.json();
       if (data.success) {
-        onBet(data.newBalance); 
+        onBet(data.newBalance);
         setTargetCrash(data.crashPoint);
         setIsPlaying(true);
         setIsCrashed(false);
@@ -141,13 +140,13 @@ const FishinatorGame = ({ onClose, balance, onBet }: FishinatorGameProps) => {
 
   return (
     <div className="fixed inset-0 z-[110] bg-[#001d3d] flex flex-col font-sans text-white overflow-hidden animate-in fade-in duration-300">
-      {/* Background Ocean Gradient */}
+      {}
       <div className="absolute inset-0 bg-gradient-to-b from-[#003566] via-[#001d3d] to-[#000814]" />
-      
-      {/* Animated Bubbles */}
+
+      {}
       <div className="absolute inset-0 pointer-events-none">
         {bubbleData.map((b, i) => (
-          <div 
+          <div
             key={i}
             className="absolute bg-white/10 rounded-full animate-bubble"
             style={{
@@ -162,7 +161,7 @@ const FishinatorGame = ({ onClose, balance, onBet }: FishinatorGameProps) => {
         ))}
       </div>
 
-      {/* Header */}
+      {}
       <div className="flex items-center justify-between p-4 bg-black/40 backdrop-blur-md border-b border-white/5 relative z-10">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-[0_0_15px_rgba(37,99,235,0.4)]">
@@ -198,11 +197,11 @@ const FishinatorGame = ({ onClose, balance, onBet }: FishinatorGameProps) => {
              {/* Fisherman */}
              <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-8 h-12 bg-white/10 rounded-t-xl border border-white/20" />
            </div>
-           
+
            {/* Fishing Line */}
-           <div 
-             className="absolute left-1/2 top-[30px] w-0.5 bg-white/40 origin-top transition-all duration-300" 
-             style={{ height: isPlaying ? '200px' : '40px' }} 
+           <div
+             className="absolute left-1/2 top-[30px] w-0.5 bg-white/40 origin-top transition-all duration-300"
+             style={{ height: isPlaying ? '200px' : '40px' }}
            />
         </div>
 
@@ -233,8 +232,8 @@ const FishinatorGame = ({ onClose, balance, onBet }: FishinatorGameProps) => {
               <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1">Valor da Isca</span>
               <div className="bg-white/5 rounded-2xl border border-white/5 p-1 flex items-center">
                 <button onClick={() => !isPlaying && setBetAmount(Math.max(1, betAmount - 1))} className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-white">-</button>
-                <input 
-                  type="number" 
+                <input
+                  type="number"
                   value={betAmount}
                   disabled={isPlaying}
                   onChange={(e) => setBetAmount(Number(e.target.value))}
@@ -248,7 +247,7 @@ const FishinatorGame = ({ onClose, balance, onBet }: FishinatorGameProps) => {
                 <button onClick={() => !isPlaying && setBetAmount(betAmount + 1)} className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-white">+</button>
               </div>
             </div>
-            
+
             <div className="flex flex-col gap-2">
               <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest pl-1">Modo Auto</span>
               <div className="bg-white/5 rounded-2xl border border-white/5 h-[50px] flex items-center justify-between px-4">
@@ -262,9 +261,9 @@ const FishinatorGame = ({ onClose, balance, onBet }: FishinatorGameProps) => {
 
           <div className="flex gap-2 overflow-x-auto no-scrollbar mb-2 px-1">
             {[10, 20, 50, 100].map(v => (
-              <button 
-                key={v} 
-                onClick={() => !isPlaying && setBetAmount(prev => prev + v)} 
+              <button
+                key={v}
+                onClick={() => !isPlaying && setBetAmount(prev => prev + v)}
                 disabled={isPlaying}
                 className="bg-white/5 border border-white/10 px-4 py-2 rounded-xl text-[10px] font-black text-gray-400 hover:text-white transition-colors disabled:opacity-40"
               >
@@ -272,16 +271,16 @@ const FishinatorGame = ({ onClose, balance, onBet }: FishinatorGameProps) => {
               </button>
             ))}
           </div>
-          
+
           {!isPlaying ? (
-            <button 
+            <button
               onClick={handleStart}
               className="w-full py-4.5 bg-gradient-to-r from-green-600 to-emerald-500 rounded-2xl font-black text-xl tracking-wider shadow-[0_8px_30px_rgba(16,185,129,0.3)] active:scale-[0.98] transition-all"
             >
               LANÇAR LINHA
             </button>
           ) : (
-            <button 
+            <button
               onClick={handleCashout}
               className="w-full py-4.5 bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl font-black text-xl tracking-wider shadow-[0_8px_30px_rgba(37,99,235,0.4)] active:scale-[0.98] transition-all"
             >

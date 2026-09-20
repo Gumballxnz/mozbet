@@ -8,27 +8,26 @@ import { useAppStore } from "@/lib/store";
 import { Toaster } from "sonner";
 import dynamic from "next/dynamic";
 
-// Lazy Loading: Estes componentes pesados só são descarregados quando necessários
-// Reduz o bundle inicial em ~80KB+ de JavaScript (Performance Mobile Crítica)
 const RegisterModal = dynamic(() => import("@/components/RegisterModal").then(m => m.RegisterModal), { ssr: false });
 const DepositModal = dynamic(() => import("@/components/DepositModal").then(m => m.DepositModal), { ssr: false });
 const SupportChat = dynamic(() => import("@/components/SupportChat").then(m => m.SupportChat), { ssr: false });
 const ChatGlobal = dynamic(() => import("@/components/ChatGlobal"), { ssr: false });
 const MobileSidebar = dynamic(() => import("@/components/MobileSidebar").then(m => m.MobileSidebar), { ssr: false });
 
-export function LayoutWrapper({ 
-  children, 
-  isAffiliate: isAffiliateProp, 
-  isAdmin: isAdminProp 
-}: { 
-  children: React.ReactNode; 
-  isAffiliate?: boolean; 
-  isAdmin?: boolean; 
+export function LayoutWrapper({
+  children,
+  isAffiliate: isAffiliateProp,
+  isAdmin: isAdminProp
+}: {
+  children: React.ReactNode;
+  isAffiliate?: boolean;
+  isAdmin?: boolean;
 }) {
   const pathname = usePathname();
   const router = useRouter();
   const { chatOpen, setChatOpen } = useAppStore();
-  const isClientAdmin = typeof window !== "undefined" && (window.location.hostname.startsWith("admin.mozbet.online") || window.location.hostname.startsWith("admin.localhost"));
+  const isClientAdmin =
+    typeof window !== "undefined" && window.location.hostname.startsWith("admin.");
   const isAdmin = isAdminProp || pathname?.startsWith("/admin") || isClientAdmin;
   const isEngine = pathname?.startsWith("/engine");
   const isAffiliate = isAffiliateProp || pathname?.startsWith("/afiliados");
@@ -71,14 +70,14 @@ export function LayoutWrapper({
           </main>
           <Footer />
         </div>
-        
+
         {/* Componentes Globais (Lazy Loaded) */}
         <RegisterModal />
         <DepositModal />
         <SupportChat />
-        <ChatGlobal 
-          isOpen={chatOpen} 
-          onClose={() => setChatOpen(false)} 
+        <ChatGlobal
+          isOpen={chatOpen}
+          onClose={() => setChatOpen(false)}
           onPlayGame={(id) => { setChatOpen(false); router.push(`/jogar/${id}`); }}
         />
         <MobileSidebar />

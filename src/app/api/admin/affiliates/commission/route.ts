@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin, verifyToken } from "@/lib/auth-server";
 
-// GET: Retorna a comissão global atual (público para exibir na página de registro)
 export async function GET() {
   try {
-    // Buscar a comissão do primeiro afiliado como referência (ou padrão 70)
+
     const { data: sample } = await supabaseAdmin
       .from("users")
       .select("affiliate_percent")
@@ -21,7 +20,6 @@ export async function GET() {
   }
 }
 
-// POST: Atualiza a comissão de TODOS os afiliados (comissão global)
 export async function POST(req: NextRequest) {
   try {
     const token = req.cookies.get("mozbet_session")?.value;
@@ -45,7 +43,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "A comissão deve ser entre 0% e 100%" }, { status: 400 });
     }
 
-    // Atualizar TODOS os afiliados com a nova comissão global
     const { error, count } = await supabaseAdmin
       .from("users")
       .update({ affiliate_percent: numPercent })

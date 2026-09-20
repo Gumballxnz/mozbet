@@ -41,7 +41,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const [isNavigatingTo, setIsNavigatingTo] = useState<string | null>(null);
 
-  // Reset do loading assim que o pathname muda (ou seja, quando a página nova carregou)
   useEffect(() => {
     setIsNavigatingTo(null);
   }, [pathname]);
@@ -58,10 +57,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { name: "Configurações", href: "/admin/settings", icon: Settings },
   ];
 
-
   return (
     <div className="flex h-screen bg-black">
-      {/* Sidebar Admin */}
+      {}
       <aside className="w-64 border-r border-white/10 bg-surface-elevated hidden md:flex flex-col">
         <div className="h-16 flex items-center px-6 border-b border-white/10">
           <span className="text-xl font-extrabold tracking-tight">
@@ -75,7 +73,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             const cleanHref = item.href.replace(/^\/admin/, "") || "/";
             const isActive = pathname === item.href || pathname === cleanHref;
             const isLoading = isNavigatingTo === item.href || isNavigatingTo === cleanHref;
-            
+
             return (
               <Link
                 key={item.href}
@@ -84,8 +82,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   if (pathname !== cleanHref) setIsNavigatingTo(cleanHref);
                 }}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
-                  isActive 
-                    ? "bg-primary text-black font-bold" 
+                  isActive
+                    ? "bg-primary text-black font-bold"
                     : "text-muted-foreground hover:text-white hover:bg-white/5"
                 }`}
               >
@@ -110,8 +108,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <p className="text-xs text-muted-foreground">{user?.phone ? formatAdminPhone(user.phone) : ''}</p>
             </div>
           </div>
-          <Button 
-            variant="destructive" 
+          <Button
+            variant="destructive"
             className="w-full justify-start text-red-500 bg-red-500/10 hover:bg-red-500/20"
             onClick={handleLogout}
           >
@@ -125,32 +123,32 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {isMobileMenuOpen && (
         <div className="fixed inset-0 z-50 flex md:hidden">
           {/* Background overlay desfocado */}
-          <div 
+          <div
             className="fixed inset-0 bg-black/80 backdrop-blur-sm"
             onClick={() => setIsMobileMenuOpen(false)}
           />
-          
+
           {/* Painel lateral do drawer */}
           <aside className="relative w-64 max-w-[80vw] bg-surface-elevated border-r border-white/10 flex flex-col h-full animate-in slide-in-from-left duration-200">
             <div className="h-16 flex items-center justify-between px-6 border-b border-white/10">
               <span className="text-xl font-extrabold tracking-tight">
                 MOZ<span className="text-primary glow-primary">ADMIN</span>
               </span>
-              <button 
+              <button
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="p-1 hover:bg-white/5 rounded text-muted-foreground hover:text-white cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
-            
+
             <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
               {navItems.map((item) => {
                 const Icon = item.icon;
                 const cleanHref = item.href.replace(/^\/admin/, "") || "/";
                 const isActive = pathname === item.href || pathname === cleanHref;
                 const isLoading = isNavigatingTo === item.href || isNavigatingTo === cleanHref;
-                
+
                 return (
                   <Link
                     key={item.href}
@@ -160,8 +158,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                       if (pathname !== cleanHref) setIsNavigatingTo(cleanHref);
                     }}
                     className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
-                      isActive 
-                        ? "bg-primary text-black font-bold" 
+                      isActive
+                        ? "bg-primary text-black font-bold"
                         : "text-muted-foreground hover:text-white hover:bg-white/5"
                     }`}
                   >
@@ -175,7 +173,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 );
               })}
             </nav>
-            
+
             <div className="p-4 border-t border-white/10">
               <div className="flex items-center gap-3 mb-4 px-2">
                 <div className="w-8 h-8 bg-primary/20 text-primary rounded-full flex items-center justify-center font-bold">
@@ -186,8 +184,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   <p className="text-xs text-muted-foreground">{user?.phone ? formatAdminPhone(user.phone) : ''}</p>
                 </div>
               </div>
-              <Button 
-                variant="destructive" 
+              <Button
+                variant="destructive"
                 className="w-full justify-start text-red-500 bg-red-500/10 hover:bg-red-500/20 cursor-pointer"
                 onClick={() => {
                   setIsMobileMenuOpen(false);

@@ -16,13 +16,12 @@ export async function GET(req: Request) {
       return NextResponse.json({ messages: [] });
     }
 
-    // Buscar mensagens dos últimos 90 dias
     const { data: messages, error } = await supabaseAdmin
       .from("support_messages")
       .select("id, role, content, created_at")
       .eq("user_id", payload.id)
       .order("created_at", { ascending: true })
-      .limit(50); // Trazer as últimas 50 para não pesar muito o frontend
+      .limit(50);
 
     if (error) {
       console.error("[Suporte History] Erro ao buscar:", error);

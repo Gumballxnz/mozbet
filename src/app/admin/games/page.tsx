@@ -33,7 +33,7 @@ export default function AdminGamesPage() {
     try {
       const res = await fetch("/api/content/games");
       const { games: data } = await res.json();
-      
+
       if (data && data.length > 0) {
         setGames(data);
         const origMap: Record<string, GameData> = {};
@@ -55,10 +55,9 @@ export default function AdminGamesPage() {
     setGames(prev => prev.map(g => g.id === id ? { ...g, [field]: value } : g));
   };
 
-  // Verifica se houve alteração real num jogo específico
   const hasChanges = useCallback((game: GameData): boolean => {
     const orig = originals[game.id];
-    if (!orig) return true; // Novo jogo, nunca gravado
+    if (!orig) return true;
     return (
       orig.name !== game.name ||
       orig.banner_url !== game.banner_url ||
@@ -83,7 +82,7 @@ export default function AdminGamesPage() {
         throw new Error(errData.error || "Falha ao salvar");
       }
       toast.success(`${game.name} atualizado com sucesso!`);
-      // Atualizar a cópia original
+
       setOriginals(prev => ({ ...prev, [game.id]: { ...game } }));
       setEditingId(null);
     } catch (err: any) {
@@ -122,18 +121,18 @@ export default function AdminGamesPage() {
 
           return (
             <div key={game.id} className={`bg-surface p-4 rounded-2xl border ${game.is_active ? 'border-white/10' : 'border-red-900/50 opacity-60'} ${isEditing ? 'ring-2 ring-primary/50' : ''} flex flex-col gap-4 relative transition-all`}>
-              
+
               {/* Botão Editar / Cancelar */}
               <div className="flex justify-end">
                 {!isEditing ? (
-                  <button 
+                  <button
                     onClick={() => setEditingId(game.id)}
                     className="flex items-center gap-1.5 text-[10px] font-bold text-primary/70 hover:text-primary transition-colors"
                   >
                     <Pencil className="w-3 h-3" /> Editar
                   </button>
                 ) : (
-                  <button 
+                  <button
                     onClick={() => handleCancelEdit(game.id)}
                     className="flex items-center gap-1.5 text-[10px] font-bold text-red-400/70 hover:text-red-400 transition-colors"
                   >
@@ -157,7 +156,7 @@ export default function AdminGamesPage() {
                   <span className="text-sm font-extrabold text-white">{game.name}</span>
                 </div>
               </div>
-  
+
               {/* Formulário */}
               <div className="space-y-3 pt-4 border-t border-white/10">
                 <div className="space-y-1">
@@ -168,7 +167,7 @@ export default function AdminGamesPage() {
                   <label className="text-xs font-bold text-gray-400">URL da Imagem</label>
                   <Input value={game.banner_url} onChange={(e) => handleUpdate(game.id, "banner_url", e.target.value)} className="bg-black h-8 text-xs" disabled={!isEditing} />
                 </div>
-                
+
                 <div className="flex gap-2">
                   <div className="space-y-1 flex-1">
                     <label className="text-xs font-bold text-gray-400">Categoria</label>
@@ -179,29 +178,29 @@ export default function AdminGamesPage() {
                     <Input value={game.rtp_display} onChange={(e) => handleUpdate(game.id, "rtp_display", e.target.value)} className="bg-black h-8 text-xs text-center" disabled={!isEditing} />
                   </div>
                 </div>
-  
+
                 <div className="flex items-center justify-between pt-2">
                   <div className="flex items-center gap-2">
-                    <Switch 
-                      checked={game.is_hot} 
-                      onCheckedChange={(c) => handleUpdate(game.id, "is_hot", c)} 
+                    <Switch
+                      checked={game.is_hot}
+                      onCheckedChange={(c) => handleUpdate(game.id, "is_hot", c)}
                       disabled={!isEditing}
                     />
                     <span className="text-[10px] font-bold text-red-400">HOT</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Switch 
-                      checked={game.is_active !== false} 
-                      onCheckedChange={(c) => handleUpdate(game.id, "is_active", c)} 
+                    <Switch
+                      checked={game.is_active !== false}
+                      onCheckedChange={(c) => handleUpdate(game.id, "is_active", c)}
                       disabled={!isEditing}
                     />
                     <span className="text-[10px] font-bold text-green-400">Visível</span>
                   </div>
                 </div>
-  
+
                 {isEditing && (
-                  <Button 
-                    onClick={() => handleSave(game)} 
+                  <Button
+                    onClick={() => handleSave(game)}
                     disabled={!changed || isSaving}
                     className="w-full mt-2 h-8 text-xs bg-primary text-black font-extrabold hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed gap-2"
                   >

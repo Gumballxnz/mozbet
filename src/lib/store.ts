@@ -1,6 +1,3 @@
-// Store global da aplicação — MOZBET
-// Usa Zustand para gerenciamento de estado leve e performático
-
 import { create } from "zustand";
 import { type Locale } from "@/lib/i18n";
 
@@ -19,11 +16,10 @@ interface User {
 }
 
 interface AppState {
-  // Idioma
+
   locale: Locale;
   setLocale: (locale: Locale) => void;
 
-  // Autenticação
   user: User | null;
   isLoggedIn: boolean;
   login: (user: User) => void;
@@ -31,7 +27,6 @@ interface AppState {
   updateBalance: (newBalance: number) => void;
   markFirstDeposit: () => void;
 
-  // Modais
   registerOpen: boolean;
   authMode: "login" | "register";
   depositOpen: boolean;
@@ -50,29 +45,24 @@ interface AppState {
   setHelpOpen: (open: boolean) => void;
   setProfileOpen: (open: boolean) => void;
 
-  // Sidebar Mobile
   mobileSidebarOpen: boolean;
   setMobileSidebarOpen: (open: boolean) => void;
 
-  // Chat Global
   fakeChatMessages: any[];
   setFakeChatMessages: (messages: any[] | ((prev: any[]) => any[])) => void;
-  
-  // Jogo ativo
+
   activeGame: string | null;
   setActiveGame: (game: string | null) => void;
 
-  // Global Online Count
   onlineCount: number;
   setOnlineCount: (count: number) => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
-  // Idioma — padrão PT
+
   locale: "pt",
   setLocale: (locale) => set({ locale }),
 
-  // Auth
   user: null,
   isLoggedIn: false,
   login: (user) => set({ user, isLoggedIn: true }),
@@ -94,7 +84,6 @@ export const useAppStore = create<AppState>((set) => ({
       user: state.user ? { ...state.user, hasDeposited: true } : null,
     })),
 
-  // Modais
   registerOpen: false,
   authMode: "register",
   depositOpen: false,
@@ -113,21 +102,17 @@ export const useAppStore = create<AppState>((set) => ({
   setHelpOpen: (open) => set({ helpOpen: open }),
   setProfileOpen: (open) => set({ profileOpen: open }),
 
-  // Sidebar Mobile
   mobileSidebarOpen: false,
   setMobileSidebarOpen: (open) => set({ mobileSidebarOpen: open }),
 
-  // Chat Global
   fakeChatMessages: [],
-  setFakeChatMessages: (messages) => set((state) => ({ 
-    fakeChatMessages: typeof messages === "function" ? messages(state.fakeChatMessages) : messages 
+  setFakeChatMessages: (messages) => set((state) => ({
+    fakeChatMessages: typeof messages === "function" ? messages(state.fakeChatMessages) : messages
   })),
 
-  // Jogo
   activeGame: null,
   setActiveGame: (game) => set({ activeGame: game }),
 
-  // Global Online Count
-  onlineCount: 200, // Começa com 200 para evitar mostrar 0
+  onlineCount: 200,
   setOnlineCount: (count) => set({ onlineCount: count }),
 }));

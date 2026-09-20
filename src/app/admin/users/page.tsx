@@ -7,7 +7,7 @@ import { cookies } from "next/headers";
 import { verifyToken } from "@/lib/auth-server";
 
 export default async function AdminUsersPage() {
-  // Obter quem é o admin atual
+
   const cookieStore = await cookies();
   const token = cookieStore.get("mozbet_session")?.value;
   let currentUserRole = "admin";
@@ -27,12 +27,12 @@ export default async function AdminUsersPage() {
     .limit(30);
 
   const { data: authData } = await supabaseAdmin.auth.admin.listUsers();
-  
+
   const mappedUsers = (users || []).map((u) => {
     const authUser = authData?.users.find((au) => au.id === u.id);
     return {
       ...u,
-      role: u.role || (u.is_admin ? 'super_admin' : 'user'), // fallback seguro
+      role: u.role || (u.is_admin ? 'super_admin' : 'user'),
       email: u.email || authUser?.email || null,
     };
   });

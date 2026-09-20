@@ -19,7 +19,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Dados em falta." }, { status: 400 });
     }
 
-    // Buscar email do user
     const { data: user } = await supabaseAdmin
       .from("users")
       .select("email")
@@ -28,7 +27,6 @@ export async function POST(req: Request) {
 
     if (!user?.email) return NextResponse.json({ error: "E-mail não encontrado." }, { status: 400 });
 
-    // 1. Verificar OTP
     const { data: otpRecord } = await supabaseAdmin
       .from("otp_codes")
       .select("*")
@@ -39,10 +37,8 @@ export async function POST(req: Request) {
     if (!otpRecord) return NextResponse.json({ error: "Código incorreto." }, { status: 400 });
     if (new Date() > new Date(otpRecord.expires_at)) return NextResponse.json({ error: "Código expirou." }, { status: 400 });
 
-    // 2. Hash da nova senha
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    // 3. Atualizar senha
     const { error: updateError } = await supabaseAdmin
       .from("users")
       .update({ password: hashedPassword })
@@ -50,7 +46,6 @@ export async function POST(req: Request) {
 
     if (updateError) throw updateError;
 
-    // Limpar OTP
     await supabaseAdmin.from("otp_codes").delete().eq("id", otpRecord.id);
 
     return NextResponse.json({ success: true, message: "Senha atualizada com sucesso!" });

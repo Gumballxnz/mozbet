@@ -11,10 +11,10 @@ interface PageProps {
 }
 
 export default async function AffiliateDetailsPage({ params }: PageProps) {
-  // 1. Validar se o admin atual está autenticado e tem permissões
+
   const cookieStore = await cookies();
   const token = cookieStore.get("mozbet_session")?.value;
-  
+
   if (!token) {
     notFound();
   }
@@ -24,7 +24,6 @@ export default async function AffiliateDetailsPage({ params }: PageProps) {
     notFound();
   }
 
-  // Obter role do administrador ativo
   const { data: adminUser } = await supabaseAdmin
     .from("users")
     .select("is_admin")
@@ -37,7 +36,6 @@ export default async function AffiliateDetailsPage({ params }: PageProps) {
 
   const { id } = await params;
 
-  // 2. Buscar dados do afiliado específico
   const { data: aff } = await supabaseAdmin
     .from("users")
     .select("*")
@@ -49,7 +47,6 @@ export default async function AffiliateDetailsPage({ params }: PageProps) {
     notFound();
   }
 
-  // 3. Buscar indicados diretos e calcular total de depósitos de cada um
   const { data: referralsData } = await supabaseAdmin
     .from("users")
     .select("id, phone, email, balance, created_at, is_active")
@@ -80,7 +77,6 @@ export default async function AffiliateDetailsPage({ params }: PageProps) {
     totalDeposited: depositsMap[r.id] || 0
   }));
 
-  // 4. Buscar transações de comissão deste afiliado
   const { data: txsData } = await supabaseAdmin
     .from("affiliate_transactions")
     .select("type, amount")
@@ -88,7 +84,6 @@ export default async function AffiliateDetailsPage({ params }: PageProps) {
 
   const txs = txsData || [];
 
-  // 5. Agregações de comissões do parceiro
   let depositCommissions = 0;
   let subCommissions = 0;
   let winDeductions = 0;
@@ -109,7 +104,6 @@ export default async function AffiliateDetailsPage({ params }: PageProps) {
     }
   });
 
-  // Cálculo de depósitos baseado na comissão e na taxa
   const rate = aff.affiliate_percent !== null && aff.affiliate_percent !== undefined
     ? Number(aff.affiliate_percent) / 100
     : 0.70;
@@ -117,7 +111,6 @@ export default async function AffiliateDetailsPage({ params }: PageProps) {
   const totalDeposits = rate > 0 ? (depositCommissions / rate) / 0.93 : 0;
   const netEarnings = Number((depositCommissions + subCommissions + winDeductions).toFixed(2));
 
-  // Extrair nome do titular se concatenado
   const rawName = aff.affiliate_name || aff.username || "Sem Nome";
   let displayName = rawName;
   let extractedSaqueName = "";

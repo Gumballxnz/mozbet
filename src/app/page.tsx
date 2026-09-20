@@ -37,7 +37,7 @@ export default async function Home() {
 
   return (
     <div className="flex flex-col pb-4">
-      {/* Lida com redirects e ?error=unauthorized no Client */}
+      {}
       <Suspense fallback={null}>
         <AuthRedirectHandler />
       </Suspense>
@@ -54,7 +54,7 @@ export default async function Home() {
       <BannerCarousel initialBanners={initialBanners} />
 
       <GameCatalog initialGames={initialGames} />
-      
+
       {/* Tabela de Apostas Ao Vivo */}
       <LiveBetsTable />
     </div>

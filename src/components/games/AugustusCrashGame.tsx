@@ -62,7 +62,7 @@ const AugustusCrashGame = ({ onClose, balance, onBet }: AugustusCrashGameProps) 
       });
       const data = await res.json();
       if (data.success) {
-        onBet(data.newBalance); 
+        onBet(data.newBalance);
         setTargetCrash(data.crashPoint);
         setIsPlaying(true);
         setIsCrashed(false);
@@ -98,11 +98,11 @@ const AugustusCrashGame = ({ onClose, balance, onBet }: AugustusCrashGameProps) 
 
   return (
     <div className="fixed inset-0 z-[110] bg-[#0d0d0d] flex flex-col font-sans text-white overflow-hidden animate-in fade-in duration-300">
-      {/* Background Glows */}
+      {}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[60%] bg-[radial-gradient(circle_at_center,rgba(168,85,247,0.15)_0%,transparent_70%)] pointer-events-none" />
       <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent_0%,rgba(0,0,0,0.8)_100%)] pointer-events-none" />
 
-      {/* Header */}
+      {}
       <div className="flex items-center justify-between p-4 bg-black/40 backdrop-blur-md border-b border-white/5 relative z-10">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center shadow-[0_0_15px_rgba(168,85,247,0.4)]">
@@ -172,8 +172,8 @@ const AugustusCrashGame = ({ onClose, balance, onBet }: AugustusCrashGameProps) 
           <div className="grid grid-cols-2 gap-3">
              <div className="bg-black/40 p-1.5 rounded-2xl border border-white/5 flex items-center">
                  <button onClick={() => !isPlaying && setBetAmount(Math.max(1, betAmount - 1))} className="w-10 h-10 flex items-center justify-center text-xl font-bold text-gray-400 hover:text-white">-</button>
-                <input 
-                  type="number" 
+                <input
+                  type="number"
                   value={betAmount}
                   disabled={isPlaying}
                   onChange={(e) => setBetAmount(Number(e.target.value))}
@@ -194,14 +194,14 @@ const AugustusCrashGame = ({ onClose, balance, onBet }: AugustusCrashGameProps) 
           </div>
 
           {!isPlaying ? (
-            <button 
+            <button
               onClick={handleStart}
               className="w-full py-4.5 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl font-black text-lg tracking-wider shadow-[0_8px_30px_rgba(37,99,235,0.4)] active:scale-[0.98] transition-all"
             >
               APOSTA
             </button>
           ) : (
-            <button 
+            <button
               onClick={handleCashout}
               className="w-full py-4.5 bg-gradient-to-r from-purple-600 to-purple-700 rounded-2xl font-black text-lg tracking-wider shadow-[0_8px_30px_rgba(168,85,247,0.4)] active:scale-[0.98] transition-all"
             >

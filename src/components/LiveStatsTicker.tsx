@@ -16,7 +16,7 @@ export function LiveStatsTicker() {
   const { isLoggedIn, onlineCount } = useAppStore();
 
   useEffect(() => {
-    // Buscar stats a cada 10 segundos
+
     const fetchStats = async () => {
       try {
         const res = await fetch("/api/game/stats");
@@ -29,7 +29,6 @@ export function LiveStatsTicker() {
       }
     };
 
-    // Fazer heartbeat para presença a cada 30 segundos se estiver logado
     const heartbeat = async () => {
       if (isLoggedIn) {
         try {
@@ -41,9 +40,8 @@ export function LiveStatsTicker() {
     fetchStats();
     heartbeat();
 
-    // Aumentado os intervalos massivamente para não sobrecarregar o dispositivo (Otimização Mobile)
-    const statsInterval = setInterval(fetchStats, 30000); // 30s
-    const hbInterval = setInterval(heartbeat, 60000); // 60s
+    const statsInterval = setInterval(fetchStats, 30000);
+    const hbInterval = setInterval(heartbeat, 60000);
 
     return () => {
       clearInterval(statsInterval);
@@ -53,10 +51,8 @@ export function LiveStatsTicker() {
 
   if (!stats) return null;
 
-  // Preferir o onlineCount do Socket.io se estiver disponível, senão cair para o stats.online
   const displayOnline = onlineCount > 0 ? onlineCount : stats.online;
 
-  // Memoizar para evitar repaints gigantes e limiter para máx 15 itens
   const allEvents = Array.from({ length: 1 }).map(() => {
     return [
       ...stats.deposits.map(d => ({ ...d, type: "deposit" as const, game: undefined })),
@@ -67,7 +63,7 @@ export function LiveStatsTicker() {
   return (
     <div className="fixed top-16 left-0 right-0 z-[120] pointer-events-none">
       <div className="bg-black/60 backdrop-blur-md border-y border-white/10 py-1.5 flex items-center shadow-lg">
-        {/* Contagem Online */}
+        {}
         <div className="flex items-center gap-2 px-4 border-r border-white/10 shrink-0">
           <div className="relative flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -82,7 +78,7 @@ export function LiveStatsTicker() {
           )}
         </div>
 
-        {/* Marquee de Entradas e Saídas */}
+        {}
         <div className="flex-1 overflow-hidden relative">
           <div className="flex gap-8 animate-[scroll_30s_linear_infinite] whitespace-nowrap px-4">
             {allEvents.map((ev, i) => (
@@ -104,8 +100,8 @@ export function LiveStatsTicker() {
                 <span className="text-[8px] text-gray-600 ml-1">{ev.time}</span>
               </div>
             ))}
-            
-            {/* Duplicar para scroll contínuo */}
+
+            {}
             {allEvents.map((ev, i) => (
               <div key={`dup-${i}`} className="flex items-center gap-1.5">
                 {ev.type === "deposit" ? (
@@ -126,7 +122,7 @@ export function LiveStatsTicker() {
               </div>
             ))}
           </div>
-          
+
           {/* Fades nas bordas */}
           <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-black/60 to-transparent z-10" />
           <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-black/60 to-transparent z-10" />

@@ -28,8 +28,7 @@ const EarplaneGame = ({ balance, onUpdateBalance, onBack }: Props) => {
   const [cashed2, setCashed2] = useState(false);
   const onlineRef = useRef(212 + Math.floor(Math.random() * 50));
   const online = onlineRef.current;
-  
-  
+
   const { phase, multiplier, countdown, roundId: currentRoundIdRef, startedAt, multiplierRef } = useGameEngine("earplane");
   const currentRoundId = { current: currentRoundIdRef };
 
@@ -41,13 +40,9 @@ const EarplaneGame = ({ balance, onUpdateBalance, onBack }: Props) => {
     } catch (err) {}
   }, []);
 
-  
-
   useEffect(() => {
     fetchHistory();
   }, [fetchHistory]);
-
-  
 
   const place = async (n: 1 | 2) => {
     const amt = n === 1 ? bet1 : bet2;
@@ -82,7 +77,7 @@ const EarplaneGame = ({ balance, onUpdateBalance, onBack }: Props) => {
     const has = n === 1 ? hasBet1 : hasBet2;
     const already = n === 1 ? cashed1 : cashed2;
     if (!has || already) return;
-    
+
     if (n === 1) setCashed1(true); else setCashed2(true);
 
     try {
@@ -124,8 +119,8 @@ const EarplaneGame = ({ balance, onUpdateBalance, onBack }: Props) => {
         </div>
         <div className="flex items-center bg-[#1a1a1a] rounded-lg">
           <button onClick={() => setVal(Math.max(1, val - 1))} disabled={has} className="px-2 py-2 text-white disabled:opacity-40"><Minus size={14} /></button>
-          <input 
-            type="number" 
+          <input
+            type="number"
             value={val}
             disabled={has}
             onChange={(e) => setVal(Number(e.target.value))}
@@ -224,4 +219,3 @@ const EarplaneGame = ({ balance, onUpdateBalance, onBack }: Props) => {
 };
 
 export default EarplaneGame;
-

@@ -26,7 +26,7 @@ const BottleManiaGame = ({ onClose, balance, onBet }: BottleManiaGameProps) => {
       toast.error("Saldo insuficiente");
       return;
     }
-    
+
     setIsPlaying(true);
     setIsRevealing(true);
     playSound('notification');
@@ -38,7 +38,7 @@ const BottleManiaGame = ({ onClose, balance, onBet }: BottleManiaGameProps) => {
         body: JSON.stringify({ betAmount, gameId: "bottle-mania" })
       });
       const data = await res.json();
-      
+
       if (!data.success) {
         toast.error(data.error);
         setIsRevealing(false);
@@ -46,14 +46,14 @@ const BottleManiaGame = ({ onClose, balance, onBet }: BottleManiaGameProps) => {
         return;
       }
 
-      onBet(data.newBalance - (data.wins ? data.winAmount : 0)); // Atualizar saldo pós aposta (temporário)
+      onBet(data.newBalance - (data.wins ? data.winAmount : 0));
 
       setTimeout(() => {
         if (data.wins) {
           setMultiplier(data.multiplier);
           playSound('win');
           toast.success(`Ganhou! ${data.multiplier}x`);
-          onBet(data.newBalance); // Atualiza com o prêmio final
+          onBet(data.newBalance);
         } else {
           setMultiplier(0);
           playSound('error');
@@ -73,11 +73,11 @@ const BottleManiaGame = ({ onClose, balance, onBet }: BottleManiaGameProps) => {
 
   return (
     <div className="fixed inset-0 z-[110] bg-[#001219] flex flex-col font-sans text-white overflow-hidden animate-in fade-in duration-300">
-      {/* Background Tropical Style */}
+      {}
       <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(0,18,25,0.7),rgba(0,95,115,0.4)),url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=80&w=2000')] bg-cover bg-center opacity-30" />
       <div className="absolute inset-0 bg-gradient-to-t from-[#001219] via-transparent to-transparent" />
 
-      {/* Header */}
+      {}
       <div className="flex items-center justify-between p-4 bg-black/40 backdrop-blur-md border-b border-white/5 relative z-10">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-cyan-600 rounded-lg flex items-center justify-center shadow-[0_0_15px_rgba(8,145,178,0.4)]">
@@ -102,7 +102,7 @@ const BottleManiaGame = ({ onClose, balance, onBet }: BottleManiaGameProps) => {
         {/* Bottles Container */}
         <div className="flex items-end justify-center gap-4 sm:gap-8 w-full max-w-sm h-64 relative">
           {bottles.map((i) => (
-            <div 
+            <div
               key={i}
               onClick={() => !isPlaying && setSelectedBottle(i)}
               className={`relative cursor-pointer transition-all duration-300 flex flex-col items-center group ${selectedBottle === i ? 'scale-110 -translate-y-4' : 'scale-90 opacity-60'}`}
@@ -111,24 +111,24 @@ const BottleManiaGame = ({ onClose, balance, onBet }: BottleManiaGameProps) => {
               <div className={`w-16 sm:w-20 h-40 sm:h-48 rounded-t-3xl rounded-b-xl border-2 transition-all duration-500 flex items-center justify-center bg-white/5 backdrop-blur-md relative overflow-hidden ${selectedBottle === i ? 'border-cyan-400 shadow-[0_0_30px_rgba(34,211,238,0.3)]' : 'border-white/10'}`}>
                 <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-black/20" />
                 <div className="w-2 h-12 bg-white/20 rounded-full blur-[1px] absolute top-4 left-4" />
-                
+
                 {isRevealing && selectedBottle === i && (
                   <div className="absolute inset-0 bg-cyan-400/20 animate-pulse flex items-center justify-center">
                     <div className="w-4 h-4 bg-white rounded-full animate-ping" />
                   </div>
                 )}
-                
+
                 {multiplier > 0 && selectedBottle === i && !isRevealing && (
                   <div className="absolute inset-0 bg-green-500/20 flex items-center justify-center">
                     <Trophy className="text-green-400 animate-bounce" size={32} />
                   </div>
                 )}
               </div>
-              
+
               <div className={`mt-4 w-2 h-2 rounded-full transition-colors ${selectedBottle === i ? 'bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,1)]' : 'bg-white/20'}`} />
             </div>
           ))}
-          
+
           {/* Floor Shadow */}
           <div className="absolute -bottom-4 w-[120%] h-4 bg-black/40 blur-xl rounded-full" />
         </div>
@@ -138,9 +138,9 @@ const BottleManiaGame = ({ onClose, balance, onBet }: BottleManiaGameProps) => {
           <div className="flex items-center gap-4 p-3 bg-black/40 backdrop-blur-md rounded-2xl border border-white/5 w-full">
             <div className="flex-1 flex items-center bg-black/40 rounded-xl border border-white/5 h-12">
               <button onClick={() => !isPlaying && setBetAmount(Math.max(1, betAmount - 1))} className="w-10 h-full flex items-center justify-center text-gray-500 font-bold">-</button>
-              <input 
-                type="number" 
-                value={betAmount} 
+              <input
+                type="number"
+                value={betAmount}
                 disabled={isPlaying}
                 onChange={(e) => setBetAmount(Number(e.target.value))}
                 onBlur={(e) => {
@@ -166,7 +166,7 @@ const BottleManiaGame = ({ onClose, balance, onBet }: BottleManiaGameProps) => {
           </div>
 
           {/* Action Button */}
-          <button 
+          <button
             onClick={handleStart}
             disabled={isPlaying}
             className={`w-full max-w-xs py-5 rounded-[2rem] flex flex-col items-center justify-center gap-1 transition-all active:scale-[0.98] ${isPlaying ? 'bg-gray-800 opacity-50' : 'bg-gradient-to-r from-cyan-500 to-blue-600 shadow-[0_10px_30px_rgba(8,145,178,0.4)]'}`}
@@ -181,7 +181,7 @@ const BottleManiaGame = ({ onClose, balance, onBet }: BottleManiaGameProps) => {
       <div className="p-6 bg-black/40 backdrop-blur-md border-t border-white/5 flex justify-between items-center relative z-10">
         <div className="flex flex-col">
           <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Saldo Atual</span>
-          
+
         </div>
         <div className="flex flex-col items-end">
           <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Aposta</span>

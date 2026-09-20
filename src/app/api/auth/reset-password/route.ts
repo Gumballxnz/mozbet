@@ -20,7 +20,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // Verificar se o token de reset é válido
     const payload = await verifyToken(resetToken);
 
     if (!payload || payload.purpose !== "reset" || !payload.phone) {
@@ -30,11 +29,9 @@ export async function POST(req: Request) {
       );
     }
 
-    // Hash da nova senha
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(newPassword, salt);
 
-    // Atualizar a senha no banco de dados
     const { error: updateError } = await supabaseAdmin
       .from("users")
       .update({ password_hash: hashedPassword })

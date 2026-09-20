@@ -1,17 +1,12 @@
-// API: Estado actual da ronda + criação de novas rondas
-// GET /api/game/round?game=aviator — estado da ronda actual
-// POST /api/game/round — criar nova ronda (só server/cron)
-
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/auth-server";
 import { generateCrashPoint, generateServerSeed, hashSeed, GAME_CONFIG } from "@/lib/game-engine";
 
-// GET — Obter estado actual da ronda
 export async function GET(req: NextRequest) {
   const gameId = req.nextUrl.searchParams.get("game") || "aviator";
 
   try {
-    // Buscar ronda activa ou mais recente
+
     const { data: round, error } = await supabaseAdmin
       .from("game_rounds")
       .select("id, game_id, status, crash_point, started_at, crashed_at, created_at")
@@ -21,7 +16,7 @@ export async function GET(req: NextRequest) {
       .single();
 
     if (error || !round) {
-      // Não existe ronda — criar a primeira
+
       const serverSeed = generateServerSeed();
       const crashPoint = generateCrashPoint();
 
@@ -46,7 +41,7 @@ export async function GET(req: NextRequest) {
           id: newRound.id,
           gameId: newRound.game_id,
           status: newRound.status,
-          seedHash: hashSeed(serverSeed), // Hash público para verificação
+          seedHash: hashSeed(serverSeed),
           startedAt: newRound.started_at,
         },
         config: {
@@ -58,7 +53,6 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // Ronda existente
     const response: Record<string, unknown> = {
       round: {
         id: round.id,
@@ -75,7 +69,6 @@ export async function GET(req: NextRequest) {
       },
     };
 
-    // Só revelar o crash_point APÓS a ronda terminar
     if (round.status === "crashed") {
       response.round = {
         ...(response.round as Record<string, unknown>),
@@ -90,7 +83,6 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST — Avançar estado da ronda (chamado pelo loop do jogo)
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -133,13 +125,12 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === "crash") {
-      // Marcar ronda como crashed
+
       await supabaseAdmin
         .from("game_rounds")
         .update({ status: "crashed", crashed_at: new Date().toISOString() })
         .eq("id", roundId);
 
-      // Marcar todas as apostas sem cashout como perdidas
       await supabaseAdmin
         .from("bets")
         .update({ status: "lost" })

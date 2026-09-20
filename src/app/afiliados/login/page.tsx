@@ -6,7 +6,6 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { Lock, Mail, ArrowRight, ShieldCheck, Eye, EyeOff, KeyRound, ArrowLeft, CheckCircle2, Loader2 } from "lucide-react";
 
-// Etapas do fluxo de recuperação de senha
 type ResetStep = "email" | "code" | "newPassword" | "success";
 
 export default function AffiliateLogin() {
@@ -16,12 +15,11 @@ export default function AffiliateLogin() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Estado do fluxo de recuperação de senha
   const [showReset, setShowReset] = useState(false);
   const [resetStep, setResetStep] = useState<ResetStep>("email");
   const [resetEmail, setResetEmail] = useState("");
   const [resetCode, setResetCode] = useState(["", "", "", "", "", ""]);
-  const [verifiedCode, setVerifiedCode] = useState(""); // Código verificado para usar no reset
+  const [verifiedCode, setVerifiedCode] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -29,10 +27,8 @@ export default function AffiliateLogin() {
   const [resetLoading, setResetLoading] = useState(false);
   const [cooldown, setCooldown] = useState(0);
 
-  // Referências para os inputs do código OTP
   const codeInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  // Temporizador do cooldown para reenviar código
   useEffect(() => {
     if (cooldown <= 0) return;
     const timer = setInterval(() => {
@@ -47,7 +43,6 @@ export default function AffiliateLogin() {
     return () => clearInterval(timer);
   }, [cooldown]);
 
-  // === LOGIN ===
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!identifier || !password) {
@@ -79,7 +74,6 @@ export default function AffiliateLogin() {
     }
   };
 
-  // === RECUPERAÇÃO - Etapa 1: Enviar código por e-mail ===
   const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!resetEmail) {
@@ -112,7 +106,6 @@ export default function AffiliateLogin() {
     }
   };
 
-  // === RECUPERAÇÃO - Etapa 2: Validar código OTP ===
   const handleVerifyCode = async (e: React.FormEvent) => {
     e.preventDefault();
     const code = resetCode.join("");
@@ -146,7 +139,6 @@ export default function AffiliateLogin() {
     }
   };
 
-  // === RECUPERAÇÃO - Etapa 3: Definir nova senha ===
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -191,7 +183,6 @@ export default function AffiliateLogin() {
     }
   };
 
-  // === Controle dos inputs de código OTP ===
   const handleCodeInput = (index: number, value: string) => {
     const digit = value.replace(/\D/g, "").slice(-1);
     const newCode = [...resetCode];
@@ -209,7 +200,6 @@ export default function AffiliateLogin() {
     }
   };
 
-  // Colar código - funciona em qualquer input do grupo
   const handleCodePaste = (e: React.ClipboardEvent) => {
     e.preventDefault();
     const pastedText = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
@@ -221,12 +211,10 @@ export default function AffiliateLogin() {
     }
     setResetCode(newCode);
 
-    // Foca no último dígito preenchido ou no próximo vazio
     const lastFilledIndex = Math.min(pastedText.length - 1, 5);
     setTimeout(() => codeInputRefs.current[lastFilledIndex]?.focus(), 10);
   };
 
-  // === Reenviar código ===
   const handleResendCode = async () => {
     if (cooldown > 0) return;
     setResetLoading(true);
@@ -253,7 +241,6 @@ export default function AffiliateLogin() {
     }
   };
 
-  // === Fechar modal e resetar estado ===
   const closeReset = () => {
     setShowReset(false);
     setTimeout(() => {
@@ -267,20 +254,19 @@ export default function AffiliateLogin() {
     }, 300);
   };
 
-  // Classes reutilizáveis
   const inputClass = "w-full pl-11 pr-4 py-3 bg-black/40 border border-white/10 rounded-xl text-white placeholder-white/20 focus:outline-none focus:border-[#00FF7F] focus:ring-1 focus:ring-[#00FF7F] transition-all duration-200 text-sm";
   const inputWithToggleClass = "w-full pl-11 pr-12 py-3 bg-black/40 border border-white/10 rounded-xl text-white placeholder-white/20 focus:outline-none focus:border-[#00FF7F] focus:ring-1 focus:ring-[#00FF7F] transition-all duration-200 text-sm";
   const greenBtnClass = "w-full py-3.5 bg-[#00FF7F] text-black rounded-xl font-extrabold hover:bg-[#00d66a] active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 text-sm shadow-lg shadow-[#00FF7F]/10 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed";
 
   return (
     <div className="min-h-screen bg-[#0b0c0f] flex flex-col justify-center items-center px-4 relative overflow-hidden font-sans">
-      {/* Efeitos de fundo */}
+      {}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#00FF7F]/5 rounded-full blur-3xl -z-10" />
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#00FF7F]/3 rounded-full blur-3xl -z-10" />
- 
+
       <div className="w-full max-w-md bg-[#12141c]/60 border border-white/5 p-8 rounded-2xl shadow-2xl space-y-6 backdrop-blur-md">
-        
-        {/* LOGO */}
+
+        {}
         <div className="text-center space-y-2">
           <span className="text-3xl font-black text-white tracking-wider">
             MOZ<span className="text-[#00FF7F] drop-shadow-[0_0_8px_rgba(0,255,127,0.4)]">BET</span>
@@ -292,7 +278,7 @@ export default function AffiliateLogin() {
             Entra no teu Painel de Parceiro
           </h2>
         </div>
- 
+
         {/* FORMULÁRIO DE LOGIN */}
         <form onSubmit={handleLogin} className="space-y-4">
           <div className="space-y-1 text-left">
@@ -309,7 +295,7 @@ export default function AffiliateLogin() {
               />
             </div>
           </div>
- 
+
           <div className="space-y-1 text-left">
             <div className="flex justify-between items-center">
               <label className="text-xs font-semibold text-muted-foreground">Palavra-passe *</label>
@@ -344,7 +330,7 @@ export default function AffiliateLogin() {
               Esqueci a minha palavra-passe
             </button>
           </div>
- 
+
           <button
             type="submit"
             disabled={loading}
@@ -354,7 +340,7 @@ export default function AffiliateLogin() {
             {!loading && <ArrowRight className="h-4 w-4" />}
           </button>
         </form>
- 
+
         {/* REDIRECIONAR PARA REGISTO */}
         <div className="text-center text-xs text-slate-500 pt-2 border-t border-white/5">
           <span>Ainda não é parceiro? </span>
@@ -362,7 +348,7 @@ export default function AffiliateLogin() {
             Crie a sua conta de afiliado
           </Link>
         </div>
- 
+
         <div className="flex items-center justify-center gap-1.5 text-[10px] text-slate-600">
           <ShieldCheck className="h-4 w-4 text-[#00FF7F]/50" />
           <span>Conexão de segurança encriptada (128-bit SSL)</span>

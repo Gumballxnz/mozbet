@@ -1,12 +1,9 @@
-// API: Cashout — sacar ganhos antes do crash
-// POST /api/game/cashout — { roundId, multiplier }
-
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin, verifyToken } from "@/lib/auth-server";
 
 export async function POST(req: NextRequest) {
   try {
-    // 1. Verificar autenticação
+
     const token = req.cookies.get("mozbet_session")?.value;
     if (!token) {
       return NextResponse.json({ error: "Faça login" }, { status: 401 });
@@ -23,7 +20,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Dados inválidos" }, { status: 400 });
     }
 
-    // 2. Verificar se a ronda está "running" (em andamento)
     const { data: round, error: roundErr } = await supabaseAdmin
       .from("game_rounds")
       .select("id, status, crash_point")
@@ -38,9 +34,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Ronda já terminou" }, { status: 400 });
     }
 
-    // 3. Validar que o multiplicador pedido não excede o crash point
-    // Isto protege contra manipulação: mesmo que alterem o valor no browser,
-    // o servidor valida contra o crash_point real
     if (multiplier > Number(round.crash_point)) {
       return NextResponse.json({ error: "Tarde demais — o jogo já crashou" }, { status: 400 });
     }
@@ -49,7 +42,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Multiplicador inválido" }, { status: 400 });
     }
 
-    // 4. Buscar a aposta activa do utilizador nesta ronda
     const { data: bet, error: betErr } = await supabaseAdmin
       .from("bets")
       .select("id, amount, status")
@@ -62,12 +54,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Nenhuma aposta activa nesta ronda" }, { status: 404 });
     }
 
-    // 5. Calcular ganhos
     const betAmount = Number(bet.amount);
     const winnings = parseFloat((betAmount * multiplier).toFixed(2));
     const profit = parseFloat((winnings - betAmount).toFixed(2));
 
-    // 6. Actualizar aposta como sacada
     await supabaseAdmin
       .from("bets")
       .update({
@@ -77,7 +67,6 @@ export async function POST(req: NextRequest) {
       })
       .eq("id", bet.id);
 
-    // 7. Creditar saldo do utilizador
     const { data: user } = await supabaseAdmin
       .from("users")
       .select("balance")
@@ -92,8 +81,7 @@ export async function POST(req: NextRequest) {
       .update({ balance: newBalance })
       .eq("id", payload.id);
 
-    // 8. Publicar vitória no chat (anúncio automático)
-    if (profit > 100) { // Só anuncia vitórias acima de 100 MZN
+    if (profit > 100) {
       await supabaseAdmin
         .from("chat_messages")
         .insert({

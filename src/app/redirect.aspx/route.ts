@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
     let isValidAffiliate = false;
 
     if (pid) {
-      // Verificar no banco de dados se o afiliado de fato existe e está ativo
+
       const { data: affiliateUser } = await supabaseAdmin
         .from("users")
         .select("id")
@@ -24,19 +24,17 @@ export async function GET(req: NextRequest) {
       }
     }
 
+    const appDomain = process.env.NEXT_PUBLIC_APP_DOMAIN || "";
     if (redirectUrlStr) {
-      // Tratar redirectUrl seguro para evitar open redirect para sites maliciosos
-      if (redirectUrlStr.startsWith("/") || redirectUrlStr.includes("mozbet.online")) {
+      if (redirectUrlStr.startsWith("/") || (appDomain && redirectUrlStr.includes(appDomain))) {
         finalRedirectUrl = redirectUrlStr;
       }
     }
 
-    // Se o afiliado for inválido, redireciona para a home por segurança
     if (pid && !isValidAffiliate) {
       return NextResponse.redirect(new URL("/", req.url));
     }
 
-    // Adicionar o pid como query param na URL de destino para rastreamento visual
     if (pid && isValidAffiliate) {
       const separator = finalRedirectUrl.includes("?") ? "&" : "?";
       finalRedirectUrl = `${finalRedirectUrl}${separator}ref=${pid}`;
@@ -45,13 +43,13 @@ export async function GET(req: NextRequest) {
     const response = NextResponse.redirect(new URL(finalRedirectUrl, req.url));
 
     if (pid && isValidAffiliate) {
-      // Injeta o cookie de indicação do afiliado (válido por 30 dias)
       response.cookies.set("affiliate_pid", pid, {
         path: "/",
-        maxAge: 60 * 60 * 24 * 30, // 30 dias
+        maxAge: 60 * 60 * 24 * 30,
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
+        domain: process.env.COOKIE_DOMAIN || undefined,
       });
     }
 
@@ -61,4 +59,3 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(new URL("/", req.url));
   }
 }
-

@@ -1,6 +1,3 @@
-// Rota para verificar o código TOTP do Google Authenticator
-// Usada tanto para ativar o 2FA pela primeira vez como para login no admin
-
 import { NextResponse } from "next/server";
 import { supabaseAdmin, verifyToken, signToken } from "@/lib/auth-server";
 import { verifyTOTP } from "@/lib/totp";
@@ -14,7 +11,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Código deve ter 6 dígitos." }, { status: 400 });
     }
 
-    // Determinar o telefone do admin (via cookie ou body)
     let phone = bodyPhone;
 
     const cookieStore = await cookies();
@@ -31,7 +27,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Sessão não encontrada." }, { status: 401 });
     }
 
-    // Buscar segredo TOTP do utilizador
     const { data: user } = await supabaseAdmin
       .from("users")
       .select("id, phone, totp_secret, totp_enabled, is_admin, balance, has_deposited, created_at")
@@ -46,14 +41,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "TOTP não configurado. Configure primeiro." }, { status: 400 });
     }
 
-    // Verificar o código
     const isValid = verifyTOTP(user.totp_secret, code);
 
     if (!isValid) {
       return NextResponse.json({ error: "Código inválido ou expirado. Verifique o Google Authenticator." }, { status: 400 });
     }
 
-    // Se é a primeira vez (ativação)
     if (!user.totp_enabled) {
       await supabaseAdmin
         .from("users")
@@ -61,7 +54,6 @@ export async function POST(req: Request) {
         .eq("phone", phone);
     }
 
-    // Gerar token de sessão admin com flag de 2FA verificado
     const adminToken = await signToken({
       id: user.id,
       phone: user.phone,
@@ -82,14 +74,13 @@ export async function POST(req: Request) {
       },
     });
 
-    // Atualizar cookie com token que tem totpVerified
     response.cookies.set("mozbet_session", adminToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       path: "/",
       maxAge: 60 * 60 * 24 * 7,
-      domain: process.env.NODE_ENV === "production" ? "mozbet.online" : undefined,
+      domain: process.env.COOKIE_DOMAIN || undefined,
     });
 
     return response;

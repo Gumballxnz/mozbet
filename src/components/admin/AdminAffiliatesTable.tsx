@@ -66,7 +66,6 @@ export function AdminAffiliatesTable({ initialAffiliates }: { initialAffiliates:
   const [globalPercent, setGlobalPercent] = useState("70");
   const [savingGlobal, setSavingGlobal] = useState(false);
 
-  // Alternar ordenação
   const toggleSort = (field: SortField) => {
     if (sortField === field) {
       setSortDir(prev => prev === "desc" ? "asc" : "desc");
@@ -76,7 +75,6 @@ export function AdminAffiliatesTable({ initialAffiliates }: { initialAffiliates:
     }
   };
 
-  // Ícone de ordenação
   const SortIcon = ({ field }: { field: SortField }) => {
     if (sortField !== field) return <ArrowUpDown className="w-3 h-3 text-gray-600 ml-1" />;
     return sortDir === "desc"
@@ -84,7 +82,6 @@ export function AdminAffiliatesTable({ initialAffiliates }: { initialAffiliates:
       : <ArrowUp className="w-3 h-3 text-primary ml-1" />;
   };
 
-  // Filtrar e ordenar
   const filteredAffiliates = useMemo(() => {
     const searchLower = search.toLowerCase();
     return affiliates
@@ -104,7 +101,6 @@ export function AdminAffiliatesTable({ initialAffiliates }: { initialAffiliates:
       });
   }, [affiliates, search, balanceFilter, sortField, sortDir]);
 
-  // Resumos calculados
   const summary = useMemo(() => {
     const totalBalance = affiliates.reduce((s, a) => s + a.balance, 0);
     const totalPositive = affiliates.filter(a => a.balance > 0).length;
@@ -115,7 +111,7 @@ export function AdminAffiliatesTable({ initialAffiliates }: { initialAffiliates:
 
   return (
     <div className="space-y-6">
-      {/* Cabeçalho */}
+      {}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold text-white flex items-center gap-2">
@@ -130,8 +126,8 @@ export function AdminAffiliatesTable({ initialAffiliates }: { initialAffiliates:
 
         <div className="relative w-full sm:w-72">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input 
-            placeholder="Pesquisar Nome, Código, Telefone..." 
+          <Input
+            placeholder="Pesquisar Nome, Código, Telefone..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9 bg-[#101116] border-[#2A2F40] h-10 text-white"
@@ -139,7 +135,7 @@ export function AdminAffiliatesTable({ initialAffiliates }: { initialAffiliates:
         </div>
       </div>
 
-      {/* Botão e Painel de Comissão Global */}
+      {}
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
         <button
           onClick={() => setShowGlobalCommission(!showGlobalCommission)}
@@ -201,7 +197,7 @@ export function AdminAffiliatesTable({ initialAffiliates }: { initialAffiliates:
         )}
       </div>
 
-      {/* Cards de resumo */}
+      {}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <div className="bg-[#101116] border border-[#2A2F40] rounded-xl p-4">
           <div className="flex items-center gap-2 text-gray-500 text-xs font-bold uppercase mb-1">
@@ -237,7 +233,7 @@ export function AdminAffiliatesTable({ initialAffiliates }: { initialAffiliates:
         </div>
       </div>
 
-      {/* Filtros de saldo */}
+      {}
       <div className="flex items-center gap-2 flex-wrap">
         <Filter className="w-4 h-4 text-gray-500" />
         <span className="text-xs text-gray-500 font-bold uppercase mr-1">Filtrar por saldo:</span>
@@ -246,8 +242,8 @@ export function AdminAffiliatesTable({ initialAffiliates }: { initialAffiliates:
             key={f.value}
             onClick={() => setBalanceFilter(f.value)}
             className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
-              balanceFilter === f.value 
-                ? `${f.color} ring-1 ring-white/10 scale-105` 
+              balanceFilter === f.value
+                ? `${f.color} ring-1 ring-white/10 scale-105`
                 : "bg-[#101116] text-gray-500 border-[#2A2F40] hover:border-gray-500"
             }`}
           >
@@ -343,9 +339,9 @@ export function AdminAffiliatesTable({ initialAffiliates }: { initialAffiliates:
                     </div>
                   </td>
                   <td className="px-6 py-4 text-right align-middle">
-                    <Button 
+                    <Button
                       onClick={() => router.push(`/admin/affiliates/${aff.id}`)}
-                      size="sm" 
+                      size="sm"
                       className="h-8 bg-[#2A2F40] hover:bg-primary hover:text-black font-bold text-white transition-all border-none cursor-pointer"
                     >
                       Detalhes CRM
@@ -418,9 +414,9 @@ export function AdminAffiliatesTable({ initialAffiliates }: { initialAffiliates:
                   </Button>
                 </div>
               </div>
-              <Button 
+              <Button
                 onClick={() => router.push(`/admin/affiliates/${aff.id}`)}
-                size="sm" 
+                size="sm"
                 className="h-8 bg-[#2A2F40] hover:bg-primary hover:text-black font-bold text-xs text-white cursor-pointer"
               >
                 Gerir CRM

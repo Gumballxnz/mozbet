@@ -1,7 +1,3 @@
-// API: Dados fake e presença — para exibição no frontend
-// GET /api/game/stats — dados fake de online, depósitos e retiradas
-// POST /api/game/stats — heartbeat de presença
-
 import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/lib/auth-server";
 import {
@@ -12,9 +8,8 @@ import {
   getRealOnlineCount,
 } from "@/lib/game-controller";
 
-// GET — Dados fake para exibição pública
 export async function GET(req: NextRequest) {
-  // Verificar se é admin para retornar dados reais
+
   const token = req.cookies.get("mozbet_session")?.value;
   let isAdmin = false;
 
@@ -26,16 +21,15 @@ export async function GET(req: NextRequest) {
   }
 
   if (isAdmin) {
-    // Admin vê dados REAIS
+
     return NextResponse.json({
       online: await getRealOnlineCount(),
       isReal: true,
-      deposits: [], // Dados reais viriam do BD
+      deposits: [],
       withdrawals: [],
     });
   }
 
-  // Jogadores normais vêm dados FAKE
   return NextResponse.json({
     online: getFakeOnlineCount(),
     isReal: false,
@@ -44,12 +38,11 @@ export async function GET(req: NextRequest) {
   });
 }
 
-// POST — Heartbeat de presença (chamado pelo frontend periodicamente)
 export async function POST(req: NextRequest) {
   try {
     const token = req.cookies.get("mozbet_session")?.value;
     if (!token) {
-      return NextResponse.json({ ok: true }); // Visitantes anónimos não contam
+      return NextResponse.json({ ok: true });
     }
 
     const payload = await verifyToken<{ id: string }>(token);

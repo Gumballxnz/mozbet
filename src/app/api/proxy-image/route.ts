@@ -10,7 +10,7 @@ export async function GET(req: Request) {
 
   try {
     const response = await fetch(targetUrl);
-    
+
     if (!response.ok) {
       throw new Error(`Failed to fetch image: ${response.statusText}`);
     }
@@ -18,18 +18,17 @@ export async function GET(req: Request) {
     const arrayBuffer = await response.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    // Get content type from original response, default to jpeg
     const contentType = response.headers.get("content-type") || "image/jpeg";
 
     return new NextResponse(buffer, {
       headers: {
         "Content-Type": contentType,
-        "Cache-Control": "public, max-age=86400, s-maxage=86400", // Cache for 24 hours
+        "Cache-Control": "public, max-age=86400, s-maxage=86400",
       },
     });
   } catch (error) {
     console.error("Proxy Image Error:", error);
-    // Return a transparent 1x1 pixel or fallback image if it fails
+
     return new NextResponse("Error processing image", { status: 500 });
   }
 }

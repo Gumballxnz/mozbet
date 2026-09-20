@@ -45,7 +45,6 @@ export function MobileHeader() {
     return `HÁ ${diffInDays} DIAS`;
   };
 
-  // Carregar e ouvir notificações em tempo real nativo do Supabase
   useEffect(() => {
     if (!user) return;
 
@@ -59,18 +58,17 @@ export function MobileHeader() {
         const hasUnreadGlobal = data.some((n: any) => n.user_id === null && !readGlobalIds.includes(n.id));
         setHasUnread(hasUnreadPrivate || hasUnreadGlobal);
       } catch (err) {
-        // Silencioso
+
       }
     };
-    
+
     fetchNotifs();
 
-    // Ouvir alterações da tabela notifications em tempo real para o usuário atual ou global
     const channel = supabase.channel(`user-notifications-${user.id}`)
-      .on('postgres_changes', { 
-        event: 'INSERT', 
-        schema: 'public', 
-        table: 'notifications' 
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'notifications'
       }, payload => {
         if (payload.new.user_id === user.id || payload.new.user_id === null) {
           setNotifications(prev => [payload.new, ...prev]);
@@ -78,14 +76,14 @@ export function MobileHeader() {
           playSound('notification');
         }
       })
-      .on('postgres_changes', { 
-        event: 'UPDATE', 
-        schema: 'public', 
-        table: 'notifications' 
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'notifications'
       }, payload => {
         if (payload.new.user_id === user.id || payload.new.user_id === null) {
           setNotifications(prev => prev.map(n => n.id === payload.new.id ? payload.new : n));
-          
+
           const readGlobalIds = JSON.parse(localStorage.getItem('read_global_notifs') || '[]');
           setNotifications(prev => {
             const hasUnreadPrivate = prev.some((n: any) => !n.is_read && n.user_id === user.id);
@@ -102,14 +100,13 @@ export function MobileHeader() {
     };
   }, [user]);
 
-  // Ouvir alterações do próprio usuário na tabela 'users' em tempo real para atualizar o saldo
   useEffect(() => {
     if (!user) return;
 
     const channel = supabase.channel(`user-profile-${user.id}`)
-      .on('postgres_changes', { 
-        event: 'UPDATE', 
-        schema: 'public', 
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
         table: 'users',
         filter: `id=eq.${user.id}`
       }, payload => {
@@ -128,20 +125,18 @@ export function MobileHeader() {
   const markAsRead = async () => {
     setHasUnread(false);
     if (!user) return;
-    
-    // Marcar as privadas na DB
+
     const unreadIds = notifications.filter(n => !n.is_read && n.user_id === user.id).map(n => n.id);
-    
-    // Marcar as globais no localStorage
+
     const globalIds = notifications.filter(n => n.user_id === null).map(n => n.id);
     if (globalIds.length > 0) {
       const readGlobalIds = JSON.parse(localStorage.getItem('read_global_notifs') || '[]');
       const newGlobalIds = Array.from(new Set([...readGlobalIds, ...globalIds]));
       localStorage.setItem('read_global_notifs', JSON.stringify(newGlobalIds));
     }
-    
+
     setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
-    
+
     if (unreadIds.length > 0) {
       try {
         const { markNotificationsAsRead } = await import("@/app/actions/notifications");
@@ -214,7 +209,7 @@ export function MobileHeader() {
                     <span className="absolute top-1.5 right-2 w-2 h-2 rounded-full bg-red-500 animate-pulse border border-background"></span>
                   )}
                 </Button>
-                
+
                 <Button
                   variant="ghost"
                   size="icon"
@@ -230,7 +225,7 @@ export function MobileHeader() {
                     </div>
                   )}
                 </Button>
-                
+
                 <Button
                   variant="ghost"
                   size="icon"
@@ -278,15 +273,15 @@ export function MobileHeader() {
             </div>
             <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1 ml-10">Fique por dentro das novidades</p>
           </div>
-          
+
           <div className="flex border-b border-[#2A2F40]">
-             <button 
+             <button
                className={`flex-1 py-3 text-xs font-bold flex items-center justify-center gap-2 transition-colors ${activeTab === 'promos' ? 'text-white border-b-2 border-primary' : 'text-gray-500 hover:text-gray-300'}`}
                onClick={() => setActiveTab('promos')}
              >
                <Zap className="w-4 h-4" /> PROMOÇÕES
              </button>
-             <button 
+             <button
                className={`flex-1 py-3 text-xs font-bold flex items-center justify-center gap-2 transition-colors ${activeTab === 'notifs' ? 'text-white border-b-2 border-primary' : 'text-gray-500 hover:text-gray-300'}`}
                onClick={() => setActiveTab('notifs')}
              >
@@ -307,7 +302,7 @@ export function MobileHeader() {
                return itemsToRender.map((notif) => {
                  const isFailed = notif.type === 'deposit_failed';
                  const isPromo = notif.type === 'promo';
-                 
+
                  const titleMap: Record<string, string> = {
                    deposit_pending: "Depósito Iniciado",
                    deposit_failed: "Depósito Falhou",
@@ -317,19 +312,19 @@ export function MobileHeader() {
                    SYSTEM: "Mensagem do Sistema"
                  };
                  const displayTitle = titleMap[notif.type] || notif.type || "Notificação";
-                 
+
                  return (
                    <div key={notif.id} className={`border rounded-xl p-4 relative overflow-hidden ${isFailed ? 'bg-red-950/20 border-red-900/30' : 'bg-[#1A1D27] border-[#2A2F40]'}`}>
                      {!notif.is_read && <div className="absolute top-3 right-3 w-2 h-2 rounded-full bg-primary" />}
-                     
+
                      <div className="flex items-center gap-3 mb-3">
                        <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 border ${
-                         isPromo ? 'bg-blue-600/20 border-blue-500/30' : 
-                         isFailed ? 'border-red-500/30' : 
+                         isPromo ? 'bg-blue-600/20 border-blue-500/30' :
+                         isFailed ? 'border-red-500/30' :
                          'border-gray-600/30'
                        }`}>
-                          {isPromo ? <Zap className="w-5 h-5 text-blue-400" /> : 
-                           isFailed ? <AlertTriangle className="w-5 h-5 text-red-500" /> : 
+                          {isPromo ? <Zap className="w-5 h-5 text-blue-400" /> :
+                           isFailed ? <AlertTriangle className="w-5 h-5 text-red-500" /> :
                            <Bell className="w-5 h-5 text-gray-400" />}
                        </div>
                        <div>
@@ -337,17 +332,17 @@ export function MobileHeader() {
                          <span className="text-[9px] text-gray-400 font-bold uppercase">{getRelativeTime(notif.created_at)}</span>
                        </div>
                      </div>
-                     
+
                      <p className={`text-xs font-medium leading-relaxed ${isFailed ? 'text-gray-300' : 'text-gray-400'} ${isPromo || isFailed ? 'mb-4' : ''}`}>
                        {notif.message}
                      </p>
-                     
+
                      {isPromo && (
                        <Button className="w-full bg-[#0B0C10] border border-[#2A2F40] hover:bg-white/5 text-white font-bold h-10" onClick={() => { setShowNotifications(false); setDepositOpen(true); }}>
                          DEPOSITAR <ExternalLink className="w-4 h-4 ml-2" />
                        </Button>
                      )}
-                     
+
                      {isFailed && (
                        <Button className="w-full bg-[#0B0C10] border border-[#2A2F40] hover:bg-white/5 text-white font-bold h-10" onClick={() => { setShowNotifications(false); setDepositOpen(true); }}>
                          TENTAR NOVAMENTE <ExternalLink className="w-4 h-4 ml-2" />

@@ -1,4 +1,3 @@
-// Hook para usar traduções em componentes
 "use client";
 
 import { translations, type TranslationKey } from "@/lib/i18n";

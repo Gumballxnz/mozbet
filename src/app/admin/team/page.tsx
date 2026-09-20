@@ -6,12 +6,12 @@ import { verifyToken } from "@/lib/auth-server";
 export const dynamic = "force-dynamic";
 
 export default async function AdminTeamPage() {
-  // 1. Identificar privilégios do administrador conectado
+
   const cookieStore = await cookies();
   const token = cookieStore.get("mozbet_session")?.value;
   let currentUserRole = "admin";
   let currentUserId = "";
-  
+
   if (token) {
     const payload = await verifyToken<{ id: string; role: string }>(token);
     if (payload?.id) {
@@ -21,12 +21,11 @@ export default async function AdminTeamPage() {
          .select("role")
          .eq("id", payload.id)
          .single();
-         
+
        if (adminUser?.role) currentUserRole = adminUser.role;
     }
   }
 
-  // 2. Buscar membros administrativos da equipa (is_admin = true ou role de admin/super_admin)
   const { data: teamUsers } = await supabaseAdmin
     .from("users")
     .select("id, email, username, phone, created_at, is_active, is_admin, role")

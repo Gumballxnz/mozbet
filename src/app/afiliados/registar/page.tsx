@@ -9,7 +9,7 @@ import { User, Mail, Lock, Phone, CreditCard, ArrowRight, ShieldCheck, Eye, EyeO
 function AffiliateRegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
@@ -25,7 +25,6 @@ function AffiliateRegisterForm() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Capturar código de subafiliado da URL (?sub=MB123456)
   useEffect(() => {
     const sub = searchParams.get("sub");
     if (sub) {
@@ -83,7 +82,7 @@ function AffiliateRegisterForm() {
       } else {
         toast.success("Conta de parceiro criada com sucesso!");
         router.refresh();
-        router.push("/afiliados"); // Redireciona para o painel principal
+        router.push("/afiliados");
       }
     } catch (err) {
       toast.error("Erro interno do servidor. Tente novamente.");
@@ -95,7 +94,7 @@ function AffiliateRegisterForm() {
   return (
     <form onSubmit={handleRegister} className="space-y-4 text-left">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Nome */}
+        {}
         <div className="space-y-1">
           <label className="text-xs font-semibold text-muted-foreground">Nome Completo *</label>
           <div className="relative">
@@ -316,7 +315,7 @@ export default function AffiliateRegister() {
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#00FF7F]/3 rounded-full blur-3xl -z-10" />
 
       <div className="w-full max-w-2xl bg-[#12141c]/60 border border-white/5 p-8 rounded-2xl shadow-2xl space-y-6 backdrop-blur-md">
-        
+
         {/* LOGO */}
         <div className="text-center space-y-2">
           <span className="text-3xl font-black text-white tracking-wider">

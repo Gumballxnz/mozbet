@@ -5,7 +5,7 @@ import { cleanupPendingDeposits } from "@/app/admin/transactions/actions";
 export const dynamic = "force-dynamic";
 
 export default async function AdminTransactionsPage() {
-  // Limpar depósitos expirados antigos antes de carregar
+
   await cleanupPendingDeposits();
 
   const { data: transactionsRaw, count } = await supabaseAdmin
@@ -21,9 +21,9 @@ export default async function AdminTransactionsPage() {
   })) || [];
 
   return (
-    <AdminTransactionsTable 
-      initialTransactions={initialTransactions} 
-      initialTotalCount={count || 0} 
+    <AdminTransactionsTable
+      initialTransactions={initialTransactions}
+      initialTotalCount={count || 0}
       typeFilter="DEPOSIT"
     />
   );

@@ -5,8 +5,6 @@ export async function POST(req: Request) {
   try {
     const { gameId, result, secret } = await req.json();
 
-    // Verificação de segurança básica para evitar spam
-    // Em produção, isso deve ser um segredo compartilhado com a VPS
     if (secret !== process.env.GAME_API_SECRET && process.env.NODE_ENV === "production") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

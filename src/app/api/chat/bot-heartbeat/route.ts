@@ -1,4 +1,3 @@
-
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/auth-server";
 
@@ -30,7 +29,7 @@ const GAMES = [
 
 export async function GET() {
   try {
-    // 1. Verificar se a última mensagem foi há menos de 15 segundos para não inundar
+
     const { data: lastMsg } = await supabaseAdmin
       .from("chat_messages")
       .select("created_at")
@@ -42,12 +41,10 @@ export async function GET() {
     const lastTime = lastMsg ? new Date(lastMsg.created_at) : new Date(0);
     const diffSeconds = (now.getTime() - lastTime.getTime()) / 1000;
 
-    // Se já houve uma mensagem recentemente (menos de 15s), não fazemos nada
     if (diffSeconds < 15) {
       return NextResponse.json({ status: "waiting" });
     }
 
-    // 2. Decidir o que enviar (60% Slang, 40% Vitória)
     const isWin = Math.random() < 0.4;
 
     if (isWin) {

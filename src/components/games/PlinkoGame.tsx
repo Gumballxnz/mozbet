@@ -72,15 +72,15 @@ const PlinkoGame = ({ balance, onUpdateBalance, onBack }: Props) => {
       toast.error("Saldo insuficiente");
       return;
     }
-    
+
     if (dropping || bet <= 0) return;
-    
+
     setDropping(true);
     setFinalSlot(null);
     setAnimStep(-1);
 
     try {
-      // O saldo é descontado no backend. Nós apenas pedimos a animação e o resultado.
+
       const res = await fetch("/api/game/plinko/play", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -88,10 +88,9 @@ const PlinkoGame = ({ balance, onUpdateBalance, onBack }: Props) => {
       });
 
       const data = await res.json();
-      
+
       if (!res.ok) throw new Error(data.error);
 
-      // Atualizar o saldo subtraindo a aposta no front-end para resposta imediata
       updateBalance(balance - bet);
 
       const serverPath = data.path;
@@ -101,7 +100,7 @@ const PlinkoGame = ({ balance, onUpdateBalance, onBack }: Props) => {
 
       setPath(serverPath);
       let step = 0;
-      
+
       const iv = setInterval(() => {
         setAnimStep(step);
         playSound('notification');
@@ -111,10 +110,10 @@ const PlinkoGame = ({ balance, onUpdateBalance, onBack }: Props) => {
           setLastWin(win);
           setFinalSlot(fs);
           setDropping(false);
-          saveResult(MULTIPLIERS[fs]); // Salva o resultado no banco
+          saveResult(MULTIPLIERS[fs]);
           setHistory(prev => [MULTIPLIERS[fs], ...prev.slice(0, 11)]);
           playSound('win');
-          updateBalance(newBalance); // Saldo final após o ganho
+          updateBalance(newBalance);
         }
       }, 180);
 
@@ -185,7 +184,7 @@ const PlinkoGame = ({ balance, onUpdateBalance, onBack }: Props) => {
           </div>
           <div className="bg-purple-900/60 rounded-xl p-2">
             <p className="text-[9px] text-white/60">Saldo</p>
-            
+
           </div>
         </div>
 
@@ -218,9 +217,9 @@ const PlinkoGame = ({ balance, onUpdateBalance, onBack }: Props) => {
 
         <div className="flex gap-2 overflow-x-auto no-scrollbar mb-1">
           {[1, 5, 10, 50].map(v => (
-            <button 
-              key={v} 
-              onClick={() => !dropping && setBet(prev => prev + v)} 
+            <button
+              key={v}
+              onClick={() => !dropping && setBet(prev => prev + v)}
               disabled={dropping}
               className="bg-black/30 border border-white/10 px-4 py-2 rounded-xl text-[10px] font-bold text-white/70 hover:text-white transition-colors disabled:opacity-40"
             >
@@ -231,9 +230,9 @@ const PlinkoGame = ({ balance, onUpdateBalance, onBack }: Props) => {
 
         <div className="flex items-center bg-black/30 rounded-xl">
           <button onClick={() => setBet(Math.max(1, bet - 1))} disabled={dropping} className="px-3 py-3 disabled:opacity-40"><Minus size={16} /></button>
-          <input 
-            type="number" 
-            value={bet} 
+          <input
+            type="number"
+            value={bet}
             disabled={dropping}
             onChange={(e) => setBet(Number(e.target.value))}
             onBlur={(e) => {

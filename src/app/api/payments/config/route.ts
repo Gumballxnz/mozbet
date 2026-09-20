@@ -4,7 +4,7 @@ import { supabaseAdmin } from "@/lib/auth-server";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  // Valores padrão (fallbacks)
+
   let minDeposit = 10;
   let maxDeposit = 17500;
   let bonusPercent = 500;
@@ -14,7 +14,7 @@ export async function GET() {
   let maxWithdrawalDaily = 25000;
 
   try {
-    // Tenta consultar a tabela de configurações do Supabase caso exista
+
     const { data: settings, error } = await supabaseAdmin
       .from("settings")
       .select("key, value");

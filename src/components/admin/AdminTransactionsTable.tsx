@@ -21,12 +21,12 @@ interface Transaction {
   bonusAmount?: number;
 }
 
-export function AdminTransactionsTable({ 
-  initialTransactions, 
+export function AdminTransactionsTable({
+  initialTransactions,
   initialTotalCount,
-  typeFilter 
-}: { 
-  initialTransactions: Transaction[], 
+  typeFilter
+}: {
+  initialTransactions: Transaction[],
   initialTotalCount: number,
   typeFilter: "DEPOSIT" | "WITHDRAW"
 }) {
@@ -207,13 +207,12 @@ export function AdminTransactionsTable({
     });
   };
 
-
   useEffect(() => {
     // 1. Escuta realtime do Supabase para transações (atualização instantânea)
     const channel = supabase.channel(`admin-transactions-${typeFilter}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'transactions' }, async (payload) => {
         const type = payload.new.type;
-        const isMatch = typeFilter === "DEPOSIT" 
+        const isMatch = typeFilter === "DEPOSIT"
           ? (type === "DEPOSIT" || type === "BONUS")
           : (type === "WITHDRAW");
         if (!isMatch) return;
@@ -233,7 +232,7 @@ export function AdminTransactionsTable({
       })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'transactions' }, payload => {
         const type = payload.new.type;
-        const isMatch = typeFilter === "DEPOSIT" 
+        const isMatch = typeFilter === "DEPOSIT"
           ? (type === "DEPOSIT" || type === "BONUS")
           : (type === "WITHDRAW");
         if (!isMatch) return;
@@ -318,7 +317,7 @@ export function AdminTransactionsTable({
     // Só associar bónus a depósitos que foram COMPLETED (evita mostrar bónus em depósitos falhados)
     if (tx.type === "DEPOSIT" && tx.status === "COMPLETED") {
       const txTime = new Date(tx.created_at).getTime();
-      const matchingBonus = transactions.find(b => 
+      const matchingBonus = transactions.find(b =>
         b.type === "BONUS" &&
         b.user_id === tx.user_id &&
         !processedBonusIds.has(b.id) &&
@@ -348,26 +347,26 @@ export function AdminTransactionsTable({
   });
 
   const filtered = groupedTransactions.filter(t => {
-    const matchesSearch = !search.trim() || 
-                          t.phone?.includes(search) || 
-                          t.type.includes(search.toUpperCase()) || 
+    const matchesSearch = !search.trim() ||
+                          t.phone?.includes(search) ||
+                          t.type.includes(search.toUpperCase()) ||
                           t.id.includes(search);
     const matchesStatus = statusFilter === "ALL" || t.status === statusFilter;
-    
+
     if (!startDate && !endDate) return matchesSearch && matchesStatus;
-    
+
     const txDate = new Date(t.created_at);
     const start = startDate ? new Date(startDate) : new Date(0);
     const end = endDate ? new Date(endDate) : new Date();
     if (endDate) end.setHours(23, 59, 59, 999);
-    
+
     const isInRange = txDate >= start && txDate <= end;
     return matchesSearch && matchesStatus && isInRange;
   });
 
   const handleDownloadCSV = () => {
     if (filtered.length === 0) return toast.error("Nenhuma transação para exportar.");
-    
+
     const headers = ["Data", "Tipo", "Telefone", "Valor Pago", "Bónus Pago", "Estado", "ID"];
     const rows = filtered.map(t => [
       new Date(t.created_at).toLocaleString("pt-MZ"),
@@ -400,26 +399,26 @@ export function AdminTransactionsTable({
             {typeFilter === "DEPOSIT" ? "Depósitos Financeiros" : "Saques & Levantamentos"}
           </h1>
           <p className="text-muted-foreground">
-            {typeFilter === "DEPOSIT" 
-              ? "Monitorização Realtime de depósitos M-Pesa e E-Mola para Depósitos e Bónus." 
+            {typeFilter === "DEPOSIT"
+              ? "Monitorização Realtime de depósitos M-Pesa e E-Mola para Depósitos e Bónus."
               : "Monitorização e aprovação manual de levantamentos de fundos."}
             <span className="text-white font-bold ml-2">Total: {filtered.length}</span>
           </p>
         </div>
-        
+
         <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 w-full xl:w-auto">
           <div className="flex items-center justify-between gap-2 bg-[#101116] border border-[#2A2F40] rounded-xl px-2 h-10 w-full sm:w-auto">
-            <input 
-              type="date" 
-              value={startDate} 
-              onChange={(e) => setStartDate(e.target.value)} 
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
               className="bg-transparent text-[10px] text-white outline-none p-2 h-9 flex-1 text-center"
             />
             <span className="text-gray-500 text-xs">até</span>
-            <input 
-              type="date" 
-              value={endDate} 
-              onChange={(e) => setEndDate(e.target.value)} 
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
               className="bg-transparent text-[10px] text-white outline-none p-2 h-9 flex-1 text-center"
             />
           </div>
@@ -447,7 +446,7 @@ export function AdminTransactionsTable({
             </select>
           </div>
 
-          <Button 
+          <Button
             onClick={handleDownloadCSV}
             className="bg-primary/20 text-primary border border-primary/50 font-bold h-10 px-4 w-full sm:w-auto cursor-pointer"
           >
@@ -456,13 +455,13 @@ export function AdminTransactionsTable({
 
           {hasPendingWithdrawals && (
             <>
-              <Button 
+              <Button
                 onClick={handleApproveAllWithdrawals}
                 className="bg-green-600 hover:bg-green-700 text-white font-bold h-10 px-4 w-full sm:w-auto cursor-pointer shadow-md shadow-green-900/30"
               >
                 Aprovar Todos
               </Button>
-              <Button 
+              <Button
                 onClick={handleRejectAllWithdrawals}
                 className="bg-red-600 hover:bg-red-700 text-white font-bold h-10 px-4 w-full sm:w-auto cursor-pointer shadow-md shadow-red-900/30"
               >
@@ -473,8 +472,8 @@ export function AdminTransactionsTable({
 
           <div className="relative w-full sm:w-60">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input 
-              placeholder="Procurar telemóvel..." 
+            <Input
+              placeholder="Procurar telemóvel..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9 bg-[#101116] border-[#2A2F40] h-10 text-white w-full"
@@ -527,7 +526,7 @@ export function AdminTransactionsTable({
                   </td>
                 </tr>
               ))}
-              
+
               {filtered.length === 0 && (
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center text-muted-foreground font-medium">
@@ -554,7 +553,7 @@ export function AdminTransactionsTable({
                 </div>
                 <span className="text-[10px] text-gray-500 mt-1">{new Date(tx.created_at).toLocaleString("pt-MZ")}</span>
               </div>
-              
+
               <div className="text-right flex flex-col items-end">
                 <span className="font-mono-data font-black text-white text-xl block">{formatMZN(tx.amount)}</span>
                 {tx.bonusAmount !== undefined && (
@@ -630,4 +629,3 @@ export function AdminTransactionsTable({
     </div>
   );
 }
-

@@ -1,20 +1,17 @@
-// Cliente Supabase para o frontend
-// As credenciais vêm das variáveis de ambiente (NUNCA hardcoded)
-
 import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn(
-    "⚠️ Supabase: Variáveis NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY não definidas."
+  console.error(
+    "⚠️ [Supabase] Erro de configuração: NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY devem estar definidas no arquivo .env."
   );
 }
 
 export const supabase = createClient(
-  supabaseUrl || "https://placeholder.supabase.co",
-  supabaseAnonKey || "placeholder-key",
+  supabaseUrl || "",
+  supabaseAnonKey || "",
   {
     auth: {
       persistSession: true,

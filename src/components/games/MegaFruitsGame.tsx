@@ -29,7 +29,7 @@ const MegaFruitsGame = ({ balance, onUpdateBalance, onBack }: MegaFruitsProps) =
   const [isSpinning, setIsSpinning] = useState(false);
   const [isAuto, setIsAuto] = useState(false);
   const [reels, setReels] = useState<string[][]>(
-    Array(REELS_COUNT).fill(null).map(() => 
+    Array(REELS_COUNT).fill(null).map(() =>
       Array(ROWS_COUNT).fill(null).map(() => SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)].icon)
     )
   );
@@ -65,29 +65,28 @@ const MegaFruitsGame = ({ balance, onUpdateBalance, onBack }: MegaFruitsProps) =
         return;
       }
 
-      onUpdateBalance(data.newBalance - (data.wins ? data.winAmount : 0)); // temp drop
+      onUpdateBalance(data.newBalance - (data.wins ? data.winAmount : 0));
 
-      // Simulated spinning animation
       const spinDuration = 1000;
       const startTime = Date.now();
-      
+
       const animate = () => {
         const now = Date.now();
         const elapsed = now - startTime;
-        
+
         if (elapsed < spinDuration) {
-          setReels(prev => prev.map(reel => 
+          setReels(prev => prev.map(reel =>
             reel.map(() => SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)].icon)
           ));
           requestAnimationFrame(animate);
         } else {
-          // Final result from backend
-          const finalReels = Array(REELS_COUNT).fill(null).map(() => 
+
+          const finalReels = Array(REELS_COUNT).fill(null).map(() =>
             Array(ROWS_COUNT).fill(null).map(() => SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)].icon)
           );
 
           if (data.wins) {
-            const winSymbol = SYMBOLS[Math.floor(Math.random() * 3)].icon; // force a basic visual symbol
+            const winSymbol = SYMBOLS[Math.floor(Math.random() * 3)].icon;
             finalReels[0][1] = winSymbol;
             finalReels[1][1] = winSymbol;
             finalReels[2][1] = winSymbol;
@@ -100,7 +99,7 @@ const MegaFruitsGame = ({ balance, onUpdateBalance, onBack }: MegaFruitsProps) =
               className: "bg-yellow-500 text-black font-bold"
             });
           } else {
-            // Force loss
+
             if (finalReels[0][0] === finalReels[1][0] && finalReels[1][0] === finalReels[2][0]) {
               finalReels[2][0] = SYMBOLS[(SYMBOLS.findIndex(s => s.icon === finalReels[2][0]) + 1) % SYMBOLS.length].icon;
             }
@@ -128,7 +127,7 @@ const MegaFruitsGame = ({ balance, onUpdateBalance, onBack }: MegaFruitsProps) =
   }, [balance, betAmount, isSpinning, onUpdateBalance]);
 
   const checkWin = (currentReels: string[][]) => {
-    // Check horizontal lines
+
     let totalWin = 0;
     let wonLine = null;
 
@@ -167,7 +166,7 @@ const MegaFruitsGame = ({ balance, onUpdateBalance, onBack }: MegaFruitsProps) =
 
   return (
     <div className="fixed inset-0 z-[110] bg-[#1a0505] flex flex-col font-sans text-white overflow-hidden animate-in fade-in duration-300">
-      {/* Lights background */}
+      {}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,165,0,0.1)_0%,transparent_70%)] pointer-events-none" />
       <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#ffd700 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
 
@@ -184,7 +183,7 @@ const MegaFruitsGame = ({ balance, onUpdateBalance, onBack }: MegaFruitsProps) =
         <div className="flex items-center gap-4">
           <div className="bg-black/40 px-4 py-2 rounded-full border border-yellow-500/50 flex items-center gap-2">
             <Coins className="text-yellow-400" size={16} />
-            
+
           </div>
         </div>
       </div>
@@ -195,7 +194,7 @@ const MegaFruitsGame = ({ balance, onUpdateBalance, onBack }: MegaFruitsProps) =
         <div className="w-full max-w-sm relative bg-gradient-to-b from-red-800 to-red-950 p-6 rounded-[3rem] border-[6px] border-yellow-600 shadow-[0_0_50px_rgba(255,0,0,0.3),inset_0_0_20px_rgba(0,0,0,0.5)]">
           {/* Animated Lights around frame */}
           <div className="absolute -inset-2 border-4 border-dashed border-yellow-400/30 rounded-[3.5rem] animate-[spin_10s_linear_infinite]" />
-          
+
           {/* Jackpot Display */}
           <div className="mb-6 bg-black/80 rounded-2xl border-2 border-yellow-500/40 py-2 px-4 text-center">
              <div className="text-[10px] font-black text-yellow-500/60 uppercase tracking-widest">Último Ganho</div>
@@ -209,8 +208,8 @@ const MegaFruitsGame = ({ balance, onUpdateBalance, onBack }: MegaFruitsProps) =
             {reels.map((reel, reelIdx) => (
               <div key={reelIdx} className="flex flex-col gap-2 relative">
                 {reel.map((icon, rowIdx) => (
-                  <div 
-                    key={rowIdx} 
+                  <div
+                    key={rowIdx}
                     className={`h-24 flex items-center justify-center text-5xl bg-gradient-to-b from-gray-50 to-gray-200 rounded-xl shadow-md transition-all duration-100 ${winningLine === rowIdx ? 'animate-bounce ring-4 ring-yellow-400 z-10' : ''}`}
                   >
                     <span className={isSpinning ? 'blur-[2px]' : ''}>{icon}</span>
@@ -220,7 +219,7 @@ const MegaFruitsGame = ({ balance, onUpdateBalance, onBack }: MegaFruitsProps) =
                 <div className="absolute inset-x-0 bottom-0 h-4 bg-gradient-to-t from-black/10 to-transparent" />
               </div>
             ))}
-            
+
             {/* Win Lines markers */}
             <div className="absolute inset-y-0 left-0 w-full pointer-events-none flex flex-col justify-around py-4">
                {[0, 1, 2].map(i => (
@@ -247,35 +246,35 @@ const MegaFruitsGame = ({ balance, onUpdateBalance, onBack }: MegaFruitsProps) =
            {/* Quick buttons */}
            <div className="flex gap-2 overflow-x-auto no-scrollbar">
               {[10, 20, 50, 100].map(v => (
-                <button 
-                  key={v} 
-                  onClick={() => !isSpinning && setBetAmount(v)} 
+                <button
+                  key={v}
+                  onClick={() => !isSpinning && setBetAmount(v)}
                   disabled={isSpinning}
                   className="bg-red-900/40 border border-yellow-500/20 px-4 py-2 rounded-xl text-xs font-black text-yellow-500/80 hover:text-yellow-400 transition-colors disabled:opacity-40"
                 >
                   {v}
                 </button>
               ))}
-              <button 
-                onClick={() => setBetAmount(10)} 
+              <button
+                onClick={() => setBetAmount(10)}
                 className="bg-black/40 border border-white/10 px-4 py-2 rounded-xl text-xs font-black text-white/50"
               >
                 C
               </button>
            </div>
-           
+
            <div className="grid grid-cols-2 gap-3">
               <div className="flex flex-col gap-1.5">
                  <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest pl-1">Valor da Aposta</span>
                  <div className="bg-black/60 rounded-xl p-1 flex items-center border border-yellow-500/30 h-14">
-                    <button 
-                      onClick={() => !isSpinning && setBetAmount(Math.max(1, betAmount - 10))} 
+                    <button
+                      onClick={() => !isSpinning && setBetAmount(Math.max(1, betAmount - 10))}
                       className="w-12 h-full flex items-center justify-center text-yellow-500 text-xl font-bold"
                     >
                       -
                     </button>
-                    <input 
-                      type="number" 
+                    <input
+                      type="number"
                       value={betAmount}
                       disabled={isSpinning}
                       onChange={(e) => setBetAmount(Number(e.target.value))}
@@ -285,8 +284,8 @@ const MegaFruitsGame = ({ balance, onUpdateBalance, onBack }: MegaFruitsProps) =
                       }}
                       className="flex-1 bg-transparent text-center font-black text-lg italic outline-none w-full text-white"
                     />
-                    <button 
-                      onClick={() => !isSpinning && setBetAmount(betAmount + 10)} 
+                    <button
+                      onClick={() => !isSpinning && setBetAmount(betAmount + 10)}
                       className="w-12 h-full flex items-center justify-center text-yellow-500 text-xl font-bold"
                     >
                       +
@@ -295,7 +294,7 @@ const MegaFruitsGame = ({ balance, onUpdateBalance, onBack }: MegaFruitsProps) =
               </div>
               <div className="flex flex-col gap-1.5">
                  <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest pl-1">Modo</span>
-                 <button 
+                 <button
                     onClick={() => setIsAuto(!isAuto)}
                     disabled={isSpinning}
                     className={`h-14 rounded-xl flex items-center justify-center gap-2 border transition-all ${isAuto ? 'bg-yellow-500 border-yellow-400 text-black font-black' : 'bg-black/60 border-white/10 text-gray-400 font-bold'}`}
@@ -306,7 +305,7 @@ const MegaFruitsGame = ({ balance, onUpdateBalance, onBack }: MegaFruitsProps) =
               </div>
            </div>
 
-           <button 
+           <button
              onClick={handleSpin}
              disabled={isSpinning}
              className={`w-full py-5 rounded-2xl font-black text-2xl tracking-[0.2em] transition-all transform active:scale-95 shadow-[0_10px_30px_rgba(239,68,68,0.4)]

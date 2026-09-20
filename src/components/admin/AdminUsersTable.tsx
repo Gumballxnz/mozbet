@@ -31,19 +31,16 @@ export function AdminUsersTable({ initialUsers, currentUserRole, totalCount = 0 
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [loadingMore, setLoadingMore] = useState(false);
-  
-  // Modais de envio de comunicação
+
   const [globalModalOpen, setGlobalModalOpen] = useState(false);
   const [messageModalOpen, setMessageModalOpen] = useState(false);
   const [emailModalOpen, setEmailModalOpen] = useState(false);
   const [commTarget, setCommTarget] = useState<string | "GLOBAL">("");
-  
-  // Estados dos formulários de comunicação
+
   const [msgTitle, setMsgTitle] = useState("");
   const [msgBody, setMsgBody] = useState("");
   const [msgTargetEmail, setMsgTargetEmail] = useState("");
-  
-  // Realtime Supabase
+
   useEffect(() => {
     const channel = supabase.channel('admin-users')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, payload => {
@@ -55,7 +52,7 @@ export function AdminUsersTable({ initialUsers, currentUserRole, totalCount = 0 
           }
         } else if (payload.eventType === 'UPDATE') {
           if (isAffiliate) {
-            // Se virou afiliado, removemos da lista de jogadores comuns
+
             setUsers(prev => prev.filter(u => u.id !== payload.new.id));
           } else {
             setUsers(prev => prev.map(u => u.id === payload.new.id ? { ...u, ...payload.new } : u));
@@ -70,7 +67,7 @@ export function AdminUsersTable({ initialUsers, currentUserRole, totalCount = 0 
       supabase.removeChannel(channel);
     };
   }, []);
-  // Busca Dinâmica no Banco de Dados com Debounce e suporte a termos em Português
+
   useEffect(() => {
     const delayDebounce = setTimeout(async () => {
       const term = search.trim();
@@ -99,7 +96,7 @@ export function AdminUsersTable({ initialUsers, currentUserRole, totalCount = 0 
     const nextPage = page + 1;
     const start = (nextPage - 1) * 30;
     const end = start + 29;
-    
+
     const { data } = await supabase
       .from("users")
       .select("*")
@@ -117,7 +114,7 @@ export function AdminUsersTable({ initialUsers, currentUserRole, totalCount = 0 
   const filteredUsers = users.filter(u => {
     if (!search.trim()) return true;
     const searchLower = search.toLowerCase().trim();
-    
+
     let roleText = "utilizador cliente user";
     if (u.role === 'super_admin') roleText = "proprietário dono super admin super_admin";
     else if (u.role === 'admin') roleText = "administrador admin";
@@ -125,7 +122,7 @@ export function AdminUsersTable({ initialUsers, currentUserRole, totalCount = 0 
     const phoneClean = u.phone.replace(/\D/g, "");
     const searchClean = search.replace(/\D/g, "");
 
-    const matchesPhone = u.phone.includes(search) || 
+    const matchesPhone = u.phone.includes(search) ||
                          (searchClean && phoneClean.includes(searchClean));
 
     const matchesId = u.id.toLowerCase().includes(searchLower);
@@ -136,11 +133,11 @@ export function AdminUsersTable({ initialUsers, currentUserRole, totalCount = 0 
 
   const executeSendSiteMessage = async () => {
     if (!msgTitle || !msgBody) return toast.error("Preencha título e mensagem");
-    
+
     toast.loading("A processar a inserção realtime...", { id: "msg" });
     try {
       const targetId = commTarget === "GLOBAL" ? null : commTarget;
-      
+
       const res = await fetch("/api/admin/notifications", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -151,7 +148,7 @@ export function AdminUsersTable({ initialUsers, currentUserRole, totalCount = 0 
          const errorData = await res.json();
          throw new Error(errorData.error || "Erro a comunicar com o servidor");
       }
-      
+
       toast.success(`Mensagem inserida! A bolinha vermelha vai acender instantaneamente.`, { id: "msg" });
       setMessageModalOpen(false);
       setMsgTitle("");
@@ -162,13 +159,12 @@ export function AdminUsersTable({ initialUsers, currentUserRole, totalCount = 0 
     }
   };
 
-  // Envio de Email
   const executeSendEmail = async () => {
     if (!msgTitle || !msgBody) return toast.error("Preencha assunto e corpo");
     if (commTarget !== 'GLOBAL' && !msgTargetEmail) return toast.error("Insira o email de destino do utilizador.");
 
     toast.loading(commTarget === 'GLOBAL' ? "A agendar disparo global de emails (via Resend)..." : "A enviar email individual...", { id: "email" });
-    
+
     try {
       const payload = { target: commTarget, targetEmail: msgTargetEmail, subject: msgTitle, body: msgBody };
       const response = await fetch('/api/admin/email', {
@@ -176,9 +172,9 @@ export function AdminUsersTable({ initialUsers, currentUserRole, totalCount = 0 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-      
+
       if (!response.ok) throw new Error("Falha no disparo.");
-      
+
       const data = await response.json();
       toast.success(commTarget === "GLOBAL" ? `${data.message}` : `E-mail entregue com sucesso!`, { id: "email" });
       setEmailModalOpen(false);
@@ -196,7 +192,7 @@ export function AdminUsersTable({ initialUsers, currentUserRole, totalCount = 0 
     setMsgTitle("");
     setMsgBody("");
     setMsgTargetEmail("");
-    
+
     if (type === 'site') setMessageModalOpen(true);
     if (type === 'email') {
       const userObj = users.find(u => u.id === target);
@@ -207,7 +203,6 @@ export function AdminUsersTable({ initialUsers, currentUserRole, totalCount = 0 
     }
   };
 
-  // Exibição dos dados do telefone e e-mail sem ofuscação (filtros removidos)
   const maskPhone = (phone: string) => {
     return phone ? `+258 ${phone}` : "";
   };
@@ -226,9 +221,9 @@ export function AdminUsersTable({ initialUsers, currentUserRole, totalCount = 0 
             Total de Registos: {totalCount}
           </div>
         </div>
-        
+
         <div className="flex w-full sm:w-auto items-center gap-3">
-          <Button 
+          <Button
             onClick={() => setGlobalModalOpen(true)}
             className="bg-primary/20 text-primary border border-primary/50 font-bold hidden md:flex"
           >
@@ -236,8 +231,8 @@ export function AdminUsersTable({ initialUsers, currentUserRole, totalCount = 0 
           </Button>
           <div className="relative flex-1 sm:w-72">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input 
-              placeholder="Pesquisar ID, telefone..." 
+            <Input
+              placeholder="Pesquisar ID, telefone..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9 bg-[#101116] border-[#2A2F40] h-10 text-white"
@@ -295,9 +290,9 @@ export function AdminUsersTable({ initialUsers, currentUserRole, totalCount = 0 
                     </div>
                   </td>
                   <td className="px-6 py-4 text-right align-middle">
-                    <Button 
+                    <Button
                       onClick={() => router.push(`/admin/users/${user.id}`)}
-                      size="sm" 
+                      size="sm"
                       className="h-8 bg-[#2A2F40] hover:bg-primary hover:text-black font-bold text-white transition-all border-none cursor-pointer"
                     >
                       <Settings className="w-4 h-4 mr-2" />
@@ -306,7 +301,7 @@ export function AdminUsersTable({ initialUsers, currentUserRole, totalCount = 0 
                   </td>
                 </tr>
               ))}
-              
+
               {filteredUsers.length === 0 && (
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center text-muted-foreground font-medium">
@@ -317,11 +312,11 @@ export function AdminUsersTable({ initialUsers, currentUserRole, totalCount = 0 
             </tbody>
           </table>
         </div>
-        
+
         {users.length < totalCount && (
           <div className="p-4 border-t border-[#2A2F40] flex justify-center bg-[#0B0C10]">
-            <Button 
-              onClick={loadMore} 
+            <Button
+              onClick={loadMore}
               disabled={loadingMore}
               variant="outline"
               className="border-[#2A2F40] text-gray-400 hover:text-white hover:bg-[#1A1D27] min-w-[200px]"
@@ -377,10 +372,10 @@ export function AdminUsersTable({ initialUsers, currentUserRole, totalCount = 0 
                     </span>
                   )}
                 </div>
-                
-                <Button 
+
+                <Button
                   onClick={() => router.push(`/admin/users/${user.id}`)}
-                  size="sm" 
+                  size="sm"
                   className="h-8 bg-[#2A2F40] hover:bg-primary hover:text-black font-bold text-xs text-white transition-all rounded-lg cursor-pointer"
                 >
                   <Settings className="w-3.5 h-3.5 mr-1" />
@@ -389,7 +384,7 @@ export function AdminUsersTable({ initialUsers, currentUserRole, totalCount = 0 
               </div>
             </div>
           ))}
-          
+
           {filteredUsers.length === 0 && (
             <div className="bg-[#101116] border border-[#2A2F40] rounded-2xl p-8 text-center text-muted-foreground">
               Nenhum utilizador encontrado.
@@ -399,8 +394,8 @@ export function AdminUsersTable({ initialUsers, currentUserRole, totalCount = 0 
 
         {users.length < totalCount && (
           <div className="flex justify-center pt-2 pb-4">
-            <Button 
-              onClick={loadMore} 
+            <Button
+              onClick={loadMore}
               disabled={loadingMore}
               variant="outline"
               className="border-[#2A2F40] text-gray-400 hover:text-white hover:bg-[#1A1D27] w-full cursor-pointer"
@@ -423,16 +418,16 @@ export function AdminUsersTable({ initialUsers, currentUserRole, totalCount = 0 
             <DialogDescription className="hidden">Dispare comunicações para toda a plataforma</DialogDescription>
           </DialogHeader>
           <p className="text-sm text-gray-400 mb-4">Envie mensagens para toda a base de dados em simultâneo.</p>
-          
+
           <div className="flex flex-col gap-3">
-             <Button 
+             <Button
                onClick={() => openCommDialog('site', 'GLOBAL')}
                className="bg-primary/20 hover:bg-primary hover:text-black text-primary border border-primary/50 py-6"
              >
                <Send className="w-5 h-5 mr-3" /> Disparar Ponto Vermelho Realtime
              </Button>
-             
-             <Button 
+
+             <Button
                onClick={() => openCommDialog('email', 'GLOBAL')}
                className="bg-sky-500/20 hover:bg-sky-500 hover:text-black text-sky-400 border border-sky-500/50 py-6"
              >
@@ -454,19 +449,19 @@ export function AdminUsersTable({ initialUsers, currentUserRole, totalCount = 0 
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <label className="text-xs font-bold text-gray-400">Título da Mensagem</label>
-              <Input 
-                value={msgTitle} 
-                onChange={(e) => setMsgTitle(e.target.value)} 
-                placeholder="Ex: Bónus Disponível 🎉" 
+              <Input
+                value={msgTitle}
+                onChange={(e) => setMsgTitle(e.target.value)}
+                placeholder="Ex: Bónus Disponível 🎉"
                 className="bg-black border-[#2A2F40]"
               />
             </div>
             <div className="space-y-2">
               <label className="text-xs font-bold text-gray-400">Conteúdo (Aparece no Dropdown do Cliente)</label>
-              <textarea 
-                value={msgBody} 
-                onChange={(e) => setMsgBody(e.target.value)} 
-                placeholder="Escreva a mensagem aqui..." 
+              <textarea
+                value={msgBody}
+                onChange={(e) => setMsgBody(e.target.value)}
+                placeholder="Escreva a mensagem aqui..."
                 className="flex w-full rounded-md border border-input px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary disabled:cursor-not-allowed disabled:opacity-50 bg-black border-[#2A2F40] min-h-[100px]"
               />
             </div>
@@ -491,10 +486,10 @@ export function AdminUsersTable({ initialUsers, currentUserRole, totalCount = 0 
             {commTarget !== 'GLOBAL' && (
               <div className="space-y-2">
                 <label className="text-xs font-bold text-gray-400">E-mail de Destino</label>
-                <Input 
-                  value={msgTargetEmail} 
-                  onChange={(e) => setMsgTargetEmail(e.target.value)} 
-                  placeholder="Ex: cliente@email.com" 
+                <Input
+                  value={msgTargetEmail}
+                  onChange={(e) => setMsgTargetEmail(e.target.value)}
+                  placeholder="Ex: cliente@email.com"
                   className="bg-black border-[#2A2F40] opacity-70 cursor-not-allowed"
                   disabled
                 />
@@ -502,19 +497,19 @@ export function AdminUsersTable({ initialUsers, currentUserRole, totalCount = 0 
             )}
             <div className="space-y-2">
               <label className="text-xs font-bold text-gray-400">Assunto do E-mail</label>
-              <Input 
-                value={msgTitle} 
-                onChange={(e) => setMsgTitle(e.target.value)} 
-                placeholder="Ex: Foste o vencedor do torneio MozBet!" 
+              <Input
+                value={msgTitle}
+                onChange={(e) => setMsgTitle(e.target.value)}
+                placeholder="Ex: Foste o vencedor do torneio MozBet!"
                 className="bg-black border-[#2A2F40]"
               />
             </div>
             <div className="space-y-2">
               <label className="text-xs font-bold text-gray-400">Conteúdo do E-mail</label>
-              <textarea 
-                value={msgBody} 
-                onChange={(e) => setMsgBody(e.target.value)} 
-                placeholder="Mensagem HTML ou texto limpo..." 
+              <textarea
+                value={msgBody}
+                onChange={(e) => setMsgBody(e.target.value)}
+                placeholder="Mensagem HTML ou texto limpo..."
                 className="flex w-full rounded-md border border-input px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-sky-500 disabled:cursor-not-allowed disabled:opacity-50 bg-black border-[#2A2F40] min-h-[150px]"
               />
             </div>

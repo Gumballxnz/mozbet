@@ -6,7 +6,6 @@ export async function POST(req: Request) {
   try {
     const { email, otp, newPassword } = await req.json();
 
-    // Validações básicas
     if (!email || !otp || !newPassword) {
       return NextResponse.json(
         { error: "Todos os campos são obrigatórios." },
@@ -24,7 +23,6 @@ export async function POST(req: Request) {
     const cleanEmail = email.toLowerCase().trim();
     const affEmail = cleanEmail.startsWith("aff_") ? cleanEmail : `aff_${cleanEmail}`;
 
-    // 1. Verificar se o afiliado existe
     const { data: user } = await supabaseAdmin
       .from("users")
       .select("id, is_affiliate")
@@ -39,7 +37,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // 2. Verificar código OTP
     const { data: otpRecord } = await supabaseAdmin
       .from("otp_codes")
       .select("*")
@@ -54,9 +51,8 @@ export async function POST(req: Request) {
       );
     }
 
-    // Verificar se o código expirou
     if (new Date() > new Date(otpRecord.expires_at)) {
-      // Limpar código expirado
+
       await supabaseAdmin.from("otp_codes").delete().eq("id", otpRecord.id);
       return NextResponse.json(
         { error: "O código expirou. Solicita um novo código." },
@@ -64,11 +60,9 @@ export async function POST(req: Request) {
       );
     }
 
-    // 3. Hash da nova senha
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(newPassword, salt);
 
-    // 4. Atualizar a senha no banco de dados
     const { error: updateError } = await supabaseAdmin
       .from("users")
       .update({ password_hash: hashedPassword })
@@ -82,7 +76,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // 5. Limpar o código OTP usado
     await supabaseAdmin.from("otp_codes").delete().eq("id", otpRecord.id);
 
     return NextResponse.json({

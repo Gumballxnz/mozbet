@@ -15,7 +15,6 @@ interface Props {
   onBack: () => void;
 }
 
-// Máscara de ID idêntica ao Lobby (MZ + 3 chars + ***)
 function maskUserId(username: string): string {
   if (!username) return "USER***";
   const cleanId = username.includes("-") ? username.split("-")[0] : username;
@@ -25,55 +24,54 @@ function maskUserId(username: string): string {
   return cleanId.slice(0, 4).toUpperCase() + "***";
 }
 
-// Componente da Caixa de Aposta Individual (Estilo Spribe)
-const BetBox = ({ 
-  phase, multiplier, balance, onBet, onCashout, 
-  cashedOut, hasBet, lastWin, activeBetAmount 
+const BetBox = ({
+  phase, multiplier, balance, onBet, onCashout,
+  cashedOut, hasBet, lastWin, activeBetAmount
 }: any) => {
   const [betAmount, setBetAmount] = useState(10);
   const presets = [32, 80, 160, 800];
   const [isAuto, setIsAuto] = useState(false);
-  
+
   return (
     <div className="flex-1 bg-[#141516] rounded-3xl border border-[#2A2F40] p-3 flex flex-col gap-3">
       <div className="flex justify-center gap-4">
-        <button 
+        <button
           onClick={() => setIsAuto(false)}
           className={`text-[10px] font-black uppercase tracking-widest px-4 py-1 rounded-full transition-colors ${!isAuto ? 'bg-[#2A2B2E] text-white' : 'text-gray-500 hover:text-gray-300'}`}
         >
           Aposta
         </button>
-        <button 
+        <button
           onClick={() => setIsAuto(true)}
           className={`text-[10px] font-black uppercase tracking-widest px-4 py-1 rounded-full transition-colors ${isAuto ? 'bg-[#2A2B2E] text-white' : 'text-gray-500 hover:text-gray-300'}`}
         >
           Automático
         </button>
       </div>
-      
+
       <div className="flex gap-2 h-full min-h-[80px]">
         <div className="flex-[1.5] flex flex-col gap-1.5">
           <div className="flex items-center bg-[#000000] rounded-xl border border-[#2A2F40] h-10 px-1 relative overflow-hidden group">
-            <button 
-              onClick={() => { playSound('click'); setBetAmount(Math.max(1, betAmount - 1)); }} 
+            <button
+              onClick={() => { playSound('click'); setBetAmount(Math.max(1, betAmount - 1)); }}
               className="w-7 h-7 rounded-full flex items-center justify-center text-gray-400 hover:bg-[#2A2B2E] hover:text-white transition-all font-black text-lg"
             >−</button>
-            <input 
-              type="number" 
-              value={betAmount} 
-              onChange={(e) => setBetAmount(Math.max(1, Number(e.target.value)))} 
-              className="flex-1 w-0 text-center text-white font-black text-base bg-transparent outline-none" 
+            <input
+              type="number"
+              value={betAmount}
+              onChange={(e) => setBetAmount(Math.max(1, Number(e.target.value)))}
+              className="flex-1 w-0 text-center text-white font-black text-base bg-transparent outline-none"
             />
-            <button 
-              onClick={() => { playSound('click'); setBetAmount(betAmount + 1); }} 
+            <button
+              onClick={() => { playSound('click'); setBetAmount(betAmount + 1); }}
               className="w-7 h-7 rounded-full flex items-center justify-center text-gray-400 hover:bg-[#2A2B2E] hover:text-white transition-all font-black text-lg"
             >+</button>
           </div>
           <div className="grid grid-cols-2 gap-1.5">
             {presets.map(v => (
-              <button 
-                key={v} 
-                onClick={() => { playSound('click'); setBetAmount(v); }} 
+              <button
+                key={v}
+                onClick={() => { playSound('click'); setBetAmount(v); }}
                 className="bg-[#000000] border border-[#2A2F40] rounded-lg py-1 text-[11px] font-black text-white/60 hover:bg-[#2A2B2E] hover:text-white transition-colors"
               >
                 {v}
@@ -84,7 +82,7 @@ const BetBox = ({
 
         <div className="flex-[2.5]">
           {!hasBet && !cashedOut && (
-            <button 
+            <button
               onClick={() => { playSound('click'); onBet(betAmount); }}
               disabled={phase !== "waiting"}
               className={`w-full h-full rounded-2xl flex flex-col items-center justify-center border-b-[4px] shadow-lg active:translate-y-0.5 active:border-b-0 transition-all
@@ -96,7 +94,7 @@ const BetBox = ({
           )}
 
           {hasBet && !cashedOut && (
-            <button 
+            <button
               onClick={() => { playSound('click'); onCashout(); }}
               disabled={phase !== "rising"}
               className="w-full h-full rounded-2xl flex flex-col items-center justify-center border-b-[4px] shadow-lg active:translate-y-0.5 active:border-b-0 transition-all bg-[#FF9800] hover:bg-[#F57C00] border-[#E65100] text-white"
@@ -126,21 +124,17 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
   const [history, setHistory] = useState<number[]>([]);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'all' | 'prev' | 'top'>('all');
-  
+
   // Estado das apostas reais
   const [betsState, setBetsState] = useState([
     { hasBet: false, cashedOut: false, lastWin: 0, betAmount: 10 },
     { hasBet: false, cashedOut: false, lastWin: 0, betAmount: 10 }
   ]);
 
-  // Lista da Esquerda (Real + Fake)
   const [roundBets, setRoundBets] = useState<any[]>([]);
   const [topBets, setTopBets] = useState<any[]>([]);
   const [prevBets, setPrevBets] = useState<any[]>([]);
 
-  
-  
-  // Quando a fase muda, ajustamos os estados das apostas para refletir o ciclo
   useEffect(() => {
     if (phase === "waiting") {
       setBetsState(prev => prev.map(b => ({ ...b, hasBet: false, cashedOut: false })));
@@ -149,7 +143,7 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
       setBetsState(prev => prev.map(b => ({
         ...b,
         hasBet: false,
-        cashedOut: b.cashedOut // Mantém se sacou, senão perde
+        cashedOut: b.cashedOut
       })));
       setTimeout(() => {
         fetchHistory();
@@ -178,22 +172,22 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
   }, []);
 
   const fetchTopBets = useCallback(async () => {
-    // Disabled to prevent 400 Bad Request if RLS/Columns mismatch.
+
     setTopBets([]);
   }, []);
 
   useEffect(() => {
     fetchHistory();
     fetchTopBets();
-    
+
     if (!roundId) return;
 
     const channel = supabase.channel(`game_aviator_bets_${roundId}`)
-      .on('postgres_changes', { 
-        event: 'INSERT', 
-        schema: 'public', 
-        table: 'bets', 
-        filter: `round_id=eq.${roundId}` 
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'bets',
+        filter: `round_id=eq.${roundId}`
       }, (payload) => {
         const data = payload.new as any;
         setRoundBets(prev => {
@@ -206,11 +200,11 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
             }, ...prev].slice(0, 50);
         });
       })
-      .on('postgres_changes', { 
-        event: 'UPDATE', 
-        schema: 'public', 
-        table: 'bets', 
-        filter: `round_id=eq.${roundId}` 
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'bets',
+        filter: `round_id=eq.${roundId}`
       }, (payload) => {
         const data = payload.new as any;
         if (data.status === 'won') {
@@ -232,12 +226,12 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
   const handleBet = async (boxIndex: number, amount: number) => {
     if (!isLoggedIn) { toast.error("Faça login para apostar!"); return; }
     if (phase !== "waiting") { toast.error("Aguarde a próxima ronda."); return; }
-    if (amount > balance) { 
+    if (amount > balance) {
       playSound('notification');
-      toast.error("Saldo insuficiente!"); 
-      return; 
+      toast.error("Saldo insuficiente!");
+      return;
     }
-    
+
     try {
       const res = await fetch("/api/game/crash/play", {
         method: "POST",
@@ -265,15 +259,15 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
     if (phase !== "rising" ) return;
     const box = betsState[boxIndex];
     if (!box.hasBet || box.cashedOut) return;
-    
+
     try {
       const res = await fetch("/api/game/crash/cashout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          betAmount: box.betAmount, 
-          multiplier: multiplier, 
-          gameId: "aviator" 
+        body: JSON.stringify({
+          betAmount: box.betAmount,
+          multiplier: multiplier,
+          gameId: "aviator"
         })
       });
       const data = await res.json();
@@ -295,7 +289,7 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
 
   const renderBetsList = () => {
       const list = activeTab === 'all' ? roundBets : (activeTab === 'prev' ? prevBets : topBets);
-      
+
       return (
         <div className="flex-1 overflow-y-auto bg-[#000000] no-scrollbar">
           <div className="grid grid-cols-[1fr_auto_auto] gap-4 px-4 py-2 text-[10px] uppercase font-black text-white/30 sticky top-0 bg-[#000000]/95 backdrop-blur z-10">
@@ -345,7 +339,7 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
            <button onClick={onBack} className="text-gray-400 hover:text-white"><ArrowLeft size={20} /></button>
            <span className="text-red-500 font-black italic text-xl tracking-tighter">Aviator</span>
         </div>
-        
+
         <div className="flex bg-[#000000] p-2 gap-1">
           <button onClick={() => setActiveTab('all')} className={`flex-1 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'all' ? 'bg-[#2A2B2E] text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}>Tudo</button>
           <button onClick={() => setActiveTab('prev')} className={`flex-1 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'prev' ? 'bg-[#2A2B2E] text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}>Anterior</button>
@@ -374,7 +368,7 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
 
       {/* ÁREA CENTRAL */}
       <div className="flex-1 flex flex-col bg-[#000000] relative">
-        
+
         {/* HEADER DESKTOP */}
         <div className="hidden lg:flex h-14 bg-[#141516] justify-end items-center px-6 border-b border-[#2A2F40] gap-4">
             <div className="flex items-center gap-2 bg-[#000000] px-4 py-1.5 rounded-full border border-white/5">
@@ -389,10 +383,10 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
         <div className="h-8 flex items-center px-4 bg-[#14161E] border-b border-[#2A2F40] shrink-0 overflow-x-auto no-scrollbar relative">
           <div className="flex gap-1.5 min-w-max">
             {history.map((m, i) => {
-               let col = "text-[#913EF8] border-[#913EF8]/20 bg-[#913EF8]/5"; 
-               if (m < 2.0) col = "text-[#3498DB] border-[#3498DB]/20 bg-[#3498DB]/5"; 
-               if (m >= 10.0) col = "text-[#C017B4] border-[#C017B4]/20 bg-[#C017B4]/5"; 
-               
+               let col = "text-[#913EF8] border-[#913EF8]/20 bg-[#913EF8]/5";
+               if (m < 2.0) col = "text-[#3498DB] border-[#3498DB]/20 bg-[#3498DB]/5";
+               if (m >= 10.0) col = "text-[#C017B4] border-[#C017B4]/20 bg-[#C017B4]/5";
+
                return (
                  <span key={i} className={`text-[10px] font-black px-2 py-0.5 rounded-full border cursor-pointer hover:bg-white/5 transition-colors ${col}`}>
                    {m.toFixed(2)}x
@@ -405,21 +399,21 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
 
         {/* TELA CENTRAL DO JOGO */}
         <div className="flex-1 flex flex-col p-2 lg:p-6 gap-2 lg:gap-6 overflow-hidden">
-          
+
           <div className="flex-1 relative bg-[#000000] rounded-[2.5rem] overflow-hidden border border-[#2A2F40] shadow-2xl flex items-center justify-center">
-            
+
             {/* EFEITO DE FUNDO DINÂMICO SUNBURST */}
             <div className="absolute inset-0 opacity-15 pointer-events-none overflow-hidden flex items-center justify-center">
-                <div 
-                   className="absolute w-[200%] h-[200%] animate-spin" 
-                   style={{ 
+                <div
+                   className="absolute w-[200%] h-[200%] animate-spin"
+                   style={{
                      background: "repeating-conic-gradient(from 0deg, transparent 0deg 15deg, rgba(255,255,255,0.15) 15deg 30deg)",
                      animationDuration: "100s"
-                   }} 
+                   }}
                 />
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(229,57,53,0.1),#000000_80%)]" />
             </div>
-            
+
             <div className="absolute inset-0 flex flex-col items-center justify-center z-10 pointer-events-none p-4">
               <style>{`
                 @keyframes spin-propeller {
@@ -456,7 +450,7 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
               `}</style>
 
               {/* GRADE DE FUNDO ANIMADA NO ESTILO SPRIBE */}
-              <div 
+              <div
                 className="absolute inset-0 opacity-[0.08] pointer-events-none"
                 style={{
                   backgroundImage: `
@@ -526,7 +520,7 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
                             <stop offset="100%" stopColor="rgba(229, 57, 53, 0.0)" />
                           </linearGradient>
                         </defs>
-                        
+
                         {/* Curva vermelha e área sob a curva */}
                         {phase !== "waiting" && (
                           <>
@@ -543,7 +537,7 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
                         )}
 
                         {/* O Aviãozinho Estilizado */}
-                        <g 
+                        <g
                           style={{
                             "--crashed-y": `${endY}%`,
                             "--crashed-angle": `${angle}deg`
@@ -554,9 +548,9 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
                           <g className={phase === "rising" ? "flying-plane" : ""} style={{ transformOrigin: "0px 0px" }}>
                             <svg viewBox="0 0 48 32" width="52" height="35" x="-26" y="-17" className="overflow-visible">
                               {/* Asa Traseira / Cauda */}
-                              <path 
-                                d="M 6 16 L 1 7 C 0.5 6, 2 5, 4 6 L 9 13 Z" 
-                                fill="#D32F2F" 
+                              <path
+                                d="M 6 16 L 1 7 C 0.5 6, 2 5, 4 6 L 9 13 Z"
+                                fill="#D32F2F"
                                 stroke="#B71C1C"
                                 strokeWidth="0.5"
                               />
@@ -564,44 +558,44 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
                               <path d="M 8 16 L 3 19 L 3 20 L 9 18 Z" fill="#B71C1C" />
 
                               {/* Corpo Principal (Vermelho esportivo) */}
-                              <path 
-                                d="M 6 16 C 6 12, 12 8, 22 8 C 32 8, 38 10, 42 16 C 38 22, 32 24, 22 24 C 12 24, 6 20, 6 16 Z" 
-                                fill="#E53935" 
+                              <path
+                                d="M 6 16 C 6 12, 12 8, 22 8 C 32 8, 38 10, 42 16 C 38 22, 32 24, 22 24 C 12 24, 6 20, 6 16 Z"
+                                fill="#E53935"
                                 stroke="#B71C1C"
                                 strokeWidth="0.5"
                                 style={{ filter: "drop-shadow(0 3px 5px rgba(0,0,0,0.6))" }}
                               />
-                              
+
                               {/* Faixa decorativa branca no corpo */}
                               <path d="M 12 11 C 18 10, 24 11, 28 13 C 26 18, 20 20, 14 20 Z" fill="#FFFFFF" opacity="0.25" />
-                              
+
                               {/* Cockpit / Cabine (Azul c/ reflexo) */}
-                              <path 
-                                d="M 22 11 C 24 8, 28 8, 32 11 C 30 15, 24 15, 22 11 Z" 
-                                fill="#E0F7FA" 
+                              <path
+                                d="M 22 11 C 24 8, 28 8, 32 11 C 30 15, 24 15, 22 11 Z"
+                                fill="#E0F7FA"
                                 stroke="#00ACC1"
                                 strokeWidth="0.5"
                               />
 
                               {/* Asa Inferior */}
-                              <path 
-                                d="M 20 18 L 24 29 C 24.5 30, 26 30, 27 29 L 24 18 Z" 
-                                fill="#B71C1C" 
+                              <path
+                                d="M 20 18 L 24 29 C 24.5 30, 26 30, 27 29 L 24 18 Z"
+                                fill="#B71C1C"
                                 stroke="#8E0C0C"
                                 strokeWidth="0.5"
                               />
 
                               {/* Asa Superior */}
-                              <path 
-                                d="M 22 12 L 28 2 C 28.5 1, 30 1, 31 2 L 26 12 Z" 
-                                fill="#E53935" 
+                              <path
+                                d="M 22 12 L 28 2 C 28.5 1, 30 1, 31 2 L 26 12 Z"
+                                fill="#E53935"
                                 stroke="#B71C1C"
                                 strokeWidth="0.5"
                               />
 
                               {/* Nariz do Avião (Spinner) */}
                               <path d="M 42 13 C 44 13, 44 19, 42 19 Z" fill="#B71C1C" stroke="#8E0C0C" strokeWidth="0.5" />
-                              
+
                               {/* Hélice Giratória */}
                               <g transform="translate(43, 16)">
                                 <g className={phase === "waiting" ? "propeller-slow" : "propeller"}>
@@ -623,20 +617,19 @@ const AviatorGame = ({ balance, onUpdateBalance, onBack }: Props) => {
 
           {/* PAINEIS DE APOSTAS (Responsividade PC) */}
           <div className="flex flex-col md:flex-row gap-3 lg:gap-6 shrink-0 h-auto md:h-[160px]">
-             <BetBox 
-               phase={phase} multiplier={multiplier} balance={balance} 
-               onBet={(amt: number) => handleBet(0, amt)} onCashout={() => handleCashout(0)} 
-               {...betsState[0]} activeBetAmount={betsState[0].betAmount} 
+             <BetBox
+               phase={phase} multiplier={multiplier} balance={balance}
+               onBet={(amt: number) => handleBet(0, amt)} onCashout={() => handleCashout(0)}
+               {...betsState[0]} activeBetAmount={betsState[0].betAmount}
              />
-             <BetBox 
-               phase={phase} multiplier={multiplier} balance={balance} 
-               onBet={(amt: number) => handleBet(1, amt)} onCashout={() => handleCashout(1)} 
-               {...betsState[1]} activeBetAmount={betsState[1].betAmount} 
+             <BetBox
+               phase={phase} multiplier={multiplier} balance={balance}
+               onBet={(amt: number) => handleBet(1, amt)} onCashout={() => handleCashout(1)}
+               {...betsState[1]} activeBetAmount={betsState[1].betAmount}
              />
           </div>
         </div>
 
-        
       </div>
     </div>
   );

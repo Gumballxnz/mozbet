@@ -1,9 +1,8 @@
-import { MetadataRoute } from 'next'
- 
+import { MetadataRoute } from 'next';
+
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://mozbet.online'
-  
-  // Rotas principais e institucionais
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+
   const routes = [
     '',
     '/sobre-nos',
@@ -22,6 +21,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     changeFrequency: 'daily' as const,
     priority: route === '' ? 1 : (route.startsWith('/jogar') ? 0.9 : 0.7),
   }))
- 
+
   return [...routes]
 }

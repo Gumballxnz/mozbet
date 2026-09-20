@@ -3,8 +3,8 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { 
-  X, Gamepad2, Flame, Dices, Cherry, Rocket, 
+import {
+  X, Gamepad2, Flame, Dices, Cherry, Rocket,
   Target, Headphones, HelpCircle, Shield, User, Handshake
 } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
@@ -14,17 +14,15 @@ import { GAMES } from "@/lib/games";
 export function MobileSidebar() {
   const pathname = usePathname();
   const { locale, setLocale } = useTranslation();
-  const { 
-    mobileSidebarOpen, setMobileSidebarOpen, 
-    setSupportOpen, isLoggedIn, user 
+  const {
+    mobileSidebarOpen, setMobileSidebarOpen,
+    setSupportOpen, isLoggedIn, user
   } = useAppStore();
 
-  // Fechar ao mudar de página
   useEffect(() => {
     setMobileSidebarOpen(false);
   }, [pathname, setMobileSidebarOpen]);
 
-  // Bloquear scroll do body quando aberto
   useEffect(() => {
     if (mobileSidebarOpen) {
       document.body.style.overflow = "hidden";
@@ -34,9 +32,6 @@ export function MobileSidebar() {
     return () => { document.body.style.overflow = ""; };
   }, [mobileSidebarOpen]);
 
-
-
-  // Jogos em destaque
   const featuredGames = [
     { game: GAMES.find(g => g.id === "aviator")!, icon: Rocket, color: "text-red-500" },
     { game: GAMES.find(g => g.id === "mines")!, icon: Target, color: "text-yellow-500" },
@@ -45,8 +40,8 @@ export function MobileSidebar() {
 
   return (
     <>
-      {/* Overlay escuro */}
-      <div 
+      {}
+      <div
         className={`fixed inset-0 bg-black/60 z-50 transition-opacity duration-300 lg:hidden ${
           mobileSidebarOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         }`}
@@ -57,7 +52,7 @@ export function MobileSidebar() {
       <div className={`fixed top-0 left-0 bottom-0 w-[280px] bg-surface border-r border-white/5 z-50 overflow-y-auto transition-transform duration-300 ease-out lg:hidden ${
         mobileSidebarOpen ? "translate-x-0" : "-translate-x-full"
       }`}>
-        
+
         {/* Header do Drawer */}
         <div className="flex items-center justify-between p-4 border-b border-white/5">
           <Link href="/" className="text-xl font-extrabold tracking-tight text-white flex items-center gap-2">
@@ -66,7 +61,7 @@ export function MobileSidebar() {
             </div>
             MOZ<span className="text-primary glow-primary">BET</span>
           </Link>
-          <button 
+          <button
             onClick={() => setMobileSidebarOpen(false)}
             className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-muted-foreground"
           >
@@ -79,13 +74,9 @@ export function MobileSidebar() {
         {/* Botão Painel Admin — apenas para administradores */}
         {isLoggedIn && user?.isAdmin && (
           <div className="px-3 pt-3">
-            <Link 
-              href={
-                typeof window !== "undefined" && window.location.hostname.includes("localhost")
-                  ? "http://admin.localhost:3000"
-                  : "https://admin.mozbet.online"
-              } 
-              target="_blank"
+            <Link
+              href="/admin"
+              onClick={() => setMobileSidebarOpen(false)}
               className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 transition-colors"
             >
               <Shield className="w-5 h-5" />
@@ -120,15 +111,14 @@ export function MobileSidebar() {
           <div>
             <h3 className="px-2 text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Parceiros</h3>
             <nav className="space-y-0.5">
-              <a 
-                href="https://afiliados.mozbet.online/registar" 
-                target="_blank" 
-                rel="noopener noreferrer"
+              <Link
+                href="/afiliados/registar"
+                onClick={() => setMobileSidebarOpen(false)}
                 className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 transition-colors border border-emerald-500/10"
               >
                 <Handshake className="w-5 h-5 flex-shrink-0" />
                 <span className="text-sm font-bold">Programa de Afiliados</span>
-              </a>
+              </Link>
             </nav>
           </div>
 
@@ -147,7 +137,7 @@ export function MobileSidebar() {
         {/* Rodapé do Drawer */}
         <div className="p-3 mt-auto border-t border-white/5 space-y-2">
           {/* Suporte */}
-          <button 
+          <button
             onClick={() => { setSupportOpen(true); setMobileSidebarOpen(false); }}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary transition-colors"
           >
@@ -157,10 +147,8 @@ export function MobileSidebar() {
 
           {/* Admin removido daqui - agora fica acima do menu */}
 
-
-
           {/* Toggle Idioma */}
-          <button 
+          <button
             onClick={() => setLocale(locale === "pt" ? "en" : "pt")}
             className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg bg-surface hover:bg-white/5 transition-colors mt-2 border border-white/5"
           >

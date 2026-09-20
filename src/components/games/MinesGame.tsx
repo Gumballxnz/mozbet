@@ -25,7 +25,6 @@ const MinesGame = ({ onClose, balance, onBet }: MinesGameProps) => {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [potentialWin, setPotentialWin] = useState(0);
 
-  // Calcular multiplicador local (para exibição antes do jogo começar)
   const calculateMultiplier = (mines: number, revealed: number) => {
     let mult = 1.0;
     for (let i = 0; i <= revealed; i++) {
@@ -34,16 +33,12 @@ const MinesGame = ({ onClose, balance, onBet }: MinesGameProps) => {
     return Number(mult.toFixed(2));
   };
 
-  // Atualizar prévia do multiplicador quando mudar nº de minas
   useEffect(() => {
     if (!isPlaying) {
       setNextMultiplier(calculateMultiplier(mineCount, 0));
     }
   }, [mineCount, isPlaying]);
 
-  // ==========================================
-  // RECUPERAR SESSÃO ATIVA (Ponto 5)
-  // ==========================================
   useEffect(() => {
     const checkActiveSession = async () => {
       if (!isLoggedIn) return;
@@ -59,15 +54,14 @@ const MinesGame = ({ onClose, balance, onBet }: MinesGameProps) => {
           setCurrentMultiplier(s.currentMultiplier);
           setPotentialWin(s.potentialWin);
           setRevealedCount(s.revealedIndices.length);
-          
-          // Restaurar o grid visual
+
           const newGrid = Array(25).fill({ status: "hidden" });
           s.revealedIndices.forEach((idx: number) => {
             newGrid[idx] = { status: "safe" };
           });
           setGrid(newGrid);
           setIsPlaying(true);
-          
+
           toast.info("Jogo restaurado! Continue de onde parou.");
         }
       } catch (e) {
@@ -79,9 +73,6 @@ const MinesGame = ({ onClose, balance, onBet }: MinesGameProps) => {
     checkActiveSession();
   }, [isLoggedIn]);
 
-  // ==========================================
-  // INICIAR JOGO (chamada ao servidor)
-  // ==========================================
   const handleStart = async () => {
     if (!isLoggedIn) {
       toast.error("Faça login para jogar com dinheiro real!");
@@ -110,7 +101,6 @@ const MinesGame = ({ onClose, balance, onBet }: MinesGameProps) => {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
-      // Sucesso! Jogo iniciado no servidor
       setSessionId(data.sessionId);
       setIsPlaying(true);
       setRevealedCount(0);
@@ -119,7 +109,6 @@ const MinesGame = ({ onClose, balance, onBet }: MinesGameProps) => {
       setPotentialWin(0);
       setGrid(Array(25).fill({ status: "hidden" }));
 
-      // Atualizar saldo no store
       updateBalance(data.newBalance);
       toast.success("Jogo iniciado!");
     } catch (err: any) {
@@ -129,9 +118,6 @@ const MinesGame = ({ onClose, balance, onBet }: MinesGameProps) => {
     }
   };
 
-  // ==========================================
-  // REVELAR CÉLULA (chamada ao servidor)
-  // ==========================================
   const handleCellClick = async (index: number) => {
     if (!isPlaying || grid[index].status !== "hidden" || isLoading || !sessionId) return;
     playSound('click');
@@ -148,10 +134,10 @@ const MinesGame = ({ onClose, balance, onBet }: MinesGameProps) => {
       if (!res.ok) throw new Error(data.error);
 
       if (data.result === "mine") {
-        // ACERTOU MINA! Revelar todas as minas
+
         const newGrid = [...grid];
         newGrid[index] = { status: "mine" };
-        // Mostrar todas as outras minas
+
         (data.minePositions as number[]).forEach((pos: number) => {
           if (pos !== index) newGrid[pos] = { status: "mine" };
         });
@@ -161,7 +147,7 @@ const MinesGame = ({ onClose, balance, onBet }: MinesGameProps) => {
         playSound('crash');
         toast.error("💣 BOMBA! Que azar, você perdeu esta rodada.");
       } else if (data.result === "safe") {
-        // SEGURO!
+
         const newGrid = [...grid];
         newGrid[index] = { status: "safe" };
         setGrid(newGrid);
@@ -172,7 +158,7 @@ const MinesGame = ({ onClose, balance, onBet }: MinesGameProps) => {
         playSound('notification');
         toast.success(`💎 Seguro! ${data.currentMultiplier}x`);
       } else if (data.result === "all_clear") {
-        // REVELOU TUDO! Vitória total
+
         const newGrid = [...grid];
         newGrid[index] = { status: "safe" };
         (data.minePositions as number[]).forEach((pos: number) => {
@@ -191,9 +177,6 @@ const MinesGame = ({ onClose, balance, onBet }: MinesGameProps) => {
     }
   };
 
-  // ==========================================
-  // CASHOUT (chamada ao servidor)
-  // ==========================================
   const handleCashout = async () => {
     if (!isPlaying || revealedCount === 0 || isLoading || !sessionId) return;
 
@@ -209,7 +192,6 @@ const MinesGame = ({ onClose, balance, onBet }: MinesGameProps) => {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
-      // Revelar minas após o saque
       const newGrid = [...grid];
       (data.minePositions as number[]).forEach((pos: number) => {
         if (newGrid[pos].status === "hidden") {
@@ -232,10 +214,10 @@ const MinesGame = ({ onClose, balance, onBet }: MinesGameProps) => {
 
   return (
     <div className="fixed inset-0 z-[110] bg-[#0b0f1a] flex flex-col font-sans text-white overflow-hidden animate-in fade-in duration-300">
-      {/* Background */}
+      {}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.05)_0%,transparent_70%)] pointer-events-none" />
 
-      {/* Header */}
+      {}
       <div className="flex items-center justify-between p-4 bg-black/40 backdrop-blur-md border-b border-white/5 relative z-10">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-[0_0_15px_rgba(37,99,235,0.4)]">
@@ -250,9 +232,9 @@ const MinesGame = ({ onClose, balance, onBet }: MinesGameProps) => {
         </div>
       </div>
 
-      {/* Conteúdo do Jogo */}
+      {}
       <div className="flex-1 overflow-y-auto no-scrollbar flex flex-col items-center py-6 px-4">
-        {/* Multiplicador Card */}
+        {}
         <div className="w-full max-w-sm mb-6 relative">
           <div className="bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 p-4 text-center">
             <div className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">

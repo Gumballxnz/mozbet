@@ -12,12 +12,10 @@ export async function POST(req: Request) {
     }
 
     const cleanIdentifier = loginIdentifier.replace(/\D/g, "");
-    
-    // Preparar as possibilidades de busca
+
     const emailWithAff = loginIdentifier.includes("@") ? `aff_${loginIdentifier}` : loginIdentifier;
     const phoneWithAff = cleanIdentifier ? `aff_${cleanIdentifier}` : loginIdentifier;
 
-    // 1. Buscar afiliado pelo e-mail, nome de usuário ou telefone (normal ou com prefixo aff_)
     const { data: user, error } = await supabaseAdmin
       .from("users")
       .select("id, email, password_hash, is_affiliate, is_active, affiliate_code")
@@ -28,23 +26,19 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "E-mail, usuário ou senha incorretos." }, { status: 401 });
     }
 
-    // 2. Verificar se possui o papel de afiliado
     if (!user.is_affiliate) {
       return NextResponse.json({ error: "Esta conta não possui perfil de afiliado ativo." }, { status: 403 });
     }
 
-    // 3. Verificar se a conta está ativa
     if (!user.is_active) {
       return NextResponse.json({ error: "Sua conta de parceiro está desativada. Contacte o suporte." }, { status: 403 });
     }
 
-    // 4. Comparar hash da senha
     const isMatch = await bcrypt.compare(password, user.password_hash);
     if (!isMatch) {
       return NextResponse.json({ error: "E-mail ou senha incorretos." }, { status: 401 });
     }
 
-    // 5. Gerar token de sessão JWT de afiliado
     const token = await signToken({
       id: user.id,
       email: user.email,
@@ -62,13 +56,13 @@ export async function POST(req: Request) {
       }
     });
 
-    // Define o cookie de sessão de afiliados
     response.cookies.set("mozbet_affiliate_session", token, {
       path: "/",
-      maxAge: 60 * 60 * 24 * 7, // 7 dias
+      maxAge: 60 * 60 * 24 * 7,
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
+      domain: process.env.COOKIE_DOMAIN || undefined,
     });
 
     return response;

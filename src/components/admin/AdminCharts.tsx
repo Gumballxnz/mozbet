@@ -24,10 +24,10 @@ interface Props {
   totalAffiliateBalance?: number;
 }
 
-export function AdminCharts({ 
-  depositsRaw: initialDeposits, 
-  usersRaw: initialUsers, 
-  withdrawalsRaw: initialWithdrawals, 
+export function AdminCharts({
+  depositsRaw: initialDeposits,
+  usersRaw: initialUsers,
+  withdrawalsRaw: initialWithdrawals,
   failedRaw: initialFailed = [],
   usersCount: initialUsersCount = 0,
   initialTotalDeposits = 0,
@@ -52,14 +52,12 @@ export function AdminCharts({
   const [users, setUsers] = useState(initialUsers);
   const [totalUsersCount, setTotalUsersCount] = useState(initialUsersCount || initialUsers.length);
 
-  // Estados para os totais de cards gerais históricos
   const [totalDeposits, setTotalDeposits] = useState(initialTotalDeposits);
   const [totalWithdrawals, setTotalWithdrawals] = useState(initialTotalWithdrawals);
   const [totalFailed, setTotalFailed] = useState(initialTotalFailed);
   const [failedCount, setFailedCount] = useState(initialFailedCount);
   const [totalRetained, setTotalRetained] = useState(initialTotalRetained);
 
-  // Subscrever ao Realtime para Gráficos e atualizar os totais acumulados dos cards
   useEffect(() => {
     const channel = supabase.channel('admin-charts')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'transactions' }, payload => {
@@ -92,17 +90,16 @@ export function AdminCharts({
     };
   }, [initialTotalDeposits, initialTotalWithdrawals, initialTotalFailed, initialFailedCount, initialTotalRetained]);
 
-  const ggr = totalDeposits - totalWithdrawals; // Gross Gaming Revenue
+  const ggr = totalDeposits - totalWithdrawals;
 
   const chartData = useMemo(() => {
     const now = new Date();
-    
-    // Configuração de Períodos
+
     const daysToSub = filter === "hoje" ? 1 : filter === "7d" ? 7 : filter === "30d" ? 30 : 90;
     const startDate = startOfDay(subDays(now, daysToSub - 1));
 
     const dataMap = new Map<string, { date: string; displayDate: string; depositos: number; levantamentos: number; falhas: number; usuarios: number }>();
-    
+
     if (filter === "hoje") {
       for (let i = 0; i <= 23; i++) {
         const key = `${i.toString().padStart(2, '0')}:00`;
@@ -123,7 +120,6 @@ export function AdminCharts({
       }
     }
 
-    // Preencher Depósitos
     deposits.forEach(dep => {
       const d = parseISO(dep.created_at);
       if (filter === "hoje") {
@@ -139,7 +135,6 @@ export function AdminCharts({
       }
     });
 
-    // Preencher Levantamentos
     withdrawals.forEach(withd => {
       const d = parseISO(withd.created_at);
       if (filter === "hoje") {
@@ -155,7 +150,6 @@ export function AdminCharts({
       }
     });
 
-    // Preencher Falhas
     failed.forEach(fail => {
       const d = parseISO(fail.created_at);
       if (filter === "hoje") {
@@ -171,7 +165,6 @@ export function AdminCharts({
       }
     });
 
-    // Preencher Utilizadores
     users.forEach(u => {
       const d = parseISO(u.created_at);
       if (filter === "hoje") {
@@ -190,18 +183,17 @@ export function AdminCharts({
     return Array.from(dataMap.values());
   }, [deposits, withdrawals, users, filter]);
 
-  // Totais do período selecionado
   const periodDeposits = chartData.reduce((acc, curr) => acc + curr.depositos, 0);
   const periodWithdrawals = chartData.reduce((acc, curr) => acc + curr.levantamentos, 0);
   const periodGGR = periodDeposits - periodWithdrawals;
 
   return (
     <div className="space-y-6">
-      
-      {/* 5 Cards Principais - Estilo Stripe/Utmify */}
+
+      {}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        
-        {/* Card 1: Receita Bruta (Depósitos) */}
+
+        {}
         <div className="bg-[#101116] border border-[#2A2F40] p-5 rounded-2xl flex flex-col justify-between shadow-xl relative overflow-hidden group hover:border-primary/50 transition-colors">
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
              <ArrowUpRight className="w-16 h-16 text-primary" />
@@ -397,7 +389,7 @@ export function AdminCharts({
 
       {/* GRÁFICOS (Financeiro + Crescimento de Base) */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        
+
         {/* GRÁFICO FINANCEIRO (Área Dupla) */}
         <div className="bg-[#101116] border border-[#2A2F40] rounded-2xl p-4 sm:p-6 shadow-xl flex flex-col">
           <div className="flex flex-wrap gap-6 mb-8 border-b border-[#2A2F40] pb-6">
@@ -414,7 +406,7 @@ export function AdminCharts({
                <span className={`text-2xl font-black ${periodGGR >= 0 ? 'text-sky-400' : 'text-red-500'}`}>{formatMZN(periodGGR)}</span>
             </div>
           </div>
-          
+
           <div className="w-full h-[350px]">
             {isMounted && (
               <ResponsiveContainer width="100%" height={350}>
@@ -436,9 +428,9 @@ export function AdminCharts({
                   <CartesianGrid strokeDasharray="3 3" stroke="#2A2F40" vertical={false} />
                   <XAxis dataKey="displayDate" stroke="#6B7280" fontSize={11} tickLine={false} axisLine={false} />
                   <YAxis stroke="#6B7280" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(val) => `MZN ${val >= 1000 ? (val/1000).toFixed(1)+'k' : val}`} />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#1A1D27', borderColor: '#2A2F40', borderRadius: '12px', color: '#fff', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)' }} 
-                    itemStyle={{ fontWeight: 'bold' }} 
+                  <Tooltip
+                    contentStyle={{ backgroundColor: '#1A1D27', borderColor: '#2A2F40', borderRadius: '12px', color: '#fff', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)' }}
+                    itemStyle={{ fontWeight: 'bold' }}
                   />
                   <Legend verticalAlign="top" height={36} iconType="circle" />
                   <Area type="monotone" dataKey="depositos" name="Entradas (Depósitos)" stroke="#28A745" strokeWidth={3} fillOpacity={1} fill="url(#colorDepositos)" />
@@ -460,12 +452,12 @@ export function AdminCharts({
             <div>
                <span className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-1">Média Diária</span>
                <span className="text-2xl font-black text-purple-400">
-                 {Math.ceil(users.length / 90).toLocaleString()} 
+                 {Math.ceil(users.length / 90).toLocaleString()}
                  <span className="text-sm font-medium text-gray-500 ml-1">users/dia</span>
                </span>
             </div>
           </div>
-          
+
           <div className="w-full h-[350px]">
             {isMounted && (
               <ResponsiveContainer width="100%" height={350}>
@@ -479,9 +471,9 @@ export function AdminCharts({
                   <CartesianGrid strokeDasharray="3 3" stroke="#2A2F40" vertical={false} />
                   <XAxis dataKey="displayDate" stroke="#6B7280" fontSize={11} tickLine={false} axisLine={false} />
                   <YAxis stroke="#6B7280" fontSize={11} tickLine={false} axisLine={false} />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#1A1D27', borderColor: '#2A2F40', borderRadius: '12px', color: '#fff', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)' }} 
-                    itemStyle={{ fontWeight: 'bold' }} 
+                  <Tooltip
+                    contentStyle={{ backgroundColor: '#1A1D27', borderColor: '#2A2F40', borderRadius: '12px', color: '#fff', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)' }}
+                    itemStyle={{ fontWeight: 'bold' }}
                   />
                   <Legend verticalAlign="top" height={36} iconType="circle" />
                   <Area type="monotone" dataKey="usuarios" name="Novas Contas" stroke="#0EA5E9" strokeWidth={4} fillOpacity={1} fill="url(#colorUsuarios)" />

@@ -1,13 +1,14 @@
 server {
     listen 80;
-    server_name api.mozbet.online socket.mozbet.online;
+    # Substitua pelos seus subdomínios ou domínio principal
+    server_name api.seudominio.com socket.seudominio.com;
 
     client_max_body_size 10M;
 
-    access_log /var/log/nginx/mozbet_access.log;
-    error_log /var/log/nginx/mozbet_error.log;
+    access_log /var/log/nginx/platform_access.log;
+    error_log /var/log/nginx/platform_error.log;
 
-    add_header X-Frame-Options "DENY" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
     add_header X-Content-Type-Options "nosniff" always;
     add_header Referrer-Policy "no-referrer-when-downgrade" always;
 

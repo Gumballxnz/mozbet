@@ -33,6 +33,23 @@ yarn-error.log*
 .env*
 !.env.example
 
+# Memoria do projeto e documentação interna (SOMENTE LOCAL)
+MEMORIA_PROJETO.md
+MEMORIA_*.md
+*memoria*
+*memory*
+docs/MEMORIA*
+
+# Backups, dumps e dados de exportacao (SOMENTE LOCAL)
+*.xlsx
+*.xls
+*.sql
+*.csv
+backup_supabase_mozbet/
+mozbet_full_backup.*
+scratch/
+scripts/
+
 # markdown
 *.md
 !README.md
